@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module>
+<ModulePrefs title="HR Diagram">
+    <Require feature="locked-domain" />  
+    <Require feature="dynamic-height"/>
+    <Require feature="opensocial-0.8"/> 
+    <Require feature="minimessage"/>
+
+</ModulePrefs>
+<Content type="html"><![CDATA[
+
+<div id="divSelections" style="width: 100%;">
+    <table> 
+    <TBODY>
+        <TR>
+            <td>
+ 	           <input id="btDoHR" onclick="hr.plotHR();" type="button" value="Plot HR"/>
+            </td> 
+			<td>
+			   <img id="imgSpinner" src="images/spinnerGrey.gif" style="display:none;" />
+			</td>
+			<td>
+				<div id="divStatusText"></div> 
+			</td>
+        </TR> 
+    </TBODY>
+    </table>
+</div>
+<div id="chartVisualization">
+	<img id="imgChartVis" src="images/1px.gif" style="display: none"/>
+</div>
+<div id="visualization">
+</div>
+<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+<script src="http://sky.astro.washington.edu/gadgets/js/gDataInterface.js" type="text/javascript"></script>
+<script src="http://sky.astro.washington.edu/gadgets/js/astroObjectLib.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+    
+
+// Plot (hr) object is global
+var hr = null,
+    debug = true;
+
+// Writes to the console if debug (global) is true  
+function debugLog(msg){
+    if ((debug === true) && (window.console && console.log)) { 
+         console.log(GADGET_NAME + ": " + msg);
+    }
+    return;
+}
+
+
+
+// GLOBAL CONSTANTS
+var GADGET_NAME = "HR Diagram" + "_" + Math.floor(Math.random()*100000+1).toString();
+
+// Writes to the console if debug (global) is true  
+function debugLog(msg){
+    if ((debug === true) && (window.console && console.log)) {
+        console.log(GADGET_NAME + ": " + msg);
+    }
+    return;
+}
+
+
+// create HR object
+function init(){
+    hr = new Plotter();
+    google.load('visualization', '1', {packages: ['ScatterChart']});
+    //google.setOnLoadCallback(hr.initPlot);
+    gadgets.window.adjustHeight();
+}
+
+
+function Plotter(){
+    var my = new Object();
+    // CONSTANTS
+    var DEFAULT_NAMESPACE = "NS1",
+        MM_TIMER_DURATION = 4,
+		PLOT_HEIGHT = 400,
+		PLOT_WIDTH = 300;
+		
+    // PRIVATE
+    var _namespaceList = [ DEFAULT_NAMESPACE ];      // list of our current Namespaces. Just init with the default
+    
+    // Private Helper Variables
+    var di = new gDataInterface(GADGET_NAME, DEFAULT_NAMESPACE); // make dataInterface object, init with default
+    var miniMsg = new gadgets.MiniMessage();// make MiniMessage object
+
+    // INIT
+    var msg = miniMsg.createStaticMessage("Attempting to register gadget...");
+    di.registerMe( { gadgetName : GADGET_NAME,
+                    namespaceList : _namespaceList,
+                    variableList : [ "VP_Coord", "Active_Point_List", "VP_Point_List" ],
+                    triggerList : [],
+                    successCallback : registrationSuccess,
+                    failureCallback : registrationFailure
+                } );
+ 
+	
+	// Callback after successful registration
+    function registrationSuccess(){
+        debugLog('Registration successful');
+        if (msg) {
+            miniMsg.dismissMessage(msg);
+            // free up msg
+            msg = null;
+            miniMsg.createTimerMessage("Registration Succesful.", MM_TIMER_DURATION);
+        }
+    }
+    // Callback after a failure of registration
+    // displays message showing failure
+    function registrationFailure(){
+        debugLog('Registration FAILED!');
+        miniMsg.dismissMessage(msg);
+        miniMsg.createDismissibleMessage("Unable to register gadget.\nWe cannot communicate with other gadgets.");
+    }
+    
+	// PUBLIC METHODS  
+	my.plotHR = function() {
+        // TODO: other ways to choose the bounds we want on the gadget
+		showSpinner(true, "Getting objects..."); 
+		
+		// clear visualization
+		showVisualization(false);
+
+		// get current VP bounds
+        // bounds is array of CelestialCoordinates: [topLeft, bottomRight]
+        var bounds = di.readVariable(DEFAULT_NAMESPACE, "VP_Current_Bounds");
+        if (bounds === null){
+            alert('Set bounds');
+			showSpinner(false, "");
+            return;
+        }
+        
+		
+		// get objects within bounds from catalogue
+		
+		// multiply ra by 15 to convert to degrees
+		// TODO: option for other catalogues
+		var maxObjs = 180;
+        var sdssQueryData = {cmd: "SELECT TOP " + maxObjs + " objid,modelMag_g,modelMag_r,modelMag_i,ra,dec FROM PhotoPrimary WHERE ra BETWEEN " + 
+				bounds[0].getRa() * 15 + " AND " + 
+				bounds[1].getRa() * 15 + " AND dec BETWEEN " + 
+				bounds[1].getDec() + " AND " + bounds[0].getDec() +
+				" AND modelMag_g > -9999" +
+				" ORDER BY modelMag_g ASC",
+            format: "xml" };
+        
+      	url = 'http://cas.sdss.org/public/en/tools/search/x_sql.asp';
+		makeGETRequest(url, sdssQueryData, sdssResponseCB);
+	}
+    
+	function showVisualization(show) {
+		if (show) {
+			document.getElementById('imgChartVis').style.display = 'inline';
+		}
+		else {
+			document.getElementById('imgChartVis').style.display = 'none';
+		}
+		gadgets.window.adjustHeight();
+	}
+    
+	function makeGETRequest(url, data, callback) {
+        var params = {};
+        getdata = gadgets.io.encodeValues(data);
+        params[gadgets.io.RequestParameters.METHOD] = gadgets.io.MethodType.GET;
+        url = url + '?' + getdata;
+        gadgets.io.makeRequest(url, callback, params); 
+    }
+    
+	function sdssResponseCB(obj) {
+		// parse the XML
+        if (obj.errors.length > 0){
+            // errors
+            debugLog(obj.errors);
+            showSpinner(false, 'Service: ' + obj.errors);
+            return;
+        }
+        else if (obj.text === ""){
+            // returned empty string
+            showSpinner(false, 'Service returned empty string');
+            return;
+        }
+        xmlDoc = xmlStringToDoc(obj.text);
+        // walk XML to create points and write to objectData
+        var pointsList = [];
+
+        var rows = xmlDoc.getElementsByTagName('Row');
+        if (rows.length === 0){
+            // no rows
+            showSpinner(false, 'No Objects');
+			return;
+        }
+        else if ((rows.length === 1) && (rows[0].textContent.indexOf('No rows returned') !== -1)){
+            // the special case answer is that no rows were returned
+            showSpinner(false, 'No Objects');
+            return;
+    	}
+        // We probably have valid data at this point, so parse it and display it
+            
+        for (var i=0,len=rows.length; i<len; i++){
+			var row = rows[i];
+            var cc = new UW.astro.CelestialCoordinate(0,0);
+			var cObj = new UW.astro.CelestialObject();
+            // loop through attributes
+            for (var k=0, kLen=row.attributes.length; k<kLen; k++){
+                // k is the attribute index
+                var attName = row.attributes[k].nodeName;
+                var attValue = row.attributes[k].nodeValue;
+                
+				// add info to the placemark description
+                cc.appendDescription('<b>' + attName + "</b>: " + attValue + "</br>");
+				// TODO: make an SDSS Data table inside the description 
+                // set all the cc properties
+                switch(attName){
+                    case "ra":
+                        // divide ra by 15 to convert to hours
+                        cc.setRa(attValue /15);
+						break;
+                    case "dec":
+                        cc.setDec(attValue);
+						break;
+					case "modelMag_g":
+						cObj.setGMag(attValue);
+						break;
+					case "modelMag_r":
+						cObj.setRMag(attValue);
+						break;
+                }
+                
+            }
+			cObj.setCelestialCoord(cc);
+            // add point to the list
+            pointsList.push(cObj);
+        }
+		// write the points to the scatter plot
+		if (pointsList.length > 0) {
+			plotPointsList(pointsList);
+				
+        	// write the points to the public point list
+        	var pubList = di.readVariable(DEFAULT_NAMESPACE, "VP_Point_List");
+        	// TODO: test for the UniqIDList type
+        	if (pubList === null){
+            	pubList = new UW.astro.UniqIdList();
+        	}
+        	for (var i=0, len=pointsList.length; i<len; i++){
+           		pubList.append(pointsList[i].getCelestialCoord());
+       		}
+
+        	di.writeVariable(DEFAULT_NAMESPACE, "VP_Point_List", pubList);
+		}
+
+		showSpinner(false, "");
+
+		
+	}
+	
+	// plots the g-r vs. g on the color-magnitude diagram
+	// @param pList: is an array of celestial coordinates 
+	//				 with g and r as properties
+	function plotPointsList(pList) {
+//		var dt = new google.visualization.DataTable();    
+//        
+//		dt.addColumn('number', 'r');
+//		dt.addColumn('number', 'g-r');
+//		dt.addRows(pList.length);	
+//		for (var i=0, len=pList.length; i<len; i++) {
+//			var cObj = pList[i];
+//			var g = Math.round(cObj.getGMag() * 10000000) / 10000000;	// round to 7 decimal places
+//			var r = Math.round(cObj.getRMag() * 10000000) / 10000000;	// round to 7 decimal places
+//			if ((g !== null) && (r !== null)) {
+//				var g_r = Math.round((g-r) * 10000000) / 10000000;	
+//				// only display -1 < g-r < 3 
+//				if ((g_r >= -1) && (g_r <= 3)) {
+//					dt.setValue(i,0, g_r);	// x value
+//					dt.setValue(i,1, -1*r);	// y value	// make negative to flip the axis
+//				}
+//			}
+//		}
+//
+//		
+//	 	var splot = new google.visualization.ImageChart(document.getElementById('visualization'));
+//		splot.draw(dt,{titleX: 'g-r', titleY: 'r', legend: 'none', height: PLOT_HEIGHT, width: PLOT_WIDTH, axisFontSize: '11', cht: 's'});
+//    	
+//		document.getElementById('visualization').style.height = PLOT_HEIGHT + "px";
+
+		var min = 9999,
+			max = -9999,
+			xCoords = [],
+			yCoords = [];
+		for (var i=0, len=pList.length; i<len; i++) {
+			var cObj = pList[i];
+			var g = Math.round(cObj.getGMag() * 100) / 100;	// round to 7 decimal places
+			var r = Math.round(cObj.getRMag() * 100) / 100;	// round to 7 decimal places
+			var g_r = Math.round((g-r) * 100) / 100;
+			if ((g_r >= -1) && (g_r <= 3)) {
+				if (g < min) {
+					min = g;
+				} else if (g > max) {
+					max = g;
+				}
+				xCoords.push(g_r);
+				yCoords.push(r); // make neg to flip y values
+			}
+		}
+		
+		var params = 'cht=s' + // type: scatter chart
+					'&chd=t:' + xCoords.join(',') + '|' + yCoords.join(',') + // data
+					'&chs=250x400' + // size
+					'&chds=-1,3,' + max + ',' + min + 	// actual (hidden) x/y axis limits
+					'&chxt=y,x' + 	// show y and x axis     y = 0 , x = 1
+					'&chxr=0,' + max + ',' + min +
+					'|1,-1,3' + 
+					'&chm=o,4080CF,0,-1,6';
+					
+		document.getElementById('imgChartVis').src = 'http://chart.apis.google.com/chart?' + params;
+		document.getElementById('chartVisualization').style.height = PLOT_HEIGHT + "px";
+
+		showVisualization(true);
+
+	}	
+	
+	my.initPlot = function() {
+	
+        // create datatable
+        var dt = new google.visualization.DataTable();
+        var splot = new google.visualization.ScatterChart(document.getElementById('visualization'));
+        
+        dt.addColumn('number', 'g-r');
+        dt.addColumn('number', 'g');
+		
+		splot.draw(dt,{titleX: 'G-R', titleY: 'G', legend: 'none', height: '400', width: '400', });
+	}
+	
+	my.testPlot = function() {
+        // create datatable
+        var dt = new google.visualization.DataTable();
+
+        // add them to the VP_Point_List so they show up as placemarks
+        var pList = di.readVariable(DEFAULT_NAMESPACE, "VP_Point_List"); // grab the current (plotted) points list
+        if (pList === null){
+            pList = new UW.astro.UniqIdList();
+        }
+        dt.addColumn('number', 'g-r');
+        dt.addColumn('number', 'g');
+        numRows = 20;
+        dt.addRows(numRows);
+        for (var i=0; i<numRows-1; i++){
+            ra = Math.floor(Math.random() * 24);
+            dec = Math.floor(Math.random() * 180 - 90);
+            dt.setValue(i,0,ra);    // set random ra
+            dt.setValue(i,1,dec); // set random dec
+            cc = new UW.astro.CelestialCoordinate(ra, dec);
+            pList.append(cc);
+
+        }
+        // plot all the points on the scatter plot
+        var splot = new google.visualization.ScatterChart(document.getElementById('visualization'));
+        splot.draw(dt,{titleX: 'G-R', titleY: 'G', legend: 'none'});
+        
+        // add points to VP as placemarks
+        di.writeVariable(DEFAULT_NAMESPACE, "VP_Point_List", pList);
+
+        // add to the 'click' event on the scatter plot
+        // we will make the VP zoom to that point
+        google.visualization.events.addListener(splot, 'select', 
+                        function(){
+                            var sel_row = splot.getSelection()[0].row;
+                            var sel_ra = dt.getValue(sel_row, 0);
+                            var sel_dec = dt.getValue(sel_row, 1);
+                            cc = new UW.astro.CelestialCoordinate(sel_ra, sel_dec);
+                            di.writeVariable(DEFAULT_NAMESPACE, "VP_Coord", cc);    // make the viewport zoom to this point
+                            
+                            });
+
+    }
+
+	// PRIVATE
+	function showSpinner(show, text){
+        // set text status
+		document.getElementById('divStatusText').innerHTML = text;
+		if (show){
+            document.getElementById('imgSpinner').style.display = 'inline';
+        }
+        else{
+            document.getElementById('imgSpinner').style.display = 'none';
+        }
+    }
+	
+	function xmlStringToDoc(text){
+        if (window.DOMParser){
+            parser=new DOMParser();
+            xmlDoc=parser.parseFromString(text,"text/xml");
+        }
+        else // Internet Explorer
+        {
+            xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
+            xmlDoc.async="false";
+            xmlDoc.loadXML(text); 
+        } 
+        // TODO: test to verify its created
+        return xmlDoc;
+    }
+    
+
+
+    return my;
+}
+
+
+    gadgets.util.registerOnLoadHandler(init); 
+
+
+</script>
+  
+  ]]>
+ </Content>
+</Module>

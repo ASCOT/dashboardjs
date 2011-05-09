@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+<ModulePrefs title="Catalog" height="270"/>
+
+
+<Content type="html"><![CDATA[
+
+<script src="http://maps.google.com/jsapi?key=ABQIAAAAKYHb1B3NpT-mpL4s83EIgRSop_PCxtS7_vOEwBFafrYxod0JxBQK6BarsnpmKY7-BFhZ1QAd3zSaLg"
+	type="text/javascript"></script>
+<script src="http://students.washington.edu/csayres/widgetlib1.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+tid = 0;
+user = "rgibson";
+
+dataWrap = new Object;
+
+function updateCoords() {
+  makeRequestGet("http://128.95.99.32:8891/c" + tid, 0);
+  tid += 1;
+}
+
+function response(obj) {
+  updecString = (obj.text.match(/^north.*$/gm)).toString();   //bounding box
+  downdecString = (obj.text.match(/^south.*$/gm)).toString();  
+  leftraString = (obj.text.match(/^west.*$/gm)).toString();
+  rightraString = (obj.text.match(/^east.*$/gm)).toString();
+
+  north=updecString.slice(6)-0;
+  south=downdecString.slice(6)-0;
+  west=leftraString.slice(5)+180;
+  east=rightraString.slice(5)+180;
+ 
+  document.forms['form'].ramin.value = Math.round(west*1000)/1000;
+  document.forms['form'].ramax.value = Math.round(east*1000)/1000;
+  document.forms['form'].decmin.value = Math.round(south*1000)/1000;
+  document.forms['form'].decmax.value = Math.round(north*1000)/1000;
+}
+    
+
+
+function postURL() {
+  dataWrap.kmlurl=("http://www.astro.washington.edu/users/krughoff/scripts/query.csh?survey="+form.catalog.options[form.catalog.selectedIndex].value+"&ramin="+form.ramin.value+"&ramax="+form.ramax.value+"&decmin="+form.decmin.value+"&decmax="+form.decmax.value+"&fmt=kml");
+
+  dataWrap.csvurl= ("http://www.astro.washington.edu/users/krughoff/scripts/query.csh?survey="+form.catalog.options[form.catalog.selectedIndex].value+"&ramin="+form.ramin.value+"&ramax="+form.ramax.value+"&decmin="+form.decmin.value+"&decmax="+form.decmax.value+"&fmt=csv");
+
+  post();
+}
+
+</script>
+
+<div name="div" style="height:100%;width:100%">
+<form name="form">
+<select name="catalog">
+  <option title='sdss'>sdss</option>
+  <option title='2mass'>2MASS</option>
+  <option title='psc'>PSC</option>
+  <option title='first'>FIRST</option>
+  <option title='xmm'>XMM</option>
+</select><br/>
+Bounds: <br/>
+RA Min:   <input type="text" id="ramin" name="ramin" value=""/> <br/>
+RA Max:  <input type="text" id="ramax" name="ramax" value=""/> <br/>
+Dec Min:  <input type="text" id="decmin" name="decmin" value=""/><br/>  
+Dec Max: <input type="text" id="decmax" name="decmax" value=""/><br/><br/>
+<input type="button" value="Get Current Viewport Bounds" onclick="updateCoords()"/><br/><br/>
+<input type="button" value="Send Query" onclick="postURL()"/><br/><br/>
+<input type="button" value="Clear Viewport" onclick="clearViewport()"/>
+
+
+</form>
+</div>
+
+
+
+]]></Content>
+</Module>

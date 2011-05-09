@@ -1,0 +1,178 @@
+<!-- name_resolve.xml -->
+<!-- Author: Ian Smith (imsmith@uw.edu) -->
+<!DOCTYPE html>
+<html lang="en">
+<meta http-equiv="Pragma" content="no-cache">
+
+<head>
+<title>Name Resolver</title>
+  
+<!-- Astro scripts -->
+<script src="/js/astroObjectLib.js" type="text/javascript"></script>
+
+<!-- other scripts -->
+<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js" type="text/javascript"></script>
+
+<!-- ASCOT Basic Style Sheets -->
+<link href="/css/960/reset.css" rel="stylesheet" type="text/css">
+<link href="/css/960/text.css" rel="stylesheet" type="text/css"> 
+
+<script type="text/javascript">
+var tq = null;
+var radec;
+var flySpeed;
+
+// HTML init
+//    $("#txtInputText").watermark("Enter object or RA and DEC");
+
+// create gadget object
+function init(){
+    tq = new NameResolve();
+    gadget.resize();
+}
+
+function NameResolve(){
+    var my = new Object();
+   
+   // CONSTANTS
+    // Status Icons
+    var ICON_URL_SELECTED = '/gadgets/images/target_yellow.png',
+        ICON_URL_DEFAULT = '/gadgets/images/target.png',
+        ICON_URL_SPINNER = '/gadgets/images/spinnerGrey.gif',
+        ICON_URL_ERROR = '/gadgets/images/errorIcon.gif',
+        ICON_URL_SUCCESS = '/gadgets/images/successIcon.gif';
+
+    var ICON = { SUCCESS : ICON_URL_SUCCESS,
+              ERROR : ICON_URL_ERROR,
+              SPINNER : ICON_URL_SPINNER,
+              NONE : ""}
+     
+    function makeRequestGet(url) {
+            
+      var service =    
+      $.ajax({
+        'url': '/XMLHttpRequest/' + encodeURIComponent(url),
+        success: response 
+      });
+      
+      //params[gadgets.io.RequestParameters.METHOD] = gadgets.io.MethodType.GET;
+      // params[gadgets.io.RequestParameters.REFRESH_INTERVAL] = 0;
+      // To turn off Google anti-refresh, add a "random" number so the
+      // url is different every time
+      //var ts = new Date().getTime();
+      //var sep = "?";
+      //if (url.indexOf("?") > -1) sep = "&";
+      //url = [ url, sep, "nocache=", ts ].join("");
+      //gadgets.io.makeRequest(url, response, params);
+    }
+
+    // parse repsonse
+    function response(obj) {
+        if (!(typeof obj === "string")){
+            showError('Unrecognized object.');
+            return;
+        }
+        // a string was returned, but does it have relevant data in it?
+        var dataLine = obj.match(/^%J.*$/gm);
+        if (dataLine === null) {
+            showError('Unrecognized object.');
+            return;
+        }
+        dataLine=dataLine.toString();
+        dataLine=dataLine.split(" ");
+        radeg = dataLine[1]-0;
+        newdec = dataLine[2]-0;
+        
+        var ra = radeg.toString();  //decimal hours
+        var dec = newdec.toString();  //decimal degrees
+        
+        writeCoord(new UW.astro.CelestialCoordinate(ra, dec));
+        
+    }
+    
+    // METHODS
+    
+    // Parses text to get coordinates. 
+    //  If text is RA and Dec, then it zooms to that coord
+    //  Otherwise it asks the URL to resolve the text
+    my.getCoords = function(text) {
+        showSpinner("Parsing coordinate...");
+        var cc = UW.astro.CelestialCoordinate.parseCoord(text);
+        if (cc !== null) {
+            // go to this cc
+            writeCoord(cc);
+        } else {
+            showSpinner("Resolving object...");
+            // ask the web service to parse it
+            // make all spaces into plusses
+            text = text.replace(/ /g, '+');
+            makeRequestGet("http://cdsws.u-strasbg.fr/axis/services/Sesame?method=sesame&name="+text+"&resultType=p/c", 0);
+        }
+    }
+    
+    function writeCoord(cc) {
+        showSuccess('<div style="float: right; margin-left: 10px; margin-right: 10px"><b>RA:</b> ' + cc.getRa().toFixed(4) + "&deg <b>DEC:</b> " + cc.getDec().toFixed(4) + "&deg</div>");
+        gadget.dashboard.setGadgetProperty('skyView','flySpeed', 1.0);
+        gadget.dashboard.trigger("centerOfCoordinatesChanged",cc);
+    }
+
+    // HELPER
+    function clearStatus() {
+        showStatus(ICON.NONE, "");
+    }
+    function showSpinner(text) {
+        showStatus(ICON.SPINNER, text);
+    }
+    function showSuccess(text) {
+        showStatus(ICON.SUCCESS, text);
+    }
+    function showError(text) {
+        showStatus(ICON.ERROR, text);
+    }
+    function showStatus(iconUrl, text){
+        if (iconUrl !== ICON.NONE) {
+            setStatus( '<img id="imgStatus" src="' + iconUrl + '" /> ' + text);
+        } else {
+            setStatus(text);
+        }
+    }
+    function setStatus(text) {
+        // set text status
+        statusDiv = document.getElementById('divStatusText');
+        statusDiv.innerHTML = text;
+        // make visible
+        statusDiv.style.visibility = 'inline';
+    }
+    
+    function xmlStringToDoc(text){
+        if (window.DOMParser){
+            parser=new DOMParser();
+            xmlDoc=parser.parseFromString(text,"text/xml");
+        }
+        else // Internet Explorer
+        {
+            xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
+            xmlDoc.async="false";
+            xmlDoc.loadXML(text); 
+        } 
+        // TODO: test to verify its created
+        return xmlDoc;
+    }
+
+    return my;
+}
+
+</script>
+</head>
+<body onLoad="init();">
+<div id='content'>
+	<form name="form" action="#" onsubmit="tq.getCoords(document.getElementById('txtInputText').value);return false">
+  	<input type="text" id="txtInputText" style="width:15em;"/>
+   	<input type="submit" value="Go"/ style="margin: 5px;"> e.g. "M67" or "190 00 00 -11 37 21.2"
+   	<div id="divStatusText" style="float:right;"></div> 
+ </form>
+ 
+</div>
+</body>
+</html>

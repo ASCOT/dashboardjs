@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- dataset_selector.xml -->
+<!-- Author: Ian Smith (imsmith@uw.edu) -->
+<!DOCTYPE html>
+<html lang="en">
+<meta http-equiv="Pragma" content="no-cache">
+
+<head>
+<title>DataSet Selector</title>
+
+<!-- ASCOT Basic Style Sheets -->
+<link href="/css/960/reset.css" rel="stylesheet" type="text/css">
+<link href="/css/960/text.css" rel="stylesheet" type="text/css"> 
+
+<!-- Contains UW.astro objects -->
+<script src="/js/astroObjectLib.js" type="text/javascript"></script>
+<script type="text/javascript">
+
+var myGadget = null;
+
+var dataSetList;
+var newDataSetName;
+
+// Creates gadget object
+function init(){
+    myGadget = new datasetSelector();
+    gadget.resize();
+}
+
+
+function datasetSelector(){
+    var my = new Object();
+    
+    // CONSTANTS
+    var DS_DIV_PREFIX = "dsDiv_",
+        DS_DIV_CLASSNAME = "dsListElement",
+        DS_DIV_ID = "divDataset_List";
+    
+    // INIT
+    gadget.dashboard.bind('dataSetListChanged', updateDataSetList); 
+                                                         
+    // VARIABLES
+    // array of dataset names that are currently displayed in list
+    
+    // METHODS
+    // ** Add public methods (that will be called from outside the object by a button or something) 
+    
+    // Adds any new datasets in the public dataset list to this gadgets list
+    function updateDataSetList() {
+  
+        var dsList = gadget.dashboard.getDataSetList();
+        
+        // Resetting list
+        var listNode = document.getElementById(DS_DIV_ID);
+        while (listNode.hasChildNodes()) {
+    			listNode.removeChild(listNode.lastChild);
+				}
+        
+        for (var i = 0; i < dsList.length; ++i){
+        	addDatasetToList(dsList[i]);   
+        }
+        
+				gadget.resize();
+        
+    }
+   
+    function updateDSListElement(dsName) {
+        var divElem= document.getElementById(DS_DIV_PREFIX + dsName);
+        // clear div
+        while (divElem.hasChildNodes()) {
+            divElem.removeChild(divElem.lastChild);
+        }
+        
+        // add the div
+        divElem.appendChild(createDSListElement(dsName));
+    }
+    
+    // adds the creates a new dataset list element and adds it to the list
+    function addDatasetToList(dsName) {
+        
+        // create the div
+        var dsOuterDiv = document.createElement("div");
+        // TODO: Possibly dangerous to allow any chars in the ID
+        dsOuterDiv.id = DS_DIV_PREFIX + dsName;
+        dsOuterDiv.className = DS_DIV_CLASSNAME;
+
+        dsOuterDiv.appendChild(createDSListElement(dsName));
+        
+        // append the div element to the list div
+        document.getElementById(DS_DIV_ID).appendChild(dsOuterDiv);
+    }
+    
+    // returns a div filled with dataset functions
+    function createDSListElement(dsName) {
+        var ds = gadget.dashboard.getDataSet(dsName);
+                
+        var dsDiv = document.createElement("div");
+
+        // create the visibility checkbox
+        var ckVis = document.createElement("input");
+        ckVis.type = "checkbox";
+        ckVis.id = "ckVis_" + dsName;
+        ckVis.checked = getDSVisibility(dsName);
+        ckVis.onclick = function() {
+                            toggleDSVisibility(dsName);
+                        }
+        dsDiv.appendChild(ckVis);
+    
+        // create the dataset name span
+        var spanDSName = document.createElement("span");
+        spanDSName.innerHTML = "<b>" + dsName + "</b> (" +  ds.getSize() + ")";
+        dsDiv.appendChild(spanDSName);
+        
+        // create the shape selector
+        
+        // create the delete button
+
+        // create a new div for color checkboxes and subsetting
+        dsDiv.appendChild(createDSSubsetList(ds));
+        
+        return dsDiv;
+               
+    }
+    
+    // returns a div containing the color subsetting functionality to add to
+    // the DS list
+    function createDSSubsetList(ds) {
+        var dsId = ds.getId();
+        var subDiv = document.createElement("div");
+        var colorList = ds.getUniqueColors();
+        
+        // indent the colors
+        var spanIndent = document.createElement("span");
+        spanIndent.innerHTML = "&nbsp; \\-";
+        subDiv.appendChild(spanIndent);
+        
+        // create the color name span
+        // for each color, make a checkbox and name
+        for (var i=0, len=colorList.length; i<len; i++) {
+            var color = colorList[i];
+            
+            // make checkbox
+            var ckVis = document.createElement("input");
+            ckVis.type = "checkbox";
+            ckVis.id = "ckVis_" + dsId + "_" + color;
+            ckVis.checked = getDSVisibility(dsId);
+            ckVis.value = color;
+            ckVis.onclick = function() {
+                            toggleDSColorVisibility(dsId, this.value, this.checked);
+                        }
+            subDiv.appendChild(ckVis);
+            
+            // create the color name span
+            var spanColor = document.createElement("span");
+            spanColor.style.marginRight = "8px";
+            spanColor.innerHTML = color;
+            if (color === "") {
+                spanColor.innerHTML = "default";
+            }
+            spanColor.innerHTML += " (" + ds.getColorIndexes(color).length + ")";
+            subDiv.appendChild(spanColor);
+        }
+
+        // create subset button
+        var aSubset = document.createElement("input");
+        aSubset.type = "button";
+        aSubset.value = "copy";
+        aSubset.onclick = function(){
+                            subsetByVisible(dsId);
+                        }
+        aSubset.style.cssFloat = "right";
+        subDiv.appendChild(aSubset);
+
+        return subDiv;
+    }
+    
+    function subsetByVisible(dsId) {
+
+        var ds = gadget.dashboard.getDataSet(dsId);
+        
+        // copy the records from the dataset
+        var subsetData = ds.db.get({db_visible:true});
+        
+        // make the new dataset
+        var subsetDS = gadget.dashboard.createDataSet();
+        subsetDS.init(subsetData);
+        // get the new name
+        var newName = prompt("Enter name for new dataset");
+        if (newName === "" || newName === null) {
+            return;
+        }
+        subsetDS.setId(newName);
+        gadget.dashboard.setDataSet(newName, subsetDS); 
+
+        // call to refresh the list
+        updateDataSetList();
+        
+    }
+    
+    function getDSVisibility(dsId) {
+        var ds = gadget.dashboard.getDataSet(dsId);
+        return ds.getVisible();
+    }
+    function toggleDSVisibility(dsId) {
+        var ds = gadget.dashboard.getDataSet(dsId);
+        ds.setVisible(!ds.getVisible());
+    }
+    function toggleDSColorVisibility(dsId, color, vis) {
+        var ds = gadget.dashboard.getDataSet(dsId);
+        ds.setIndexesVisible(ds.getColorIndexes(color), vis);
+    }
+
+    // returns true if arr contains el
+    function arrayContains(arr, el) {
+        for (var i=0, len=arr.length; i<len; i++) {
+            if (arr[i] === el) {
+                return true;
+            }
+        }
+        return false;
+    }
+    return my;
+}
+
+
+</script>
+</head>
+<body onLoad="init();">
+<div id="content">
+	<div id="divDataset_List">
+</div>
+</div>
+</body>
+</html>
+

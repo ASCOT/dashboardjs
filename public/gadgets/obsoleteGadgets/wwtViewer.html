@@ -1,0 +1,56 @@
+<!doctype html><head></head>
+<body>
+
+<script language="javascript">
+	alert('first load');
+	debugger;
+</script>
+<div style="height:800px">
+        <object id="WWTView" 
+            data="data:application/x-silverlight," 
+            type="application/x-silverlight-2"             
+            width="1000" height="800">
+
+<!-- Ensure the source parameter links correctly to the wwtsl.xap file -->
+
+            <param name="source" value="http://www.worldwidetelescope.org/webclient/clientbin/WWTSL.xap"/>
+            <param name="background" value="black" />
+            <param name="minRuntimeVersion" value="3.0.40624.0" />
+            <param name="autoUpgrade" value="true" />
+            <param name="initParams" value="NoUI=true,wtml=,webkey=AX2011Gqqu" />
+            <param name="enableHtmlAccess" value="true" />
+            <a href="http://go.microsoft.com/fwlink/?LinkID=149156&v=3.0.40624.0">
+	    	<img src="http://go.microsoft.com/fwlink/?LinkId=108181" alt="Install Microsoft Silverlight" /></a>
+        </object> 
+</div>
+
+
+
+<!-- WWT Stuff -->
+<script language="javascript">
+
+// Create the WorldWide telescope object
+    var wwtView;
+
+// Create variables to hold the changeable settings
+
+    var bShowCrosshairs = true;
+    var bShowUI = true;
+    var bShowFigures = true;
+
+// The wwtReady function is called by the WWT Web Control software
+// This function sets up the wwt object, and the initial defaults
+
+    function wwtReady() {
+    	alert('wwtReady() called.');
+        wwtView = document.getElementById("WWTView").content.WWT;
+
+        wwtView.Settings.ShowCrosshairs = bShowCrosshairs;
+        wwtView.Settings.ShowConstellationFigures = bShowFigures;
+        wwtView.HideUI(!bShowUI);
+
+        wwtView.Settings.ShowConstellationBoundries = true;
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- kml_sandbox.xml -->
+<!-- Author: Ian Smith (imsmith@uw.edu) -->
+<Module>
+<ModulePrefs title="KML Sandbox" 
+    height="200"
+    scrolling="true">
+     <Require feature="dynamic-height"/>
+     <Require feature="opensocial-0.9"/> 
+     <Require feature="minimessage"/>
+</ModulePrefs> 
+
+<Content type="html"><![CDATA[
+
+<script src="js/DataInterface.js" type="text/javascript"></script>
+<script src="js/widgetlib1.js" type="text/javascript"></script>
+<script src="js/astroObjectLib.js" type="text/javascript"></script>
+
+<div id="divKML">
+<table> 
+  <TBODY><tr> 
+    <td>KML:  </td><td><textarea id="taKML_TEXT" rows="6" cols="50"/></td> 
+  </tr> 
+  <TR>
+    <td colspan="2">
+        <input id="btKML_SUBMIT" onclick="ks.writeKML();" type="button" value="Write KML"/>
+    </td> 
+  </TR>
+  <TR>
+    <td colspan="2">
+        <input id="btKML_CLEARLIST" onclick="ks.clearKMLList();" type="button" value="Clear All KML"/>
+    </td> 
+  </TR> 
+<!-- REMOVED  <TR>
+    <td colspan="2">
+        <input id="btKML_WRITE_500_POINTS" onclick="ks.writeRandomPoints(500);" type="button" value="Write 500 Points"/>
+    </td> 
+  </TR> 
+-->
+
+</TBODY></table>
+</div>
+
+<script type="text/javascript">
+
+// KML Sandbox object is global
+var ks = null,
+    DEBUG = false;
+
+
+function debugLog(msg){ if(DEBUG){UW.astro.debugLog(GADGET_NAME + ": " + msg);}}
+
+// CONSTANTS
+var GADGET_NAME = "KML_Sandbox" + "_" + Math.floor(Math.random()*100000).toString();
+
+
+// create InputCoords object
+function init(){
+    ks = new KMLSandbox();
+}
+
+
+function KMLSandbox(){
+    var my = new Object();
+    // CONSTANTS
+    
+    
+    // PRIVATE
+    var _namespaceList = [ UW.astro.DEFAULT_NAMESPACE ];      // list of our current Namespaces. Just init with the default
+    
+    // Private Helper Variables
+    var di = new UW.astro.DataInterface(GADGET_NAME); // make dataInterface object, init with default
+
+    // INIT
+    gadgets.window.adjustHeight();
+    di.registerMe( { namespaceList : _namespaceList,
+                    variableList : [ "KML_List", "Viewport_Point_List" ],
+                    triggerList : [],
+                } );
+   
+    // METHODS
+    // Coordinates are entered, tell the DataInterface
+    my.writeKML = function(){
+        debugLog("Writing KML...");
+        var kml = (document.getElementById("taKML_TEXT").value).toString();
+        var kmlList = di.readVariable(UW.astro.DEFAULT_NAMESPACE, "KML_List");
+        if (kmlList === null){
+            kmlList = [];
+        }
+        kmlList.push(kml);
+    // JUST A TEST, WILL WANT TO CHANGE NS IN THE FUTURE
+        if (di.writeVariable(UW.astro.DEFAULT_NAMESPACE, "KML_List", kmlList)){
+            debugLog('Wrote variable "KML_List"');
+        }
+
+    }
+    my.clearKMLList = function(){
+        debugLog("Clearing KML List...");
+        // first clear the KML_List
+        var kmlList = di.readVariable(UW.astro.DEFAULT_NAMESPACE, "KML_List");
+        di.writeVariable(UW.astro.DEFAULT_NAMESPACE, "KML_List", []);
+        // next clear the Viewport_Point_List
+        var kmlList = di.readVariable(UW.astro.DEFAULT_NAMESPACE, "Viewport_Point_List");
+        di.writeVariable(UW.astro.DEFAULT_NAMESPACE, "Viewport_Point_List", new UW.astro.UniqIdList());
+
+    }
+
+    my.writeRandomPoints = function(num){
+            // Viewport_Point_List is a UniqIdList
+            var pointList = di.readVariable(UW.astro.DEFAULT_NAMESPACE, "Viewport_Point_List");
+            if (pointList === null){
+                pointList = new UW.astro.UniqIdList();
+            }
+            for (var i=0; i<num; i++){
+                var ra = Math.random()*24;
+                var dec = Math.random()*180 - 90;
+                var point = new UW.astro.CelestialCoordinate(ra, dec);
+                pointList.append(point);
+            }
+            di.writeVariable(UW.astro.DEFAULT_NAMESPACE, "Viewport_Point_List", pointList);
+    }
+
+
+    return my;
+}
+
+ gadgets.util.registerOnLoadHandler(init); 
+
+</script>
+
+]]></Content>
+</Module>

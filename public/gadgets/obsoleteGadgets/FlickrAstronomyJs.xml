@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+<ModulePrefs title="Flickr Astrometry" 
+    height="10"
+    scrolling="true">
+     <Require feature="dynamic-height"/>
+     <Require feature="opensocial-0.8"/> 
+     <Require feature="minimessage"/>
+</ModulePrefs> 
+
+<Content type="html"><![CDATA[
+
+
+<!--
+  jQuery library
+-->
+<script type="text/javascript" src="js/jquery-1.4.2.min.js"></script>
+
+<!--
+  jCarousel library
+-->
+<script type="text/javascript" src="text/javascript" src="js/jquery.jcarousel.min.js"></script>
+
+<!--
+  jCarousel skin stylesheet
+-->
+<link rel="stylesheet" type="text/css" href="http://sky.astro.washington.edu/gadgets/css/skins/ie7/skin.css" />
+
+<style type="text/css">
+
+#mycarousel .jcarousel-item-placeholder {
+    background: transparent url(images/loading-small.gif) 50% 50% no-repeat;
+}
+
+</style>
+
+<script src="http://sky.astro.washington.edu/gadgets/js/gDataInterface.js" type="text/javascript"></script>
+<script src="http://sky.astro.washington.edu/gadgets/js/widgetlib1.js" type="text/javascript"></script>
+<script src="http://sky.astro.washington.edu/gadgets/js/astroObjectLib.js" type="text/javascript"></script>
+
+<link href="http://sky.astro.washington.edu/gadgets/css/style.css" rel="stylesheet" type="text/css" />
+
+
+
+<script type="text/javascript">
+var tq = null,
+    debug = true;
+
+var GADGET_NAME = "FlickrAstrometry" + "_" + Math.floor(Math.random()*100000+1).toString();
+
+// Writes to the console if debug (global) is true  
+function debugLog(msg){
+    if ((debug === true) && (window.console && console.log)) {
+        console.log(GADGET_NAME + ": " + msg);
+    }
+    return;
+}
+
+// create gadget object
+function init(){
+    tq = new NameResolve();
+    gadgets.window.adjustHeight();
+}
+
+function NameResolve(){
+    var my = new Object();
+    // CONSTANTS
+    var DEFAULT_NAMESPACE = "NS1",
+        MM_TIMER_DURATION = 4;
+
+    // PRIVATE
+    var _namespaceList = [ DEFAULT_NAMESPACE ];      // list of our current Namespaces. Just init with the default
+    
+    // Private Helper Variables
+    var di = new gDataInterface(GADGET_NAME, DEFAULT_NAMESPACE); // make dataInterface object, init with default
+    var miniMsg = new gadgets.MiniMessage();// make MiniMessage object
+
+    // INIT
+    var msg = miniMsg.createStaticMessage("Attempting to register gadget...");
+    di.registerMe( { gadgetName : GADGET_NAME,
+                    namespaceList : _namespaceList,
+                    variableList : [ "VP_Coord" ],
+                    triggerList : [],
+                    successCallback : registrationSuccess,
+                    failureCallback : registrationFailure
+                } );
+    
+    // Callback after successful registration
+    function registrationSuccess(){
+        debugLog('Registration successful');
+        if (msg) {
+            miniMsg.dismissMessage(msg);
+            // free up msg
+            msg = null;
+            miniMsg.createTimerMessage("Registration Succesful.", MM_TIMER_DURATION);
+        }
+    }
+    // Callback after a failure of registration
+    // displays message showing failure
+    function registrationFailure(){
+        debugLog('Registration FAILED!');
+        miniMsg.dismissMessage(msg);
+        miniMsg.createDismissibleMessage("Unable to register gadget.\nWe cannot communicate with other gadgets.");
+    }
+    
+    function mycarousel_itemLoadCallback(carousel, state)
+    {
+        if (carousel.prevFirst != null) {
+            // Remove the last visible items to keep the list small
+            for (var i = carousel.prevFirst; i <= carousel.prevLast; i++) {
+                // jCarousel takes care not to remove visible items
+                carousel.remove(i);
+            }
+        }
+    
+        var per_page = carousel.last - carousel.first + 1;
+        var currPage = 0;
+        var f,l;
+        var cr = carousel;
+    
+        for (var i = carousel.first; i <= carousel.last; i++) {
+            var page = Math.ceil(i / per_page);
+    
+            if (currPage != page) {
+                currPage = page;
+    
+                f = ((page - 1) * per_page) + 1;
+                l = f + per_page - 1;
+    
+                f = f < carousel.first ? carousel.first : f;
+                l = l > carousel.last ? carousel.last : l;
+    
+                if (carousel.has(f, l)) {
+                    continue;
+                }
+    
+                mycarousel_makeRequest(carousel, f, l, per_page, page);
+
+            }
+        }
+    };
+
+
+    function mycarousel_makeRequest(carousel, first, last, per_page, page)
+    {
+        // Lock carousel until request has been made
+        carousel.lock();
+        $.getJSON("http://api.flickr.com/services/rest/?method=flickr.groups.pools.getPhotos&extras=url_m,machine_tags&api_key=4ca112a2ac8348fc0c3f85e3ecb6a2e9&group_id=387956@N23&tags=Astrometrydotnet:status=solved&format=json&jsoncallback=?", function(data) {
+                mycarousel_itemAddCallback(carousel, first, last, data, page);
+            }); 
+
+       // function processImages(data) {  images = data.photos.photo;  $("#solveIds").html("") // remove contents of UL  $.each(images, function(i, item){ displaySolveId(item); });}
+
+
+        /* old stuff jQuery.get(
+            "http://api.flickr.com/services/rest/?method=flickr.groups.pools.getPhotos&group_id=387956@N23&api_key=4ca112a2ac8348fc0c3f85e3ecb6a2e9",
+            {
+                'per_page': per_page,
+                'page': page
+            },
+            function(data) {
+                mycarousel_itemAddCallback(carousel, first, last, data, page);
+            },
+            'xml'
+        );
+    
+    };*/
+    
+    function mycarousel_itemAddCallback(carousel, first, last, data, page)
+    {
+        // Unlock
+        carousel.unlock();
+    
+        // Set size
+        carousel.size($('photos', data).attr('total'));
+    
+        var photos = $('photo', data);
+        var per_page = carousel.last - carousel.first + 1;
+    
+        for (var i = first; i <= last; i++) {
+            var pos = i - 1;
+            var idx = Math.round(((pos / per_page) - Math.floor(pos / per_page)) * per_page);
+    
+            carousel.add(i, mycarousel_getItemHTML(photos.get(idx)));
+        }
+    };
+    
+    /**
+     * Global item html creation helper.
+     */
+    function mycarousel_getItemHTML(photo)
+    {
+        var url = 'http://farm'+$(photo).attr('farm')+'.static.flickr.com/'+$(photo).attr('server')+'/'+$(photo).attr('id')+'_'+$(photo).attr('secret')+'_s.jpg';
+        return '<a href="http://www.flickr.com/photos/'+$(photo).attr('owner')+'/'+$(photo).attr('id')+'/" target="_blank" title="'+$(photo).attr('title')+'"><img src="' + url + '" border="0" width="75" height="75" alt="'+$(photo).attr('title')+'" /></a>';
+    };
+    
+    jQuery(document).ready(function() {
+        jQuery('#mycarousel').jcarousel({
+            itemLoadCallback: mycarousel_itemLoadCallback
+        });
+    });
+
+
+/*----------------------------------------------------------
+
+    
+    function makeRequestGet(url) {
+      params = {};
+      params[gadgets.io.RequestParameters.METHOD] = gadgets.io.MethodType.GET;
+      // params[gadgets.io.RequestParameters.REFRESH_INTERVAL] = 0;
+      // To turn off Google anti-refresh, add a "random" number so the
+      // url is different every time
+      var ts = new Date().getTime();
+      var sep = "?";
+      if (url.indexOf("?") > -1) sep = "&";
+      url = [ url, sep, "nocache=", ts ].join("");
+      gadgets.io.makeRequest(url, response, params);
+    }
+
+    function response(obj) {
+          //alert("from input"+obj.text);
+          // This is a first attempt to parse the response.  We should
+          //  work on improving this.  Not sure if it works exactly, either.  :-)
+          //lines = obj.text.split("\n");
+        
+        if (!(typeof obj.text === "string")){
+            showError('No results found');
+            return;
+        }
+        // a string was returned, but does it have relevant data in it?
+        var dataLine = obj.text.match(/^%J.*$/gm);
+        if (dataLine === null) {
+            showError('No results found');
+            return;
+        }
+        //alert(dataLine);
+        dataLine=dataLine.toString();
+        dataLine=dataLine.split(" ");
+        radeg = dataLine[1]-0;
+        newdec = dataLine[2]-0;
+        
+        debugLog("Writing Coods...");
+        var ra = (radeg/15).toString();  //decimal hours
+        var dec = newdec.toString();  //decimal degrees
+        var coord = new UW.astro.CelestialCoordinate(ra, dec);
+        if (di.writeVariable(DEFAULT_NAMESPACE, "VP_Coord", coord)){
+            debugLog('Wrote variable "VP_Coord"');
+        }
+    }
+
+    // Indicate to the user that something went wrong
+    function showError(msg){
+        alert(msg);
+    }
+
+    // METHODS
+    // Coordinates are entered, tell the DataInterface
+   
+    my.getCoords=function(){
+      var text = document.getElementById("input");
+      text = text.value;
+      text = text.replace(/ /g, "+");
+      //alert(text);
+      makeRequestGet("http://cdsws.u-strasbg.fr/axis/services/Sesame?method=sesame&name="+text+"&resultType=p/c", 0);
+      
+
+    }
+    */
+    return my;
+}
+
+gadgets.util.registerOnLoadHandler(init); 
+
+
+</script>
+
+<div id="wrap">
+
+  <div id="mycarousel" class="jcarousel-skin-ie7">
+    <ul>
+      <!-- The content will be dynamically loaded in here -->
+    </ul>
+  </div>
+
+
+]]></Content>
+</Module>

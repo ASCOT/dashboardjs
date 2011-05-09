@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- geoCode.xml -->
+<!-- Author: Conor Sayres (csayres@uw.edu) -->
+<ModuleXXX>
+<ModulePrefs title="Geo Coder" 
+    height="10"
+    scrolling="true">
+     <Require feature="dynamic-height"/>
+     <Require feature="opensocial-0.8"/> 
+     <Require feature="minimessage"/>
+</ModulePrefs> 
+<Content type="html"><![CDATA[
+<div>
+<form name="address" action="#" onsubmit="tq.loadAddress(this.address.value); return false">
+      <p>
+        <input type="text" size="60" name="address" id="address" style="width:400px" value="Seattle" />
+        <input type="submit"  value="Input Address" />
+        <input type="button" id="stream" value="Real Time" onclick="tq.RealTime()"/>
+      </p>
+</div>
+
+<script src="http://maps.google.com/maps?file=api&v=2.x&key=ABQIAAAAKYHb1B3NpT-mpL4s83EIgRQzt0YKTVqUXSYRVWG0hmrtNBrIoRR7DpPaW2tmkpIRWqo23u2fzmKu3g"
+    type="text/javascript"></script>
+<script src="js/DataInterface.js" type="text/javascript"></script>
+<script src="js/widgetlib1.js" type="text/javascript"></script>
+<script src="js/astroObjectLib.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+
+var tq=null,
+    DEBUG=true;
+var timeIntervalId = 0;
+var geocoder = new GClientGeocoder();
+
+function debugLog(msg){ if(DEBUG){UW.astro.debugLog(GADGET_NAME + ": " + msg);}}
+
+var GADGET_NAME = "GeoCode" + "_" + Math.floor(Math.random()*100000).toString();
+
+// create InputCoords object
+function init(){
+    tq = new GeoCode();
+    gadgets.window.adjustHeight();
+}
+
+function GeoCode(){
+    var my = new Object();
+    // CONSTANTS
+    
+
+    // PRIVATE
+    var _namespaceList = [ UW.astro.DEFAULT_NAMESPACE ];      // list of our current Namespaces. Just init with the default
+    
+    // Private Helper Variables
+    var di = new UW.astro.DataInterface(GADGET_NAME); // make dataInterface object, init with default
+
+    // INIT
+
+    di.registerMe( { namespaceList : _namespaceList,
+                    variableList : [ "Viewport_Center_Coordinate_Direct", "Viewport_Speed" ],
+                    triggerList : [],
+                    successCallback : registrationSuccess,
+                    failureCallback : registrationFailure
+                } );
+
+    // METHODS
+    // Coordinates are entered, tell the DataInterface
+  my.celestialCoords = function(){   
+    var ra=((findZenithRA(longitude))/15).toString();
+    var dec=(latitude).toString();
+    var coord = new UW.astro.CelestialCoordinate(ra,dec);
+    di.writeVariable(UW.astro.DEFAULT_NAMESPACE, "Viewport_Center_Coordinate", coord)
+  }
+
+  function findZenithRA(longitude){
+              var date = new Date();
+              var month = date.getUTCMonth() + 1;
+              var dayofmonth = date.getUTCDate();
+              var k = 2; 
+                // k = 1 for leapyears
+
+              var G = 6.63681;   // updated for 2010
+              var UT = date.getUTCHours() + date.getUTCMinutes()/60.0 + date.getUTCSeconds()/3600.0;
+               // UT gets current UT in decimal hours
+              var N = Math.floor(275.0*month/9.0)-k*Math.floor((month+9.0)/12.0)+dayofmonth-30;
+              // N is algorithm for the day of the year in Observational Astronomy Text
+              var ST = (G + .0657098245*N+1.00273791*UT);
+              // GST is Greenwich Sidereal Time.  Given in same astro text
+                 if (ST>=24){
+                    GST = (G + .0657098245*(N+1)+1.00273791*UT)-24;
+                 }
+                 else{
+                    GST = (G + .0657098245*N+1.00273791*UT);
+                 }
+              var ra = GST + longitude/15.0;
+                 if (ra<0){
+                    rahours=ra+24;
+                 }
+                 else if (ra>=24){
+                    rahours=ra-24
+                 }
+                 else{
+                    rahours=ra;
+                 }
+                 var radeg=rahours*15;
+    return radeg;
+  }
+
+my.RealTime = function(){
+  if ( document.getElementById("stream").value == "Real Time" ){
+    // Start the timer
+    document.getElementById("stream").value = "Stop";
+    timeIntervalId = setInterval ( "tq.celestialCoords()", 200);
+  }
+  else
+  {
+    document.getElementById("stream").value = "Real Time";
+    clearInterval ( timeIntervalId );
+  }
+}
+
+my.loadAddress =function(address) {
+   
+     if (geocoder) {
+        geocoder.getLatLng(
+          address,
+          function(point) {
+            if (!point) {
+              alert(address + " not found");
+            } 
+            else {
+              longitude = point.lng();
+              latitude=point.lat();
+              var ra=((findZenithRA(longitude))/15).toString();
+              var dec=(latitude).toString();
+              var coord = new UW.astro.CelestialCoordinate(ra,dec);
+              if (parseFloat(di.readVariable(UW.astro.DEFAULT_NAMESPACE, "Viewport_Speed")) != 5) {
+                  di.writeVariable(UW.astro.DEFAULT_NAMESPACE, "Viewport_Speed", 5);
+                }
+              di.writeVariable(UW.astro.DEFAULT_NAMESPACE, "Viewport_Center_Coordinate", coord);
+             }
+            }
+           
+        )
+      
+      }
+ return;
+}
+return my;
+}
+
+
+gadgets.util.registerOnLoadHandler(init); 
+
+
+
+</script>
+
+]]></Content>
+</Module>

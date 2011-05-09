@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+<ModulePrefs title="Data Output" height="500"/>
+<Content type="html"><![CDATA[
+<script src="http://students.washington.edu/csayres/widgetlib1.js" type="text/javascript"></script>
+<script type="text/javascript">
+dataWrap = new Object;
+var range=null;
+user = "rgibson";
+var heading=null;
+var raHour=null;
+var dec=null;
+var earthlat = null;
+var earthlng = null;
+var maplat = null;
+var maplng = null;
+var updecString = null;
+var downdecString = null;
+var leftraString = null;
+var rightraString = null;
+var north=null;
+var south=null;
+var east=null;
+var west=null;
+var csvurl=null;
+var kmlurl=null;
+tid = 0;
+
+
+function updateCoords() {
+//  makeRequestGet("http://128.95.99.32:8891/c" + tid, 0);
+  tid += 1;
+}
+
+
+function response(obj) {
+      if (obj.text.search(/^range.*$/gm) != -1){
+        range = ((obj.text.match(/^range.*$/gm)).toString()).slice(6)-0;
+      }
+      if (obj.text.search(/^heading.*$/gm) != -1){
+        heading = ((obj.text.match(/^heading.*$/gm)).toString()).slice(8)-0;
+      }
+      if (obj.text.search(/^earthlat.*$/gm) != -1){
+        earthlat = ((obj.text.match(/^earthlat.*$/gm)).toString()).slice(9)-0;
+      }
+      if (obj.text.search(/^earthlng.*$/gm) != -1){
+        earthlng = ((obj.text.match(/^earthlng.*$/gm)).toString()).slice(9)-0;
+      }
+      if (obj.text.search(/^north.*$/gm) != -1){
+        north = ((obj.text.match(/^north.*$/gm)).toString()).slice(6)-0;   //bounding box
+      }
+      if (obj.text.search(/^south.*$/gm) != -1){
+        south = ((obj.text.match(/^south.*$/gm)).toString()).slice(6)-0; 
+      }
+      if (obj.text.search(/^west.*$/gm) != -1){ 
+        west = ((obj.text.match(/^west.*$/gm)).toString()).slice(5)+180;
+      }
+      if (obj.text.search(/^east.*$/gm) != -1){
+        east = ((obj.text.match(/^east.*$/gm)).toString()).slice(5)+180;
+      }
+      if (obj.text.search(/^csvurl.*$/gm) != -1){
+       csvurlnew=((obj.text.match(/^csvurl.*$/gm)).toString()).slice(7).toString();
+       csvurlnew=csvurlnew.replace(/%3A/g, ":");
+       csvurlnew=csvurlnew.replace(/%2F/g, "/");
+       csvurlnew=csvurlnew.replace(/%3D/g, "=");
+       csvurlnew=csvurlnew.replace(/%26/g, "&");
+       csvurlnew=csvurlnew.replace(/%3F/g, "?");
+       csvurl=csvurlnew;
+      }
+      if (obj.text.search(/^kmlurl.*$/gm) != -1){
+       kmlurlnew=((obj.text.match(/^kmlurl.*$/gm)).toString()).slice(7).toString();
+       kmlurlnew=kmlurlnew.replace(/%3A/g, ":");
+       kmlurlnew=kmlurlnew.replace(/%2F/g, "/");
+       kmlurlnew=kmlurlnew.replace(/%3D/g, "=");
+       kmlurlnew=kmlurlnew.replace(/%26/g, "&");
+       kmlurlnew=kmlurlnew.replace(/%3F/g, "?");
+       kmlurl=kmlurlnew;
+       }
+      if (earthlng){
+       var ra = (180+earthlng)/15;
+       var raH = Math.floor(ra);
+       var raM = Math.floor((ra - raH)*60);
+       var raS = Math.round(((ra - raH)*60-raM)*60*100)/100;
+      }
+     if (earthlat<0){
+       earthlat=earthlat*-1;
+       var decD = Math.floor(earthlat);
+       var decM = Math.floor((earthlat-decD)*60);
+       var decS = Math.round(((earthlat-decD)*60-decM)*60*100)/100;
+       earthlat=earthlat*-1;
+
+      document.getElementById("earthlat").innerHTML = "-"+decD+"\t:\t"+decM+"\t:\t"+decS+"  ( "+Math.round(earthlat*100)/100+" )"
+     }
+      
+      if (earthlat>=0){
+       var decD = Math.floor(earthlat);
+       var decM = Math.floor((earthlat-decD)*60);
+       var decS = Math.round(((earthlat-decD)*60-decM)*60*100)/100;
+       document.getElementById("earthlat").innerHTML = decD+"\t:\t"+decM+"\t:\t"+decS+"  ( "+Math.round(earthlat*100)/100+" )";
+      }
+
+       document.getElementById("id_rng_la").innerHTML = range;
+       document.getElementById("id_head_la").innerHTML = heading;
+       document.getElementById("earthlng").innerHTML = raH+"\t:\t"+raM+"\t:\t"+raS+"  ( "+Math.round((earthlng+180)*100)/100+" )";
+       document.getElementById("ra_bounds").innerHTML = "between "+Math.round(east*100)/100+"  and  "+Math.round(west*100)/100;
+       document.getElementById("dec_bounds").innerHTML = "between "+Math.round(south*100)/100+"  and  "+Math.round(north*100)/100;
+       document.getElementById("csv").innerHTML = csvurl;
+       document.getElementById("kml").innerHTML = kmlurl;
+}
+
+function loopGet(){
+//    timeIntervalId = setInterval ( "updateCoords()", 2200);
+}
+
+loopGet();
+</script>
+
+<table>
+
+		<th>Viewport Data</th>
+	</tr>
+
+<tr>
+<td> RA:<td>
+    <td id="earthlng"></td>  
+</tr>
+<tr>
+<td> DEC:<td>
+    <td id="earthlat"></td>  
+</tr>
+      
+<tr>
+		<td>RA Bounds:<td>
+		<td id="ra_bounds"></td>
+	</tr>
+	
+	<tr>
+		<td>Dec Bounds:<td>
+		<td id="dec_bounds"></td>
+	</tr>
+
+
+<tr>
+		<td>Zoom:<td>
+		<td id="id_rng_la"></td>
+	</tr>
+	
+	<tr>
+		<td>Heading:<td>
+		<td id="id_head_la"></td>
+	</tr>
+
+	<tr>
+		<td>kmlurl:<td>
+		<td id="kml"></td>
+	</tr>
+
+	<tr>
+		<td>csvurl:<td>
+		<td id="csv"></td>
+	</tr>
+
+</table>
+
+
+
+]]></Content>
+</Module>

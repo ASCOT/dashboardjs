@@ -1,0 +1,550 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- flickr_viewport_sky.xml -->
+<!-- Author: Conor Sayres (csayres@uw.edu) -->
+<Module>
+<ModulePrefs title="Sky Viewport" 
+    height="400" scrolling="true">
+    <Require feature="dynamic-height"/>
+    <Require feature="opensocial-0.9"/>
+    <Require feature="minimessage"/>
+    <Require feature="settitle"/>
+
+</ModulePrefs>
+
+
+<Content type="html"><![CDATA[
+
+<script src="http://google.com/jsapi?key=ABQIAAAAKYHb1B3NpT-mpL4s83EIgRSop_PCxtS7_vOEwBFafrYxod0JxBQK6BarsnpmKY7-BFhZ1QAd3zSaLg"
+    type="text/javascript"></script>
+<script src="js/DataInterface.js" type="text/javascript"></script>
+<script src="http://students.washington.edu/csayres/widgetlib1.js" type="text/javascript"></script>
+<script src="js/astroObjectLib.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+
+    // run some triggers just in case it took us a while to start up and there are already some public vars we need to react to
+//    refreshKMLFromList("Viewport_Point_List", _KMLPointList);
+
+
+var vpe = null;
+
+// CONSTANTS
+var GADGET_NAME = "ViewportSky" + "_" + Math.floor(Math.random()*100000).toString()
+    DEBUG = false;
+
+function debugLog(msg){ if(DEBUG){UW.astro.debugLog(GADGET_NAME + ": " + msg);}}
+
+function init(){
+    gadgets.window.setTitle("Viewport Sky");
+    vpe = new ViewportEarth();
+    gadgets.window.adjustHeight();
+}
+
+function ViewportEarth() {
+    var my = new Object();
+    var Kml_catch=null;
+
+
+    // CONSTANTS
+    var TIMER_VIEWCHANGEEND = 200;  // ms to wait to trigger the ge viewchangeend event
+
+    // PRIVATE
+    var namespaceList = [ UW.astro.DEFAULT_NAMESPACE ];      // list of our current Namespaces. Just init with the default
+    var di = new UW.astro.DataInterface(GADGET_NAME); // make dataInterface object, init with default
+    
+    // private Point List
+    // first make the list item constructor
+    function KMLListItem(){}
+    KMLListItem.prototype = {
+        KMLobj : null,
+        listItemId : -1,
+        isPlotted : false,
+    };
+
+    var _KMLPointList = [];
+
+    
+    var tidsViewchangeend = [];   // array of timer IDs for ge viewchangeend event
+
+    // INIT Functions
+    
+    // init google earth (ge)
+    var ge = null;     // the google earth object is within the viewport scope
+    google.load("earth", "1");
+    google.setOnLoadCallback(initGE);
+    
+    function initGE() {
+        google.earth.createInstance('sky_map', initCB, failureCB);
+    }
+
+    // callback on successful creation of ge plugin instance
+    function initCB(instance) {
+        ge = instance;
+        ge.getWindow().setVisibility(true);
+        ge.getOptions().setMapType(ge.MAP_TYPE_SKY);
+        ge.getNavigationControl().setVisibility(ge.VISIBILITY_AUTO);
+        ge.getOptions().setStatusBarVisibility(true);
+
+        // Add event listeners
+        google.earth.addEventListener(ge.getView(), "viewchangeend", function(){
+                    // write the new VP bounds to the public variable
+                    // TODO: This will need a timer, because the viewchangeend event fires so often when dragging slowly.
+                    // We need to make sure that we arent writing the current bounds more often than once every 250ms or so
+                    writeCurrentBounds();
+                });
+
+    }  
+
+function failureCB(errorCode) {
+   alert("*** Error initializing google earth plugin ***");
+}
+
+   
+    // REGISTRATION
+   
+        var varList = [ "Viewport_Center_Coordinate", "KML_List", "img_ovly", "Viewport_Point_List", "Viewport_Current_Bounds", "Viewport_Speed","kml_opac" ] // list of variables to register
+
+        var triggerList = [ ["Viewport_Center_Coordinate", my.moveMap ],
+                            ["KML_List", showKML ],
+                            ["Viewport_Point_List", 
+                                function(){refreshKMLFromList("Viewport_Point_List", _KMLPointList);} ],
+                            ["kml_opac", setOpac ],
+                            ["img_ovly", createGroundOverlay ],
+                            ["Viewport_Speed", my.setFlyToSpeed ] ];
+
+     di.registerMe( { namespaceList : _namespaceList,
+                    variableList : varList,
+                    triggerList : triggerList,
+                } );
+
+   
+    // METHODS
+    // Sets the flytospeed between 0 and 5
+    my.setFlyToSpeed = function() {
+        var speed = parseFloat(di.readVariable(UW.astro.DEFAULT_NAMESPACE, "Viewport_Speed"));
+        if (!isNaN(speed)) {
+            if ((speed >= 0) && (speed <= 5)) {
+                ge.getOptions().setFlyToSpeed(speed);   // fastest speed before ge.SPEED_TELEPORT
+            }
+        }
+    }
+
+    // Slews map to point (center) at new coordinate
+    // TODO: with range? or bounding box?
+    my.moveMap = function (){
+        var coord = di.readVariable(UW.astro.DEFAULT_NAMESPACE, "Viewport_Center_Coordinate");
+        var lon = coord.getLongitude();
+        var lat = coord.getLatitude();
+        //alert("RA: " + ra + "\nDEC: " + dec);
+        // check that ra and dec are numbers
+         if (!isNaN(lon) && !isNaN(lat)){
+            var lookAt = ge.createLookAt('');
+            lookAt.setLatitude(lat);
+            lookAt.setLongitude(lon);
+            lookAt.setAltitude(0);
+            lookAt.setHeading(0);
+            lookAt.setRange(7000.0);
+        
+            ge.getView().setAbstractView(lookAt);
+        }   
+    } 
+    
+    
+    writeCurrentBounds = function(){
+        // we need to wait a few ms so we don't trigger this event too often
+        if (tidsViewchangeend.length !== 0){
+            // if the timer was already set, then clear them to reset them.
+            clearTimerArray(tidsViewchangeend);    
+        }
+        // now there is no timer set
+        // so make one
+        var tid = setTimeout(function(){
+                    boxBounds = ge.getView().getViewportGlobeBounds();
+            
+                    topLeft = new UW.astro.CelestialCoordinate(0,0);
+                    topLeft.setLongitude(boxBounds.getWest());
+                    topLeft.setLatitude(boxBounds.getNorth());
+
+                    bottomRight = new UW.astro.CelestialCoordinate(0,0);
+                    bottomRight.setLongitude(boxBounds.getEast());
+                    bottomRight.setLatitude(boxBounds.getSouth());
+
+                    curBounds = [topLeft, bottomRight];     // 2-element array of CelestialCoordinates. [topLeft, bottomRight]
+                    
+                    di.writeVariable(UW.astro.DEFAULT_NAMESPACE, "Viewport_Current_Bounds", curBounds);
+                    // alert('viewchangeend: ' + curBounds[0].getRa() + ' ' + curBounds[0].getDec() + ' ' + curBounds[1].getRa() + ' ' + curBounds[1].getDec());
+  
+                }, TIMER_VIEWCHANGEEND);
+        // add the new timer id to the array
+        tidsViewchangeend.push(tid);
+    }
+    
+    // KML
+    function clearKML() {
+        if (ge !== null){
+            var features = ge.getFeatures();
+            while (features.getFirstChild()) {
+                features.removeChild(features.getFirstChild());
+            }
+        }
+    }
+
+    function setOpac(){
+    var opac=di.readVariable(UW.astro.DEFAULT_NAMESPACE, "kml_opac");
+    //alert(opac)
+     var features = ge.getFeatures();
+     //alert(features.getLastChild().getKml().toString());
+     var newKml=features.getLastChild().getKml().toString();
+
+     //kmlObject.getColor.set(opac+'ffffff');
+     
+     Kml2=newKml.replace(/<color>..ffffff<\/color>/igm,"<color>"+opac.toString()+"ffffff</color>");  
+     //alert('Length before: '+features.getChildNodes().getLength());    
+     var kmlObject = ge.parseKml(Kml2);
+     
+     //if (Kml_catch!=Kml2){
+     //features.removeChild(features.getLastChild());
+     //}
+
+     features.removeChild(features.getLastChild());
+ 
+ 
+      
+
+     features.appendChild(kmlObject);
+     Kml_catch=Kml2;
+     //alert('end:  '+features.getLastChild().getKml().toString());
+
+     //ge.getFeatures().appendChild(newKml);
+     //alert(features.getLastChild().getKml().toString());
+    // features.getLastChild().setOpacity(0);
+    // features.removeChild(features.getFirstChild());
+     //ge.getFeatures().getFirstChild().Overlay.getColor().set('00ffffff');
+    //ge.getFeatures().getLastChild().getColor().set(opac+'ffffff');
+    
+    }
+
+    function createGroundOverlay() {
+      features=ge.getFeatures();
+      if (features.getLastChild()){
+        features.removeChild(features.getLastChild());
+      }
+      //alert('here1')
+      //alert('Length before: '+features.getChildNodes().getLength());    
+      var img_ovly=di.readVariable(UW.astro.DEFAULT_NAMESPACE, "img_ovly");
+      var url=img_ovly[0];
+      var north=Number(img_ovly[1]);
+      var south=Number(img_ovly[2]);
+      var east=Number(img_ovly[3]);
+      var west=Number(img_ovly[4]);
+      var rotation=Number(img_ovly[5]);
+      var transp=img_ovly[6];
+      var fov = Number(img_ovly[10]);     
+      //fov=fov*3600.0;
+      rot=Number(img_ovly[11]);
+      //alert(fov)
+     // var rng=(6.378*Math.pow(10,6))*(1.1917536*((Math.sin((fov/2.0)*(Math.PI/180.0))))*(180.0/Math.PI)-(Math.cos((fov/2.0)*(Math.PI/180.0)))*(180.0/Math.PI)+1);  //range calculation given in KML sky reference
+     // var rng=(6.378*Math.pow(10,6))*(1.1917536*(Math.sin(fov/2.0))-(Math.cos(fov/2.0))+1);  //range calculation given in KML sky reference
+     // alert(rng)
+      //var lat=0.5*(north+south);
+      //var lng=0.5*(east+west);
+      rng=(0.0021*(Math.pow(fov,4)))-(1.8*Math.pow(fov,3))+(3.3*(Math.pow(10,2)*Math.pow(fov,2)))+(5.5*(Math.pow(10,4)*fov))-28;
+      //alert(rng)
+      var lat=Number(img_ovly[7]);
+      var lng=Number(img_ovly[8])-180.0;
+      //alert(lat+'  '+lng)
+      //alert(transp);
+      transp=transp.toString()+'ffffff';
+     // alert(transp);
+     // alert(url);
+      //alert('north '+north)
+      //alert('south '+south)
+      //alert('east '+east)
+      //alert('west '+west)
+      //alert('rotation '+rotation)
+       
+       var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+       lookAt.setLatitude(lat);
+       lookAt.setLongitude(lng);
+       lookAt.setRange(rng);
+       lookAt.setHeading(rot);
+       ge.getView().setAbstractView(lookAt);
+  
+
+     var groundOverlay = ge.createGroundOverlay('');
+     groundOverlay.setIcon(ge.createIcon(''))
+     groundOverlay.getIcon().setHref(url);
+    // alert("'"+transp.toString()+"'")
+
+     groundOverlay.getColor().set('feffffff');
+
+     groundOverlay.setLatLonBox(ge.createLatLonBox(''));
+     
+     //var center = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+     //var north = center.getLatitude() + .35;
+     //alert(north)
+     //var south = center.getLatitude() - .35;
+     //var east = center.getLongitude() + .55;
+     //var west = center.getLongitude() - .55;
+     //var rotation = 0;
+     var latLonBox = groundOverlay.getLatLonBox();
+     latLonBox.setBox(north, south, east, west, rotation);
+
+     ge.getFeatures().appendChild(groundOverlay);
+    //alert('Length after: '+features.getChildNodes().getLength());    
+     // var groundOverlay = ge.createGroundOverlay('');
+      //groundOverlay.setIcon(ge.createIcon(''))
+      //groundOverlay.getIcon().setHref("http://www.google.com/intl/en_ALL/images/logo.gif");
+      //groundOverlay.setLatLonBox(ge.createLatLonBox(''));
+    
+//      var center = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+//      alert(center.toSource())
+      //var latLonBox = groundOverlay.getLatLonBox();
+      //groundOverlay.getLatLonBox().setBox(north, south, east, west, rotation);
+    
+     //var opac = prompt("Enter Opacity")
+     
+    }
+    function showKML() {
+        var kmlList = di.readVariable(UW.astro.DEFAULT_NAMESPACE, "KML_List");
+        if (kmlList !== null) {
+            if (kmlList.length === 0){
+                //clearKML();
+            }
+            for (var i=0, len=kmlList.length; i<len; i++) {
+                parsed = ge.parseKml(kmlList[i]);
+                if (parsed !== null){
+                    // TODO: better test for ge
+                    if (ge !== null){
+                        ge.getFeatures().appendChild(parsed);
+                    }
+                }
+                else{
+                    debugLog('Problem parsing element ' + i + ' in KML_List');
+                }
+            }
+        }
+    }
+    function refreshKMLFromList(pubListName, privList) {
+        
+        // Sync the pub and priv lists
+
+        var pubList = di.readVariable(UW.astro.DEFAULT_NAMESPACE, pubListName);
+        var toPlot = [];    // array of ids to plot
+        var toRemove = [];  // array of ids to remove
+        // compare the ids from pubList to the ids in the privList
+        // first find points to remove
+        // TODO: Is there a faster way to search these arrays?
+        // loop thru privList looking for points NOT in pubList
+        // loop backwards so we can splice array in loop
+        for (var i=privList.length-1; i>=0; i--) { 
+            if ((pubList.getItemById(privList[i].listItemId) === null) || (pubList.isIdModified(privList[i].listItemId))) {
+                // has been removed from the pubList, so add it to the toRemove list
+                // and remove it from the privList
+                toRemove.push(privList[i].KMLobj);  // add the KMLobj to the remove list
+                privList.splice(i,1); // remove it from privList
+            }
+        }
+        // TODO: check isPlotted!
+        // next find the new points to plot
+        // loop thru pub list looking for points NOT in priv list (they are new points)
+        for (var i=0, len=pubList.getLength(); i<len; i++){
+            var pubItemId = pubList.getIdByIndex(i);
+            var found = false;
+            // check for this id in the priv list
+            for (var i2=0, len2=privList.length; i2<len2; i2++){
+                if (privList[i2].listItemId === pubItemId) {
+                    found = true;
+                    //break;
+                    // break actually breaks out of both for's, so lets just reset i=len
+                    // TODO: CHANGE THIS BAD FORM
+                    i2 = len;
+                }
+            }
+            if (!found){
+                // we found a NEW point in the pubList (not in privList)
+                // add it to the toPlot array
+                toPlot.push(pubItemId)
+            }
+        }
+        
+        // Find indexes of modified points
+        var modifiedIdsList = pubList.getModifiedIds();
+        for (var i=0, len=modifiedIdsList.length; i<len; i++){
+        //  toPlot.push(modifiedIdsList[i]);
+            pubList.setModifiedById(modifiedIdsList[i]);
+        }
+        
+        
+//      alert('Modified IDs: ' + modifiedIdsList);
+
+        // sync the GE to the priv list
+        // TODO: better test for GE
+        if (ge !== null){ 
+            var geFeatures = ge.getFeatures();  // speed up the getFeatures methods
+            // REMOVE the kmlobjects in toRemove
+            for (var i=0,len=toRemove.length; i<len; i++){
+                geFeatures.removeChild(toRemove[i]);
+            }
+        
+            
+            // PLOT the kml objects in toPlot
+            for (var i=0,len=toPlot.length; i<len; i++){
+                // first we plot it
+                var kmlText = pubList.getItemByIndex(toPlot[i]).getKML();
+                parsed = ge.parseKml(kmlText);
+                geFeatures.appendChild(parsed);
+            
+                // then add it to the privList
+                var privItem = new KMLListItem();
+                privItem.KMLobj = parsed;
+                privItem.listItemId = toPlot[i];
+                privItem.isPlotted = true;
+                privList.push(privItem);
+            } 
+        }
+   
+    }
+    
+    // HELPER
+    function clearTimerArray(timers){
+        if (timers instanceof Array){
+            for (var i=0, len=timers.length; i<len; i++){
+                clearTimeout(timers.splice(i,1));    // splice returns the removed element
+            }
+        }
+    }
+
+}
+
+
+
+            
+            //  loopGet();
+        //function loopGet(){
+        //  timeIntervalId = setInterval ( "updateCoords()", 1910);
+        //}
+
+        //function updateCoords() {
+          //makeRequestGet("http://128.95.99.32:8891/c" + tid, 0);
+          //tid += 1;
+
+          //var coords = dataGadget.readVar("VPCoords");
+          //response(coords);
+
+        //}
+
+//function moveMap(){
+//  ge.getOptions().setFlyToSpeed(ge.SPEED_TELEPORT);
+//  var lookAt = ge.createLookAt('');
+//  lookAt.setLatitude(newdec);
+//  lookAt.setLongitude(radeg);
+//  lookAt.setAltitude(0);
+//  lookAt.setHeading(0);
+//  lookAt.setRange(range);
+//  ge.getView().setAbstractView(lookAt);
+//}
+
+
+//function eventListener(){    
+//  var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+//  var globeBounds = ge.getView().getViewportGlobeBounds();
+//  range = lookAt.getRange();
+//  heading = lookAt.getHeading();
+//  dataWrap.range = range;
+//  dataWrap.heading = heading;
+//  dataWrap.earthlng = lookAt.getLongitude();
+//  dataWrap.earthlat = lookAt.getLatitude();  
+//  dataWrap.north=globeBounds.getNorth();
+//  dataWrap.south=globeBounds.getSouth();
+//  dataWrap.east=(globeBounds.getEast())+180;
+//  dataWrap.west=(globeBounds.getWest())+180;
+//  post();
+//}
+//
+//
+//function target(){
+//  var placemark = ge.createPlacemark('');
+//  placemark.setName("");
+//  var features = ge.getFeatures();
+//  var icon = ge.createIcon('');
+//  icon.setHref('http://students.washington.edu/csayres/target.png');
+//  var style = ge.createStyle(''); //create a new style
+//  style.getIconStyle().setIcon(icon); //apply the icon to the style
+//  placemark.setStyleSelector(style); //apply the style to the placemark 
+//  var point = ge.createPoint('');
+//  point.setLatitude(tarDEC);
+//  point.setLongitude(tarRA-180);
+//  placemark.setGeometry(point);
+//  features.appendChild(placemark);
+//}
+//
+//function loadKml() {
+//    google.earth.fetchKml(ge, kmlurl, function(kmlObject) {
+//      if (kmlObject) {
+//        ge.getFeatures().appendChild(kmlObject);
+//      } 
+//      else {
+//        setTimeout(function() {
+//          alert('Bad or null KML.');
+//          }, 0);
+//
+//      }
+//    })
+//}
+//
+//
+//function response(obj) {
+//
+//  if (obj.text.search(/^cellng.*$/gm) != -1){    
+//    newRA = ((obj.text.match(/^cellng.*$/gm)).toString()).slice(7)-0;
+//  }
+//  if (obj.text.search(/^cellat.*$/gm) != -1){
+//    newDec = ((obj.text.match(/^cellat.*$/gm)).toString()).slice(7)-0;
+//  }
+//  if (obj.text.search(/^tarRA.*$/gm) != -1){
+//    tarRAtest = ((obj.text.match(/^tarRA.*$/gm)).toString()).slice(6)-0;
+//  }
+//  if (obj.text.search(/^tarDEC.*$/gm) != -1){
+//    tarDECtest = ((obj.text.match(/^tarDEC.*$/gm)).toString()).slice(7)-0;
+//  }
+//  if (obj.text.search(/^kmlurl.*$/gm) != -1){
+//    kmlurlnew=((obj.text.match(/^kmlurl.*$/gm)).toString()).slice(7).toString();
+//      kmlurlnew=kmlurlnew.replace(/%3A/g, ":");
+//      kmlurlnew=kmlurlnew.replace(/%2F/g, "/");
+//      kmlurlnew=kmlurlnew.replace(/%3D/g, "=");
+//      kmlurlnew=kmlurlnew.replace(/%26/g, "&");
+//      kmlurlnew=kmlurlnew.replace(/%3F/g, "?");
+//  }
+//  else{ 
+//    setTimeout("doNothing()", 10);
+//  }
+//
+//  if (newRA != radeg || newDec != newdec) {
+//    radeg = newRA; newdec = newDec;
+//    moveMap();
+//  }
+//  if (tarRAtest != tarRA || tarDECtest != tarDEC){ 
+//    tarRA=tarRAtest;tarDEC=tarDECtest;
+//    target();
+//  }
+//  if (kmlurlnew != kmlurl){
+//    kmlurl=kmlurlnew;
+//    loadKml();
+//  }
+//}
+
+function doNothing(){}
+
+
+gadgets.util.registerOnLoadHandler(init);
+
+</script>
+<div id="sky_map" style="height:500px; width:100%;">
+<!-- <input type="button" value="clear KML" onclick="ks.clearKML()"> -->
+</div>
+
+
+
+]]></Content>
+</Module>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- template_gadget.xml -->
+<!-- Author: Ian Smith (imsmith@uw.edu) -->
+<Module>
+
+<!-- ** Replace inside quotes with your gadgets title -->
+<ModulePrefs title="Gadget Template"
+    height="10"
+    scrolling="true">
+     <Require feature="dynamic-height"/>
+     <Require feature="opensocial-0.9"/> 
+     <Require feature="minimessage"/>
+     <Require feature="settitle"/>
+</ModulePrefs> 
+
+<Content type="html"><![CDATA[
+
+<!-- Add HTML content here -->
+<div>
+    <input type="button" value="Say Hello" onclick="myGadget.sayHello();"/>
+</div>
+
+
+<!-- Used to register with the Data Gadget -->
+<script src="js/DataInterface.js" type="text/javascript"></script>
+
+<!-- Contains UW.astro objects -->
+<script src="js/astroObjectLib.js" type="text/javascript"></script>
+
+
+<script type="text/javascript">
+var myGadget = null,
+    DEBUG = false;
+
+function debugLog(msg){ if(DEBUG){UW.astro.debugLog(GADGET_NAME + ": " + msg);}}
+
+
+// ** Replace with your gadgets name
+var GADGET_NAME = "Gadget_Template" + "_" + Math.floor(Math.random()*100000).toString();
+
+// Creates gadget object
+function init(){
+    gadgets.window.setTitle('Hello');
+    myGadget = new GadgetTemplate();
+    gadgets.window.adjustHeight();
+}
+
+
+function GadgetTemplate(){
+    var my = new Object();
+
+    // CONSTANTS
+
+    // PRIVATE
+    var _namespaceList = [ UW.astro.DEFAULT_NAMESPACE ];      // list of our current Namespaces
+    
+    // Private Helper Variables
+    var di = new UW.astro.DataInterface(GADGET_NAME); // make dataInterface object, init with default
+
+    // INIT
+    
+    // ** Variables to register go in this array. 
+    // ex: ["Viewport_Center_Coordinate", "Viewport_Point_List"]
+    var variableArray = []; 
+                            
+    // ** Triggers to register go in this array
+    // Each trigger is a 2-element array as follows:
+    // [ "VariableName", triggerFunction ]
+    // example with one trigger: (notice the array inside the array)
+    //      var triggerArray = [ ["Viewport_Center_Coordinate", function(){ zoomMe() }] ]
+    // it is recommended to define functions outside the array for more readable code
+    var triggerArray = [];
+                           
+    di.registerMe( { namespaceList : _namespaceList,
+                    variableList : variableArray,   // optional
+                    triggerList : triggerArray,     //optional
+                    successCallback : registrationSuccess, // optional
+                    failureCallback : registrationFailure, // optional
+                } );
+   
+    // Optional callback after successful registration
+    function registrationSuccess(){
+        debugLog('Registration SUCCESS');
+            }
+    // Optional callback after a failure of registration
+    // Displays failure message
+    function registrationFailure(){
+        debugLog('Registration FAILED!');
+    }
+    
+    
+    // METHODS
+    // ** Add public methods that will be called from outside the object (eg by a button)
+   
+    my.sayHello = function(){
+    debugLog("Hello to the console log!");
+        alert("Hello!");
+    }
+    
+    return my;
+}
+
+gadgets.util.registerOnLoadHandler(init); 
+</script>
+
+]]></Content>
+</Module>
+

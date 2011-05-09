@@ -1,0 +1,863 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- data_gadget.xml -->
+<!-- Author: Ian Smith (imsmith@uw.edu) -->
+<Module>
+<ModulePrefs title="DataGadget v0.1" 
+    height="90">
+    <Require feature="dynamic-height"/>
+    <Require feature="opensocial-0.9"/> 
+    <Require feature="minimessage"/>
+    <Require feature="settitle"/>
+
+</ModulePrefs>
+
+<Content type="html"><![CDATA[
+<!-- Set title so the DataInterface can find this gadget. This how we identify ourselves, so we must do it first! -->
+<title>DataGadgetv0.1</title>
+
+<div id="divHeader" class="dgHeader">
+    DataGadget v0.1    
+</div>
+
+<div id="divNamespaceInfo" class="hidden">
+</div>
+
+<link rel="stylesheet" type="text/css" href="css/dgGadget.css" />
+
+<style type="text/css">
+.hidden {
+    display:none;
+}
+.dgHeader {
+    font-style:underline;
+}
+.dgInfoList  {
+    padding:5px;
+    margin:5px;
+    font-size:small;
+    font-weight:bold;
+    background-color:#f0fcff;
+    border-style:solid;
+    border-width:1px;
+}
+.dgInfoList ul {
+    font-size:small;
+    font-weight:normal;
+    margin: 0px;
+}
+</style>
+<script type="text/javascript">
+
+/**
+ * Global DataGadget object
+ */
+var dg = null;
+
+// CONSTANTS
+/**
+ * Number of seconds to display miniMessages
+ */
+var MM_TIMER_DURATION = 4;
+
+/**
+ * If true, then write debug messages to console
+ */
+var DEBUG = false;
+
+/**
+ * Writes to the console of DEBUG is true
+ */  
+function debugLog(msg){
+    if (DEBUG && window.console && console.log) { 
+         console.log(msg);
+    }
+}          
+
+// INIT
+function init(){
+    gadgets.window.setTitle("Data Gadget");
+    dg = new DataGadget();
+    gadgets.window.adjustHeight();
+}
+
+/**
+ * @class Trigger
+ * A Trigger contains the gadget name and callback that is executed within 
+ * the context of the gadget when an event occurs.
+ * For example: when a datagadget variable is modified, a trigger registered
+ * to that variable is executed.
+ */
+/**
+ * @constructor
+ * @param {string} gadgetName Name of gadget registering the trigger
+ * @param {function} func Callback function executed by trigger
+ */
+function Trigger(gadgetName, func){
+    var my = new Object();
+    
+    // Callback function that is executed
+    var cbFunc = func;
+    
+    // Gadget that created this trigger
+    var cbGadget = gadgetName;
+    
+    debugLog("Creating New Trigger");
+    
+    // METHODS
+    /**
+     * Gets the name of the gadget that created the trigger
+     * @return {string} Name of gadget
+     */
+    my.getGadget = function(){
+        return cbGadget;
+    }
+    
+    /**
+     * Executes the trigger (executes the callback function)
+     */
+    my.executeTrigger = function(){
+         debugLog("executing trigger: " + cbFunc.toString());
+         cbFunc();
+    }
+    
+    /**
+     * Returns the callback function
+     * @return {function} The callback function for this trigger
+     */
+    my.returnTrigger = function(){
+        return cbFunc;
+    }
+    
+    /**
+     * Returns a string representation of the trigger (currently
+     * only the name of the gadget that registered the trigger
+     * @return {string} String representation of the trigger 
+     */
+    my.toString = function(){
+        return cbGadget;
+    }
+    
+    return my;
+} // end Trigger class
+
+/**
+ * @class DataGadgetVariable
+ * A DataGadgetVariable is a public variable stored in the datagadget.
+ * The variable has a name (by which it is identified for reading and writing),
+ * value,
+ * list of names of gadgets that are registered to read and write to the variable, 
+ * and a list of triggers that are executed sequentially when the variable is 
+ * modified by the "setValue" method
+ */
+
+/**
+ * Create a DataGadgetVariable object
+ * @constructor
+ * @param {string} name Name of the DataGadgetVariable
+ * @param {object} value Any type of object to be stored in the variable
+ * @param {string} gadgetName Name of gadget that created the variable
+ */
+function DataGadgetVariable(name, value, gadgetName){
+    var my = new Object();
+    
+    /**
+     * Array of callback Triggers to call when this variable is modified
+     */
+    var triggerList = [];
+    
+    /**
+     * Array of gadget names that registered this variable.
+     * Creator is added first.
+     */
+    var gadgetList = [ gadgetName ];    
+   
+    /** 
+     * Name of the DataGadgetVariable
+     */
+    var varName = name;
+    
+    /**
+     * Value of the variable
+     */
+    var varValue = value;
+
+    /**
+     * @private
+     * Returns true iff the gadget name is in the list of registered gadgets
+     * @param {string} gadgetName Name of gadget to check if registered
+     * @return {boolean} True iff gadget name is registered
+     */
+    function isGadgetRegistered(gadgetName){
+    	for (var i=0, len=gadgetList.length; i<len; i++) {
+            if (gadgetList[i].toString() === gadgetName) {
+                // Found it
+                return true;
+            }
+        }
+        // Not found
+        return false;
+    }
+
+    // METHODS
+    
+    /**
+     * Returns name of DataGadgetVariable
+     * @return {string} Name of DataGadgetVariable
+     */
+    my.getName = function(){
+        return varName;
+    }
+   
+    /**
+     * Returns value of the DataGadgetVariable
+     * @return {object} Value of DataGadgetVariable
+     */
+    my.getValue = function(){
+        return varValue;
+    }
+    
+    /**
+     * Sets the value of the DataGadgetVariable and executes all triggers associated with the 
+     * variable EXCEPT for triggers registered to the gadget that is setting the value
+     * @param {string} Name of gadget setting the value
+     * @param {object} Object to set the new value of the variable to
+     * @return {boolean} True if no errors, False if gadget trying to set the value is not registered
+     */
+    my.setValue = function(gadgetName, value){
+    	if (!isGadgetRegistered(gadgetName)) {
+    		// Gadget not in list
+            debugLog('Cannot write to variable "' + varName + '" because the gadget "' + gadgetName + '" has not registered this variable!');
+            return false;
+    	}
+    	
+    	// Set the value
+    	varValue = value;
+    	
+        // Execute all triggers except for triggers set by 'gadgetName'
+        for (var i=0, len = triggerList.length; i<len; i++){
+            // Dont execute triggers for the gadget that is setting value
+            if (triggerList[i].getGadget() !== gadgetName){
+                triggerList[i].executeTrigger();
+            }
+        }
+        // Everything went OK
+        return true;
+    }
+
+    /**
+     * Adds a gadget to the list of gadgets registered to this variable
+     * or does nothing if the gadget is already registered
+     * @param {string} gadgetName Name of gadget to add to registration list
+     */
+    my.addGadget = function(gadgetName) {
+        if (!isGadgetRegistered(gadgetName)) {
+            gadgetList.push(gadgetName);
+        }
+    }
+
+    /**
+     * Adds a new trigger to this variable
+     * @param {string} gadgetName Name of gadget creating trigger
+     * @param {function} callback Callback function for this trigger
+     * @return {boolean} True iff trigger was created successfully
+     * TODO: Return a unique trigger ID so this trigger can be destroyed later?
+     * That might be a difficult change to make since we return booleans all the way
+     * up the stack.
+     */
+    my.addTrigger = function(gadgetName, callback){
+        if (isGadgetRegistered(gadgetName)){
+            newTrig = new Trigger(gadgetName, callback);
+            triggerList.push(newTrig);
+            return true;
+        }
+        else {
+            // Gadget not in list
+            debugLog('Cannot register trigger on "' + varName + '" because the gadget "' + gadgetName + '" has not registered this variable!');
+            return false;
+        }
+    }
+    
+    /**
+     * NOTE: Not Implemented
+     * Removes a trigger from the list
+     * @param {integer} triggerId ID of trigger to remove
+     * @return {boolean} True iff triggerId is found and trigger with triggerId was
+     * successfully removed 
+     */
+    my.removeTrigger = function(triggerId){
+        throw "DataGadgetVariable.removeTrigger() Not implemented";
+    }
+
+
+    /**
+     * Returns a string of info about this DataGadgetVariable
+     * Specifically:
+     *   An HTML bulleted list of gadgets registered
+     *   An HTML bulleted list of trigger info 
+     * @return {string} Info about variable
+     */
+    my.printInfoList = function(){
+        var txtElem = [];
+        // Add varName
+        txtElem.push(varName + "<ul>" + 
+                    "<li>Gadgets:</li>" +
+                    "<ul>");
+        // Add the gadgets, and close with a </ul>
+
+        for (var i=0, len=gadgetList.length; i<len; i++){
+            txtElem.push("<li>" + gadgetList[i].toString() + "</li>");
+        }
+        txtElem.push("</ul>");  // end gadgets
+        
+        // Add triggers
+        txtElem.push('<li>Triggers:</li>' +
+                        '<ul>');
+        for (var i=0, len=triggerList.length; i<len; i++){
+            txtElem.push('<li>' + triggerList[i].toString() + '</li>');
+        }
+        txtElem.push('</ul>');  // end triggers
+        txtElem.push('</ul>');  // end this variable
+        return txtElem.join(''); 
+    }
+
+    return my;
+} // end DataGadgetVariable class
+
+/**
+ * @class Namespace
+ * Represents a namespace to which gadgets and DataGadgetVariables
+ * are registered. 
+ * Gadgets in a Namespace can read and write variables in that Namespace.
+ */
+
+/**
+ * @constructor
+ * Creates a new Namespace object in which to register
+ * gadgets and DataGadgetVariables
+ * @param {string} name Name of the new Namespace
+ */ 
+function Namespace(name) {
+    var my = new Object();
+    
+    // PRIVATE
+    /**
+     * List of gadgets registered to the Namespace
+     */
+    var gadgetList = [];
+    
+    /**
+     * list of DataGadgetVariables registered to the Namespace
+     */
+    var dgVarList = [];
+    
+    /**
+     * Name of the Namespace
+     */
+    var nsName = name;
+    
+    
+    /**
+     * @private
+     * Returns DataGadgetVariable if it exists, otherwise
+     * returns null
+     * @param {string} varName Name of DataGadgetVariable to find
+     * @return {object} The DataGadgetVariable if it exists, or else null
+     */
+    function findDGVar(varName) {
+        for (var i=0, len=dgVarList.length; i<len; i++) {
+            if (dgVarList[i].getName() === varName) {
+                return dgVarList[i];
+            }
+        }
+        // not found, return null
+        return null;
+    }
+    
+    // METHODS
+    /**
+     * Get the name of the Namespace
+     * @return {string} Name of the Namespace
+     */
+    my.getName = function(){
+        return nsName;
+    }
+
+    // Gadget Methods
+    /**
+     * Returns true iff gadget is currently registered in this namespace
+     * @param {string} gadgetName Name of gadget to search for in Namespace
+     * @return {boolean} True iff gadget is currently registered in this Namespace
+     */
+    my.isGadgetRegistered = function(gadgetName){
+        var len = gadgetList.length;
+        for (i=0; i<len; i++){
+            if (gadgetList[i] === gadgetName){
+                return true; 
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Registers a gadget to this Namespace
+     * @param {string} gadgetName Name of gadget to register
+     */
+    my.registerGadget = function(gadgetName){
+        // Check if gadget currently exists in this namespace
+        if (my.isGadgetRegistered(gadgetName)){
+            debugLog("gadget '" + gadgetName + "' is already registered in\nNamespace '" + nsName + "'");
+        }
+        else {
+            // Is not yet registered, so add it
+            gadgetList.push(gadgetName);
+            debugLog("gadget '" + gadgetName + "' is now registered in\nNamespace '" + nsName + "'");
+        }
+    }
+    
+    /**
+     * Removes a gadget from the Namespace by name
+     * @param {string} gadgetName Name of gadget to remove
+     * @return {boolean} True if successfully removed, or false if gadget not found
+     * in the Namespace
+     */
+    my.dropGadget = function(gadgetName){
+        // Find gadget and drop it
+        // TODO: we should also delete all the triggers for that gadget!
+        var len = gadgetList.length;
+        for (i=0; i<len; i++){
+            if (gadgetList[i] === gadgetName){
+                // Remove this element 
+                gadgetList.splice(i,1);
+                // Just in case there are duplicates, we should look through entire array
+                debugLog("gadget '" + gadgetName + "' is now removed from\nNamespace '" + nsName+ "'\nCurrent Gadget List: " + gadgetList.toString());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // DataGadgetVar Methods
+    /**
+     * Create a new DataGadgetVariable in the Namespace (only if the gadget is registered
+     * to the Namespace)
+     * @param {string} gadgetName Name of gadget registering variable
+     * @param {string} varName Name to call DataGadgetVariable
+     * @param {object} varValue Object to store in new variable
+     * @return {boolean} True if variable is successfully registered, otherwise false.
+     * If the gadget is not registered to the namespace, then false will be returned.
+     */ 
+    my.registerVariable = function(gadgetName, varName, varValue){
+        if (my.isGadgetRegistered(gadgetName)) {
+            var dv = findDGVar(varName);
+            if (dv === null) {
+                // Variable doesnt exist, so make it and add it to the list
+                var dgVar = new DataGadgetVariable(varName, varValue, gadgetName);
+                dgVarList.push(dgVar);
+            }
+            else {
+                // Variable already exists, so add gadget to the variable
+                dv.addGadget(gadgetName);
+            }
+            return true;
+        }
+        else {
+            // Gadget not registered to this Namespace
+            alert('Cannot register variable "' + varName + '." First register the gadget "' + gadgetName + '" in the namespace "' + nsName +'."');
+            return false;
+        }
+    }
+
+    /**
+     * Writes a value to a DataGadgetVariable
+     * @param {string} gadgetName Name of gadget writing variable
+     * @param {string} varName Name of DataGadgetVariable to write to
+     * @param {object} varValue Object to set variable value to
+     * @return {boolean} Returns true iff value was set correctly. Returns false
+     * if variable doens't exist or if the gadget is not regirstered to the Namespace
+     */
+    my.writeVariable = function(gadgetName, varName, varValue){
+        if (my.isGadgetRegistered(gadgetName)) {
+            var dv = findDGVar(varName);
+            if (dv !== null) {
+                // write it!
+                return dv.setValue(gadgetName, varValue);
+            }
+            else {
+                // dgVar doesn't exist, so log it
+                debugLog('Cannot write variable "' + varName + '" because it does not exist. First register the variable in the namespace "' + nsName +'."');
+                return false;
+            }
+        }
+        else {
+            // gadget not registered
+            debugLog('Cannot write variable "' + varName + '." First register the gadget "' + gadgetName + '" in the namespace "' + nsName +'."');
+            return false;
+        }
+        return false;
+    }
+
+    /**
+     * Returns the value of the DataGadgetVariable
+     * @param {string} gadgetName Name of gadget reading variable
+     * @param {string} varName Name of variable to write to
+     * @return {object} Returns the value of the variable (or undefined if 
+     * varName doesnt exist or if gadget is not registered in namespace)
+     */
+    my.readVariable = function(gadgetName, varName){
+        if (my.isGadgetRegistered(gadgetName)) {
+            var dv = findDGVar(varName);
+            if (dv !== null) {
+                // read it!
+                return dv.getValue();
+            }
+            else {
+                // dgVar doesn't exist, so log it
+                debugLog('Cannot read variable "' + varName + '" because it does not exist. First register the variable in the namespace "' + nsName +'."');
+                return undefined;
+            }
+        }
+        else {
+            // gadget not registered
+            debugLog('Cannot read variable "' + varName + '." First register the gadget "' + gadgetName + '" in the namespace "' + nsName +'."');
+            return undefined;
+        }
+        return undefined;
+    }
+
+
+
+    // Trigger Methods
+    /**
+     * Registers a trigger to a variable
+     * @param {string} gadgetName Name of gadget registering trigger
+     * @param {string} varName Name of variable to register trigger for
+     * @param {function} triggerCallback Callback function for trigger
+     * @return {boolean} Returns true if trigger added successfully, false if variable
+     * doesnt exist or if gadget not registered in the namespace
+     * TODO: return the triggerID of the trigger created.
+     */
+    my.registerTrigger = function(gadgetName,  varName, triggerCallback){
+        if (my.isGadgetRegistered(gadgetName)) {
+            var dv = findDGVar(varName);
+            if (dv !== null) {
+                // register it!
+                return dv.addTrigger(gadgetName, triggerCallback);
+            }
+            else {
+                // dgVar doesn't exist, so log it
+                debugLog('Cannot register trigger on variable "' + varName + '" because it does not exist. First register the variable in the namespace "' + nsName +'."');
+                return false;
+            }
+        }
+        // gadget not registered
+        debugLog('Cannot register trigger for variable "' + varName + '." First register the gadget "' + gadgetName + '" in the namespace "' + nsName +'."');
+        return false;
+    }
+
+
+
+    // Display Methods
+    /**
+     * Returns a list of info about the gadgets in the namespace, and 
+     * the variables registered.
+     * @return {string} String representing gadgets and variables registered
+     * in the namespace 
+     */ 
+    my.printInfoList = function(){
+        var txtElem = [];
+        // Print gadgets list
+        // begin namespace
+        txtElem.push(nsName + "<ul>" +  
+                  "<li>Gadgets:</li>" +
+                    "<ul>");
+        // add the gadgets, and close with a </ul></ul>
+        for (var i=0, len=gadgetList.length; i<len; i++){
+            txtElem.push("<li>" + gadgetList[i].toString() + "</li>");
+        }
+        txtElem.push("</ul>");  // end gadgets
+        
+        // add variables
+        txtElem.push('<li>Variables:</li>' +
+                        '<ul>');
+        for (var i=0, len=dgVarList.length; i<len; i++){
+            txtElem.push('<li>' + dgVarList[i].printInfoList() + '</li>');
+        }
+        txtElem.push('</ul>');  // end vars
+        txtElem.push('</ul>');  // end namespace
+
+        return txtElem.join(''); 
+    }
+
+    return my;
+} // end Namespace class
+
+
+/**
+ * @class DataGadget
+ * The DataGadget contains multiple Namespaces, which each contain DataGadgetVariables
+ * Interactions with namespaces can only be done by gadgets registered to the 
+ * namespace
+ */
+/**
+ * @constructor
+ * Creates a new DataGadget object
+ */
+function DataGadget() {
+    var my = new Object();
+
+    // CONSTANTS
+    var DATAGADGET_TITLE = "DataGadgetv0.1",
+        DIV_NAMESPACE_INFO = "divNamespaceInfo",
+        SHOW_INFO = false;
+
+    // PRIVATE
+ 
+    /**
+     * Array of current active namespaces
+     */
+    var nsList = [];
+
+    // Private helper objects for the gadget
+    /**
+     * MiniMessage to display information about registration on the gadget
+     */
+    var miniMsg = new gadgets.MiniMessage();
+    
+    /**
+     * @private
+     * Returns namespace if it exists in the array
+     * @param {string} nsName Name of Namespace to search for
+     * @return {Namespace} Returns the Namespace with the name being searched for, or
+     * null if not found
+     */
+    // 
+    function findNamespace(nsName){
+        var len = nsList.length;
+        for (i=0; i<len; i++){
+            if (nsList[i].getName() === nsName){
+                return nsList[i];
+            }
+        }
+        return null;
+    }
+
+    
+    // Display
+    /**
+     * Print a ul (HTML bulleted unordered list) version of the properties of each
+     * Namespace in a div. Then adjust the size of the DataGadget so the info fits.
+     */
+    function updateNamespaceInfo(){
+        if (SHOW_INFO) {
+            // find Div we will eventually write to
+            var nsDiv = window.document.getElementById(DIV_NAMESPACE_INFO);         
+            
+            var nsInfoHTML = [];
+            nsInfoHTML.push("Namespaces:");
+            nsInfoHTML.push("<ul>");
+            for (var i=0, len=nsList.length; i<len; i++){
+                // append to the fragment the text generated by the namespaces
+                nsInfoHTML.push("<li>" + nsList[i].printInfoList() + "</li>");
+            }
+            nsInfoHTML.push("</ul>");
+            // add the fragment to the div to display it
+            nsDiv.innerHTML = nsInfoHTML.join('');
+            
+            // move from the 'hidden' into the 'dgInfoList' class
+            nsDiv.className = "dgInfoList";
+            // resize height of gadget
+            gadgets.window.adjustHeight();
+        }
+    }
+            
+
+    // METHODS
+
+    // Namespace Methods 
+    /**
+     * NOTE: Not Implemented
+     * Return a list of the names of the namespaces
+     * NOTE: This should only return a list of string names, NOT the
+     * actual list of Namespaces
+     * @return {string[]} Returns an array of strings containing the names
+     * of the Namespaces in the DataGadget
+     */
+    my.getNamespaceList = function(){
+    	throw "DataGadget.getNamespaceList() is not implemented!"
+    }
+    
+    /**
+     * NOTE: Not Implemented
+     * 
+     */
+    my.createNamespace = function(name){
+        // check to see if namespace already exists
+        // if doesn't exist, create the namespace
+        // and add to nsList
+       
+        // ns = new Namespace(name);
+    }
+    my.deleteNamespace = function(namespace){
+    	throw "DataGadget.deleteNamespace() is not implemented!"
+    }
+    my.addGadgetToNamespace = function(name, namespace){
+    	throw "DataGadget.addGadgetToNamespace() is not implemented!"
+    }
+    my.removeGadgetFromNamespace = function(name, namespace){
+    	throw "DataGadget.removeGadgetFromNamespace() is not implemented!"
+    }
+    my.removeGadgetFromAllNamespaces = function(name){
+    	throw "DataGadget.removeGadgetFromAllNamespaces() is not implemented!"
+    }
+    my.switchGadgetNamespace = function(name, namespace){
+    	throw "DataGadget.switchGadgetNamespace() is not implemented!"
+    }
+
+    // GETS
+
+    /**
+     * Returns array of strings of gadget's current namespaces
+     * @param {string} gadgetName Name of gadget who's namespaces to get
+     * @return {Array[string]} Array of strings of gadget's current namespaces
+     */
+    my.getGadgetNamespaces = function(gadgetName){
+    	throw "DataGadget.getGadgetNamespaces() is not implemented!"
+    }
+
+
+    // GADGET METHODS
+
+    /**
+     * Registers a gadget to a namespace. If the namespace does not exist,
+     * a new one of specified name is created and the gadget is registered to it.
+     * @param {string} Name of gadget to register
+     * @param {string} Name of namespace in which to register gadget
+     */
+    my.registerGadget = function(gadgetName, namespace){
+        var ns = findNamespace(namespace);
+        if (ns !== null){
+            ns.registerGadget(gadgetName);
+        }
+        else {
+            ns = new Namespace(namespace);
+            ns.registerGadget(gadgetName);
+            nsList.push(ns);
+        }
+        // print on page
+        updateNamespaceInfo();
+    }
+    
+    // VARIABLE METHODS
+
+    /**
+     * Registers a gadget to a variable in a specified namespace.
+     * Throws an exception if the namespace doesn't exist.
+     * @param {string} gadgetName Name of gadget to register to variable.
+     * @param {string} namespaceName Namspace name in which gadget and variable are registered.
+     * @param {string} varName Name of variable to register gadget to.
+     * @param {object} varValue Value to set to the variable
+     * @return {boolean} Returns true if the registration is successful, otherwise false
+     */
+    my.registerVariable = function(gadgetName, namespaceName, varName, varValue){
+        var ns = findNamespace(namespaceName);
+        if (ns !== null) {
+            // return true if successful, false if not
+            if (ns.registerVariable(gadgetName, varName, varValue)) {
+                updateNamespaceInfo();          
+                return true;
+            }
+            else {
+                // something went wrong
+                return false;
+            }
+        }
+        // namespace not found
+        throw('Namespace "' + namespaceName + '" does not exist yet. Register the gadget "' + gadgetName + '" to the namespace before registering variables.');
+        return false;
+    }
+    
+    var gadgetList = {};
+	
+		my.addGadget = function(id){
+			if(gadgetList.id==undefined){
+				gadgetList.id = {};	
+				console.log("Declared Component " + id);
+			}
+			else{
+				console.log("Declared Component " + id + "id already exists. Id must be unique");
+			}
+		}
+
+    /**
+     * Writes a value to a variable (which executes triggers on that variable).
+     * All triggers on a variable are executed EXCEPT for triggers that were created by
+     * the gadget that is doing the writing. 
+     * @param {string} gadgetName Name of gadget writing to variable.
+     * @param {string} namespaceName Namspace name in which gadget and variable are registered.
+     * @param {string} varName Name of variable to write to.
+     * @param {object} varValue Value to write to the variable
+     * @return {boolean} Returns true if the write is successful, otherwise false
+    */
+    my.writeVariable = function(gadgetName, namespaceName, varName, value){
+        var ns = findNamespace(namespaceName);
+        if (ns !== null) {
+            return ns.writeVariable(gadgetName, varName, value);
+        }
+    }
+
+     /**
+     * Returns the value of a variable
+     * @param {string} gadgetName Name of gadget reading the variable.
+     * @param {string} namespaceName Namspace name in which gadget and variable are registered.
+     * @param {string} varName Name of variable to read.
+     * @return {object} Return value of the variable
+    */
+    my.readVariable = function(gadgetName, namespaceName, varName){
+        var ns = findNamespace(namespaceName);
+        if (ns !== null) {
+            return ns.readVariable(gadgetName, varName);
+        }
+    }
+
+
+    // TRIGGER METHODS
+
+    /**
+     * Registers a trigger on a variable. The trigger is a callback function that is
+     * executed every time the variable is written to by "writeVariable()". 
+     * @param {string} gadgetName Name of gadget creating the trigger.
+     * @param {string} namespaceName Namspace name in which gadget and variable are registered.
+     * @param {string} varName Name of variable to read.
+     * TODO: @return {integer} TODO: return an ID to this trigger, so it can be deleted later
+     */
+    my.registerTrigger = function(gadgetName, namespaceName, varName, triggerCallback){
+        // TODO: return triggerID
+         var ns = findNamespace(namespaceName);
+        if (ns !== null) {
+            if (ns.registerTrigger(gadgetName, varName, triggerCallback)){
+                updateNamespaceInfo();          
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+    }
+
+    // NOT IMPLEMENTED
+    // TODO: When triggers are created, they currently don't return an ID. 
+    // But they should so this method can delete the triggers by an ID
+    my.unregisterTrigger = function(triggerID){
+    	throw "DataGadget.unregisterTrigger() is not implemented!"
+    }
+    
+    return my;
+} // DataGadget class
+
+gadgets.util.registerOnLoadHandler(init);  
+
+</script>
+
+]]></Content>
+</Module>

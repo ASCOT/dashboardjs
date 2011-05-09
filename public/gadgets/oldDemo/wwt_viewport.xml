@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- wwt_viewport.xml -->
+<!-- Author: Ian Smith (imsmith@uw.edu) -->
+<Module>
+
+<!-- ** Replace inside quotes with your gadgets title -->
+<ModulePrefs title="WWT Gadget"
+    height="10"
+    scrolling="true">
+     <Require feature="dynamic-height"/>
+     <Require feature="opensocial-0.8"/> 
+     <Require feature="minimessage"/>
+</ModulePrefs> 
+
+<Content type="html"><![CDATA[
+
+<!-- Add HTML content here -->
+<div style="height:650px">
+<!-- WWT Stuff -->
+<div id="WorldWideTelescopeControlHost"> 
+        
+    <object id="WWTView" data="data:application/x-silverlight," type="application/x-silverlight-2" width="100%" height="800"> 
+        <param name="source" value="http://www.worldwidetelescope.org/webclient/clientbin/WWTSL.xap"/>
+        <param name="background" value="black" /> 
+        <param name="minRuntimeVersion" value="3.0.40624.0" /> 
+        <param name="autoUpgrade" value="true" /> 
+        <param name="initParams"  value="wtml=,webkey=AX2011Gqqu" /> 
+        <param name="enableHtmlAccess" value="true" /> 
+        
+        <a href="http://go.microsoft.com/fwlink/?LinkID=149156&v=3.0.40624.0"> 
+        <img src="http://go.microsoft.com/fwlink/?LinkId=108181" alt="Install Microsoft Silverlight" /></a> 
+    </object> 
+    </div> 
+</div>
+
+
+
+<script language="javascript">
+
+// Create the WorldWide telescope object
+    var wwt;
+
+// Create variables to hold the changeable settings
+
+    var bShowCrosshairs = true;
+    var bShowUI = false;
+    var bShowFigures = false;
+
+// The wwtReady function is called by the WWT Web Control software
+// This function sets up the wwt object, and the initial defaults
+
+    function wwtReady() {
+        wwt = document.getElementById("WWTView").content.WWT;
+
+        wwt.Settings.ShowCrosshairs = bShowCrosshairs;
+        wwt.Settings.ShowConstellationFigures = bShowFigures;
+        wwt.HideUI(!bShowUI);
+
+        wwt.Settings.ShowConstellationBoundries = false;
+        wwt.Settings.ShowCrosshairs = false;
+    }
+</script>
+
+
+
+<!-- Used to register with the Data Gadget -->
+<script src="js/DataInterface.js" type="text/javascript"></script>
+
+<!-- Contains UW.astro objects -->
+<script src="js/astroObjectLib.js" type="text/javascript"></script>
+
+
+
+<script type="text/javascript">
+
+var myGadget = null,
+    DEBUG = false;
+
+    
+function debugLog(msg){ if(DEBUG){UW.astro.debugLog(GADGET_NAME + ": " + msg);}}
+
+// ** Replace with your gadget's name
+var GADGET_NAME = "WWT Viewport" + "_" + Math.floor(Math.random()*100000).toString();
+
+// Creates gadget object
+function init(){
+    myGadget = new GadgetTemplate();
+    gadgets.window.adjustHeight();
+}
+
+
+
+function GadgetTemplate(){
+    var my = new Object();
+
+    // CONSTANTS
+    
+
+    // PRIVATE
+    var _namespaceList = [ UW.astro.DEFAULT_NAMESPACE ];      // list of our current Namespaces. Just init with the default
+    
+    // Private Helper Variables
+    var di = new UW.astro.DataInterface(GADGET_NAME); // make dataInterface object, init with default
+
+    // INIT
+    
+    // ** Variables to register go in this array. 
+    // ex: ["Viewport_Center_Coordinate", "Viewport_Point_List"]
+    var variableArray = ["Viewport_Center_Coordinate" , "Dataset_List"]; 
+                            
+    // ** Triggers to register go in this array
+    // Each trigger is a 2-element array as follows:
+    // [ "VariableName", triggerFunction ]
+    // example with one trigger: (notice the array inside the array)
+    //      var triggerArray = [ ["Viewport_Center_Coordinate", function(){ zoomMe() }] ]
+    // it is recommended to define functions outside the array for more readable code
+    var triggerArray = [ ["Viewport_Center_Coordinate", moveMap], ["Dataset_List", updateDataset_List] ];
+                           
+
+    di.registerMe( { namespaceList : _namespaceList,
+                    variableList : variableArray,  
+                    triggerList : triggerArray,   
+                } );
+    
+    // PRIVATE VARS
+    var _registeredDatasets = [];
+    
+    // METHODS
+    // ** Add public methods (that will be called from outside the object by a button or something) 
+    function updateDataset_List(){
+        var list = di.readVariable(UW.astro.DEFAULT_NAMESPACE, "Dataset_List").slice(0);  // copy array
+        // register trigger to this dataset variable so updates happen when it changes
+        for (var i=0, len=list.length; i<len; i++) {
+            var datasetName = list[i];
+            if (!arrayContains(_registeredDatasets, datasetName)) {
+                _registeredDatasets.push(datasetName);
+                di.registerVariable(datasetName, null);
+                di.registerTrigger(UW.astro.DEFAULT_NAMESPACE, datasetName, function(){redrawAllDatasets(di.readVariable(UW.astro.DEFAULT_NAMESPACE, "Dataset_List"));});
+            }
+        }
+        redrawAllDatasets(list);
+        // TODO: need to unregister the previous dataset!
+    }
+
+    function moveMap() {
+        var coord = di.readVariable(UW.astro.DEFAULT_NAMESPACE, "Viewport_Center_Coordinate");
+        wwt.Goto(coord.getRa(), coord.getDec(), 0.1, false);
+    }
+
+    // accepts a list of dataset names and replots all points from the datasets
+    function redrawAllDatasets(dsList) {
+        // clear all annotations
+        wwt.ClearAnnotations();
+        for (var i=0, len=dsList.length; i<len; i++) {
+            plotDataset(dsList[i]);
+        }
+    }
+    
+    function plotDataset(dsName) {
+        var ds = di.readVariable(UW.astro.DEFAULT_NAMESPACE, dsName);
+        if (!ds.isVisible()) {
+            return;
+        }
+        var pubDataset = ds.toJSON();
+        // list of celestial coords to plot
+        var ccsToPlot = [];
+
+        for (var i=0, len=pubDataset.length; i<len; i++) {
+            if (pubDataset[i].hasOwnProperty("db_CelestialCoord") && pubDataset[i].db_visible) { // check the visible property of the record
+                var cc = pubDataset[i].db_CelestialCoord;
+                ccsToPlot.push(cc);
+            }
+        }
+        plotCelestialCoords(ccsToPlot);
+    }
+
+    function plotCelestialCoords(ccList) {
+        // PLOT each celestialCoord as an circle object
+        for (var i=0,len=ccList.length; i<len; i++){
+            var cc = ccList[i];
+                createPlacemark(cc.getColor(), cc.getRa(), cc.getDec(), cc.getDescription());
+        }
+
+    }
+
+
+    function createCircle(fill, lineColor, fillColor, lineWidth, opacity, radius, skyRelative, ra, dec)
+    {
+        var circle = wwt.CreateCircle(fill);
+        circle.LineColor = lineColor;
+        circle.FillColor = fillColor;
+        circle.LineWidth = lineWidth;
+        circle.Opacity = opacity;
+        circle.Radius = radius;
+        circle.SkyRelative = skyRelative;
+        circle.SetCenter(ra, dec);
+        return circle;
+    }
+
+    function createPlacemark(color, ra, dec, note) {
+        var hexColor = convertColorToHex(color);
+        var pm = createCircle(false, hexColor, 0, 2, 1.0, 12, false, ra, dec);
+        pm.Label = note;
+        pm.ShowHoverLabel = true;
+
+        wwt.AddAnnotation(pm);
+
+    }
+    
+    function convertColorToHex(color) {
+        var hexColor = 0x0;
+        switch (color) {
+            case 'red':
+                hexColor = 0x88FF0000;
+                break;
+            case 'blue':
+                hexColor = 0x880000FF;
+                break;
+            case 'green':
+                hexColor = 0x8800FF00;
+                break;
+            case 'yellow':
+                hexColor = 0x88FFFF00;
+                break;
+            case 'default', 'grey':
+                hexColor = 0x88CCCCCC;
+                break;
+            default: 
+                hexColor = 0x88CCCCCC;
+                break;
+        }
+        return hexColor;
+    }
+    function arrayContains(arr, el) {
+        for (var i=0, len=arr.length; i<len; i++) {
+            if (arr[i] === el) {
+                return true;
+            }
+        }
+        return false;
+    }
+    return my;
+}
+
+gadgets.util.registerOnLoadHandler(init); 
+
+</script>
+
+]]></Content>
+</Module>
+
+

@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- data_table.xml -->
+<!-- Author: Ian Smith (imsmith@uw.edu) -->
+<html lang="en">
+<meta http-equiv="Pragma" content="no-cache">
+
+<head>
+<title>Table View</title>
+
+<!-- ASCOT Basic Style Sheets -->
+<link href="/css/960/reset.css" rel="stylesheet" type="text/css">
+<link href="/css/960/text.css" rel="stylesheet" type="text/css"> 
+<script src="/js/astroObjectLib.js" type="text/javascript"></script>
+
+
+<!-- Combo-handled YUI CSS files: -->
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/combo?2.8.1/build/fonts/fonts-min.css&2.8.1/build/grids/grids-min.css&2.8.1/build/base/base-min.css&2.8.1/build/paginator/assets/skins/sam/paginator.css&2.8.1/build/datatable/assets/skins/sam/datatable.css">
+<!-- Combo-handled YUI JS files: -->
+<script type="text/javascript" src="http://yui.yahooapis.com/combo?2.8.1/build/yahoo/yahoo.js&2.8.1/build/dom/dom.js&2.8.1/build/event/event.js&2.8.1/build/dragdrop/dragdrop.js&2.8.1/build/element/element.js&2.8.1/build/paginator/paginator.js&2.8.1/build/datasource/datasource.js&2.8.1/build/datatable/datatable.js&2.8.1/build/selector/selector.js"></script>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js" type="text/javascript"></script>
+
+<style type="text/css">
+#divTable { 
+        text-align: center; 
+} 
+#divTable table { 
+        margin-left:auto; margin-right:auto; 
+} 
+#divTable, ##divTable .yui-dt-loading { 
+        text-align: center; background-color: transparent; 
+
+#divSelectDataset { 
+        text-align: left
+}
+.yui-skin-sam .yui-dt-liner { white-space:nowrap; } 
+</style>
+
+
+<script type="text/javascript">
+
+var myGadget = null;
+
+var dataSetList;
+
+// Creates gadget object
+function init(){
+    myGadget = new dataTable();  
+    gadget.resize();
+}
+
+
+function dataTable(){
+    var my = new Object();
+        
+    // INIT
+    gadget.dashboard.bind('dataSetListChanged', updateDataSetList); 
+    
+    // ** Variables to register go in this array.                             
+      
+    // METHODS
+    // ** Add public methods (that will be called from outside the object by a button or something) 
+    my.chooseDataset = function(datasetName) {
+        updateTable();
+    }
+            
+    function updateTable() {
+        var datasetName = getSelectedDataset();     
+        var tableDiv = "divTable";
+        var ds = gadget.dashboard.getDataSet(datasetName);
+        if (ds === undefined || ds === null) {
+            return;
+        }
+        var columnNames = sortColumns(ds.getColumns());     // custom column order for this table
+        var myDataSource = new YAHOO.util.DataSource(ds.toJSON());
+        var myColumnDefs = [];
+        for (var i=0, len=columnNames.length; i<len; i++) {
+            var obj = {};
+            obj.key = columnNames[i];
+            obj.label = columnNames[i];
+            obj.sortable = true;
+            myColumnDefs.push(obj);
+        }
+
+        var width = document.getElementById(tableDiv).offsetWidth;
+        myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
+        var oConfigs = {
+                paginator: new YAHOO.widget.Paginator({
+                        rowsPerPage: 12
+                }),
+                width: width+"px",
+                height: "400px",
+                draggableColumns: true
+        };
+                        
+                        
+        var myDataTable = new YAHOO.widget.DataTable(tableDiv, myColumnDefs, myDataSource, oConfigs);
+        $("#content").get(0).style.height = document.getElementById('divTable').offsetHeight + 100;
+        gadget.resize();
+
+    }
+
+    function sortColumns(cols) {
+        moveStringToStart(cols, "db_id");
+        moveStringToStart(cols, "db_color");
+        moveStringToStart(cols, "dec");
+        moveStringToStart(cols, "ra");
+        return cols;
+    }
+
+    // finds the first element=elem and moves it to the start of the array
+    function moveStringToStart(arr, elem) {
+        for (var i=0, len=arr.length; i<len; i++) {
+            if (typeof arr[i] === 'string' && arr[i].toLowerCase() === elem.toLowerCase()) {
+                moveIndexToStart(arr, i);
+                break;
+            }
+        }
+        return arr;
+    }
+    
+    // moves element at index of arr to the beginning of the array
+    function moveIndexToStart(arr, index) { 
+        var elem = arr[index];
+        arr.splice(index, 1);
+        arr.unshift(elem);
+        return arr;
+    }
+    
+    function updateDataSetList(){
+        var list = gadget.dashboard.getDataSetList();
+        var select = document.getElementById("selDatasetName");
+        // save old selected option so maybe it can be reselected
+        var oldOpt = getSelectedOption("selDatasetName");
+        // clear options
+        for (var i=select.length-1; i>=0; i--) {
+            select.remove(i);
+        }
+         for (var i = 0; i < list.length; ++i){
+            select.add(new Option(list[i], list[i], false, (oldOpt === list[i])), null);
+        }
+         if(select.onchange)
+        	select.onchange();
+        document.getElementById("divSelectDataset").style.display = 'block';
+    }
+
+    function getSelectedOption(select) {
+        var selName = document.getElementById(select);
+        if (selName.length > 0){
+            return selName.options[selName.selectedIndex].value;
+        } else {
+            return "";
+        }
+    }
+        
+    function getSelectedDataset() {
+        return getSelectedOption("selDatasetName");
+    }
+   
+    return my;
+}
+</script>
+</head>
+<body onLoad="init();">
+<div id="content" class="yui-skin-sam" style="height: 0px">
+	<div id="divSelectDataset" style="display: none">
+  	Dataset: <select id="selDatasetName" onchange="myGadget.chooseDataset(this.options[this.selectedIndex].value);"></select>
+  </div>
+  <div id="divTable" style="width:100%; overflow:auto;"></div>
+</div>
+</body>
+</html>

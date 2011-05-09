@@ -1,0 +1,499 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+<ModulePrefs title="Sky Viewport" 
+	height="400" scrolling="true">
+	<Require feature="dynamic-height"/>
+	<Require feature="opensocial-0.8"/>
+    <Require feature="minimessage"/>
+
+</ModulePrefs>
+
+
+<Content type="html"><![CDATA[
+
+<script src="http://maps.google.com/jsapi?key=ABQIAAAAKYHb1B3NpT-mpL4s83EIgRSop_PCxtS7_vOEwBFafrYxod0JxBQK6BarsnpmKY7-BFhZ1QAd3zSaLg"
+	type="text/javascript"></script>
+<script src="http://sky.astro.washington.edu/gadgets/js/gDataInterface.js" type="text/javascript"></script>
+<script src="http://students.washington.edu/csayres/widgetlib1.js" type="text/javascript"></script>
+<script src="http://sky.astro.washington.edu/gadgets/js/astroObjectLib.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+
+    // run some triggers just in case it took us a while to start up and there are already some public vars we need to react to
+//    refreshKMLFromList("VP_Point_List", _KMLPointList);
+
+// Writes to the console if debug (global) is true  
+function debugLog(msg){
+    if ((debug === true) && (window.console && console.log)) { 
+         console.log(GADGET_NAME + ": " + msg);
+    }
+    return;
+}
+
+
+var vpe = null;
+
+// CONSTANTS
+var GADGET_NAME = "ViewportSky" + "_" + Math.floor(Math.random()*100000+1).toString()
+    debug = true;
+
+function init(){
+//debugger;
+    vpe = new ViewportEarth();
+	gadgets.window.adjustHeight();
+}
+
+function ViewportEarth() {
+    var my = new Object();
+
+
+    // CONSTANTS
+    var DEFAULT_NAMESPACE = "NS1",
+        MM_TIMER_DURATION = 4,
+        TIMER_VIEWCHANGEEND = 200;  // ms to wait to trigger the ge viewchangeend event
+
+		
+	    // PRIVATE
+    var _namespaceList = [ DEFAULT_NAMESPACE ];      // list of our current Namespaces. Just init with the default
+    var di = new gDataInterface(GADGET_NAME, DEFAULT_NAMESPACE); // make dataInterface object, init with default
+    var miniMsg = new gadgets.MiniMessage();// make MiniMessage object
+    var msg = miniMsg.createStaticMessage("Attempting to register gadget...");
+	
+	var triggerArray = [ ["KML_List", showKML], 
+//						 ["Dataset_1", updateSelectedPoints],
+//						 ["DatasetList", updateDatasetList] ];
+						 ["VP_Point_List", function(){refreshKMLFromList("VP_Point_List", _KMLPointList);} ],
+						 ["VP_Speed", setFlyToSpeed],
+						 ["VP_Coord", moveMap],
+						 ["VP_Coord_Center", moveMapCenter],
+						 ["DatasetList", updateDatasetList] ];
+
+	di.registerMe( { gadgetName : GADGET_NAME,
+			namespaceList : _namespaceList,
+			variableList : [ "VP_Coord_Center", "VP_Coord", "KML_List", "VP_Point_List", "VP_Current_Bounds", "VP_Speed", "DatasetList" ],
+			triggerList : triggerArray,
+			successCallback : registrationSuccess,
+			failureCallback : registrationFailure
+			} );
+
+	// Callback after successful registration
+	function registrationSuccess(){
+		debugLog('Registration successful');
+		if (msg) {
+			miniMsg.dismissMessage(msg);
+			// free up msg
+			msg = null;
+			miniMsg.createTimerMessage("Registration Succesful.", MM_TIMER_DURATION);
+		}
+	}
+	// Callback after a failure of registration
+	// displays message showing failure
+	function registrationFailure(){
+		debugLog('Registration FAILED!');
+		miniMsg.dismissMessage(msg);
+		miniMsg.createDismissibleMessage("Unable to register gadget.\nWe cannot communicate with other gadgets.");
+	}
+
+
+	// private Point List
+	// first make the list item constructor
+	function KMLListItem(){}
+	KMLListItem.prototype = {
+		 KMLObj : null,
+		 listItemId : -1,
+		 isPlotted : false,
+		 id : null,
+	};
+
+	var _KMLPointList = [];
+
+	var tidsViewchangeend = [];   // array of timer IDs for ge viewchangeend event
+
+	var iconUrlStyles = {  grey: { url: "http://sky.astro.washington.edu/gadgets/images/target_grey.png", kmlStyle: null },
+		red: { url: "http://sky.astro.washington.edu/gadgets/images/target_red.gif", kmlStyle: null },
+		green: { url: "http://sky.astro.washington.edu/gadgets/images/target_green.gif", kmlStyle: null },
+		yellow: { url: "http://sky.astro.washington.edu/gadgets/images/target_yellow.gif", kmlStyle: null },
+		blue: { url:  "http://sky.astro.washington.edu/gadgets/images/target_blue.png", kmlStyle: null }
+	};
+
+
+	// INIT Functions
+
+	// init google earth (ge)
+	var ge = null;     // the google earth object is within the viewport scope
+	google.load("earth", "1");
+	google.setOnLoadCallback(initGE);
+
+
+
+	function updateDatasetList(){
+		var list = di.readVariable(DEFAULT_NAMESPACE, "DatasetList").slice(0);  // copy array
+		// register trigger to this dataset variable so updates happen when it changes
+		var datasetName = list[0];
+		di.registerVariable(DEFAULT_NAMESPACE, datasetName, null);
+		//di.registerTrigger(DEFAULT_NAMESPACE, datasetName, function(){plotAllFromDataset(datasetName);});
+		di.registerTrigger(DEFAULT_NAMESPACE, datasetName, function(){updatePlacemarkStyles(datasetName);});
+		// TODO: need to unregister the previous dataset!
+	}
+
+	function initGE() {
+		google.earth.createInstance('sky_map', initCB, failureCB);
+	}
+
+	// callback on successful creation of ge plugin instance
+	function initCB(instance) {
+		ge = instance;
+		ge.getWindow().setVisibility(true);
+		ge.getOptions().setMapType(ge.MAP_TYPE_SKY);
+		ge.getNavigationControl().setVisibility(ge.VISIBILITY_AUTO);
+		ge.getOptions().setStatusBarVisibility(true);
+
+		// Add event listeners
+		google.earth.addEventListener(ge.getView(), "viewchangeend", function(){
+				// write the new VP bounds to the public variable
+				// TODO: This will need a timer, because the viewchangeend event fires so often when dragging slowly.
+				// We need to make sure that we arent writing the current bounds more often than once every 250ms or so
+				writeCurrentBounds();
+				});
+	
+		// fill the iconUrlStyles variable with actual KML styles
+		createIconStyles(iconUrlStyles);
+
+		// we can implement this stuff later if we want...
+		//Initialize map to Sombrero Galaxy  
+		//   setTimeout(function() {
+		//     var oldFlyToSpeed = ge.getOptions().getFlyToSpeed();
+		//     ge.getOptions().setFlyToSpeed(.2);  // Slow down the camera flyTo speed.
+		//     var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+		//     lookAt.set(-11.623055555555556, 9.997500000000002, 0,ge.ALTITUDE_RELATIVE_TO_GROUND, 262.87, 0, 6039.328125684229);
+		//     ge.getView().setAbstractView(lookAt);
+		//     ge.getOptions().setFlyToSpeed(oldFlyToSpeed);
+
+
+		//    }, 1000);  // Start the zoom-in after one second.
+	}  
+
+	function failureCB(errorCode) {
+		alert("*** Error initializing google earth plugin ***");
+	}
+
+
+
+
+	// METHODS
+	// Sets the flytospeed between 0 and 5
+	function setFlyToSpeed() {
+		var speed = parseFloat(di.readVariable(DEFAULT_NAMESPACE, "VP_Speed"));
+		if (!isNaN(speed)) {
+			if ((speed >= 0) && (speed <= 5)) {
+				ge.getOptions().setFlyToSpeed(speed);	// fastest speed before ge.SPEED_TELEPORT
+			}
+		}
+	}
+
+	// Slews map to point (center) at new coordinate
+	// TODO: with range? or bounding box?
+	function moveMap (){
+		var coord = di.readVariable(DEFAULT_NAMESPACE, "VP_Coord");
+		var lon = coord.getLongitude();
+		var lat = coord.getLatitude();
+		//alert("RA: " + ra + "\nDEC: " + dec);
+		// check that ra and dec are numbers
+		if (!isNaN(lon) && !isNaN(lat)){
+			var lookAt = ge.createLookAt('');
+			lookAt.setLatitude(lat);
+			lookAt.setLongitude(lon);
+			lookAt.setAltitude(0);
+			lookAt.setHeading(0);
+			lookAt.setRange(7000.0);
+
+			ge.getView().setAbstractView(lookAt);
+		}   
+	} 
+
+	// Slews map to point (center) at new coordinate
+	// TODO: with range? or bounding box?
+	function moveMapCenter (){
+		var coord = di.readVariable(DEFAULT_NAMESPACE, "VP_Coord_Center");
+		var lon = coord.getLongitude();
+		var lat = coord.getLatitude();
+		//alert("RA: " + ra + "\nDEC: " + dec);
+		// check that ra and dec are numbers
+		if (!isNaN(lon) && !isNaN(lat)){
+			var lookAt = ge.createLookAt('');
+			lookAt.setLatitude(lat);
+			lookAt.setLongitude(lon);
+			lookAt.setAltitude(0);
+			lookAt.setHeading(0);
+			lookAt.setRange(ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND).getRange());
+
+			ge.getView().setAbstractView(lookAt);
+		}   
+	} 
+
+
+	writeCurrentBounds = function(){
+		// we need to wait a few ms so we don't trigger this event too often
+		if (tidsViewchangeend.length !== 0){
+			// if the timer was already set, then clear them to reset them.
+			clearTimerArray(tidsViewchangeend);    
+		}
+		// now there is no timer set
+		// so make one
+		var tid = setTimeout(function(){
+				boxBounds = ge.getView().getViewportGlobeBounds();
+
+				topLeft = new UW.astro.CelestialCoordinate(0,0);
+				topLeft.setLongitude(boxBounds.getWest());
+				topLeft.setLatitude(boxBounds.getNorth());
+
+				bottomRight = new UW.astro.CelestialCoordinate(0,0);
+				bottomRight.setLongitude(boxBounds.getEast());
+				bottomRight.setLatitude(boxBounds.getSouth());
+
+				curBounds = [topLeft, bottomRight];     // 2-element array of CelestialCoordinates. [topLeft, bottomRight]
+
+				di.writeVariable(DEFAULT_NAMESPACE, "VP_Current_Bounds", curBounds);
+				}, TIMER_VIEWCHANGEEND);
+		// add the new timer id to the array
+		tidsViewchangeend.push(tid);
+	}
+
+	// KML
+	function clearKML() {
+		if (ge !== null){
+			var features = ge.getFeatures();
+			while (features.getFirstChild()) {
+				features.removeChild(features.getFirstChild());
+			}
+		}
+	}
+	function showKML() {
+		var kmlList = di.readVariable(DEFAULT_NAMESPACE, "KML_List");
+		if (kmlList !== null) {
+			if (kmlList.length === 0){
+				//clearKML();
+			}
+			for (var i=0, len=kmlList.length; i<len; i++) {
+				parsed = ge.parseKml(kmlList[i]);
+				if (parsed !== null){
+					// TODO: better test for ge
+					if (ge !== null){
+						ge.getFeatures().appendChild(parsed);
+					}
+				}
+				else{
+					debugLog('Problem parsing element ' + i + ' in KML_List');
+				}
+			}
+		}
+	}
+
+	function updatePlacemarkStyles(dsName) {
+		var pubDataset = di.readVariable(DEFAULT_NAMESPACE, dsName).toJSON();
+		placemarks = _KMLPointList;
+	debugger;
+		for (var i=0, len=pubDataset.length; i<len; i++) {
+			var rec = pubDataset[i];
+			if (rec.hasOwnProperty("db_CelestialCoord") && rec.hasOwnProperty("db_color")) {
+				var cc = rec["db_CelestialCoord"];
+				var color = rec["db_color"];
+				var kmlItem = getKmlItemById(placemarks, cc.getId());
+				if (kmlItem === null) {
+					// create the kml and append it
+					createPlacemarkFromCC(cc);
+
+// TODO: make this cleaner
+		// sets the cc id as the kmlid
+		debugger;
+		cc.setId(parsed.getId());
+
+				} else {
+					// look up the (possibly new) color and set the style based on it
+					if (iconUrlStyles.hasOwnProperty(color)) {
+						kmlItem.setStyleSelector(iconUrlStyles[color].style);
+					} else if (color === "" || color === "default") {
+						kmlItem.setStyleSelector(iconUrlStyles["grey"].style);
+					}
+				}
+			}
+		}		
+	}
+	
+	function createPlacemarkFromCC(cc) {
+		var geFeatures = ge.getFeatures();
+		parsed = ge.parseKml(cc.getKML());
+		geFeatures.appendChild(parsed);
+		var kmlItem = new KMLListItem();
+		kmlItem.KMLObj = parsed;
+		_KMLPointList.push(kmlItem);
+	}
+
+	function getKmlItemById(items, id) {
+		for (var i=0, len=items.length; i<len; i++) {;
+		// TODO: check ids for duplicates including "" !	
+			var id = items[i].KMLObj.getId();
+			if (id !== "" && items[i].KMLObj.getId() === id) {
+				return items[i].KMLObj;
+			}
+		}
+		return null;
+	}
+
+
+
+	function plotAllFromDataset(dsName) {
+		var pubDataset = di.readVariable(DEFAULT_NAMESPACE, dsName).toJSON();
+		var toPlotStrings = [];
+
+		//clearKML();
+
+		for (var i=0, len=pubDataset.length; i<len; i++) {
+			if (pubDataset[i].hasOwnProperty("db_CelestialCoord")) {
+				toPlotStrings.push(pubDataset[i].db_CelestialCoord.getKML());
+			}
+		}
+
+		// PLOT the kml objects in toPlot
+		if (ge !== null){ 
+			var geFeatures = ge.getFeatures();  // speed up the getFeatures methods
+
+			for (var i=0,len=toPlotStrings.length; i<len; i++){
+				parsed = ge.parseKml(toPlotStrings[i]);
+				geFeatures.appendChild(parsed);
+				var kmlItem = new KMLListItem();
+				kmlItem.KMLObj = parsed;
+				_KMLPointList.push(kmlItem);
+				// THIS WORKS - It's possible to modify a KML object after it's been appended
+				//parsed.setDescription("MODIFIED");
+			}
+		}
+
+	}
+
+
+	function refreshKMLFromDataset(dsName, privList) {
+		var pubDataset = di.readVariable(DEFAULT_NAMESPACE, dsName);
+		var toPlot = [];
+		var toRemove = [];
+
+	} // END refreshKMLFromDataset
+
+
+	function refreshKMLFromList(pubListName, privList) {
+
+		// Sync the pub and priv lists
+
+		var pubList = di.readVariable(DEFAULT_NAMESPACE, pubListName);
+		var toPlot = [];    // array of ids to plot
+		var toRemove = [];  // array of ids to remove
+		// compare the ids from pubList to the ids in the privList
+		// first find points to remove
+		// TODO: Is there a faster way to search these arrays?
+		// loop thru privList looking for points NOT in pubList
+		// loop backwards so we can splice array in loop
+		for (var i=privList.length-1; i>=0; i--) { 
+			if ((pubList.getItemById(privList[i].listItemId) === null) || (pubList.isIdModified(privList[i].listItemId))) {
+				// has been removed from the pubList, so add it to the toRemove list
+				// and remove it from the privList
+				toRemove.push(privList[i].KMLobj);  // add the KMLobj to the remove list
+				privList.splice(i,1); // remove it from privList
+			}
+		}
+		// TODO: check isPlotted!
+		// next find the new points to plot
+		// loop thru pub list looking for points NOT in priv list (they are new points)
+		for (var i=0, len=pubList.getLength(); i<len; i++){
+			var pubItemId = pubList.getIdByIndex(i);
+			var found = false;
+			// check for this id in the priv list
+			for (var i2=0, len2=privList.length; i2<len2; i2++){
+				if (privList[i2].listItemId === pubItemId) {
+					found = true;
+					//break;
+					// break actually breaks out of both for's, so lets just reset i=len
+					// TODO: CHANGE THIS BAD FORM
+					i2 = len;
+				}
+			}
+			if (!found){
+				// we found a NEW point in the pubList (not in privList)
+				// add it to the toPlot array
+				toPlot.push(pubItemId)
+			}
+		}
+
+		// Find indexes of modified points
+		var modifiedIdsList = pubList.getModifiedIds();
+		for (var i=0, len=modifiedIdsList.length; i<len; i++){
+			//	toPlot.push(modifiedIdsList[i]);
+			pubList.setModifiedById(modifiedIdsList[i]);
+		}
+
+
+		//		alert('Modified IDs: ' + modifiedIdsList);
+
+		// sync the GE to the priv list
+		// TODO: better test for GE
+		if (ge !== null){ 
+			var geFeatures = ge.getFeatures();  // speed up the getFeatures methods
+			// REMOVE the kmlobjects in toRemove
+			for (var i=0,len=toRemove.length; i<len; i++){
+				geFeatures.removeChild(toRemove[i]);
+			}
+
+
+			// PLOT the kml objects in toPlot
+			for (var i=0,len=toPlot.length; i<len; i++){
+				// first we plot it
+				var kmlText = pubList.getItemByIndex(toPlot[i]).getKML();
+				parsed = ge.parseKml(kmlText);
+				geFeatures.appendChild(parsed);
+
+				// then add it to the privList
+				var privItem = new KMLListItem();
+				privItem.KMLobj = parsed;
+				privItem.listItemId = toPlot[i];
+				privItem.isPlotted = true;
+				privList.push(privItem);
+			} 
+		}
+
+	}
+
+	// HELPER
+	function clearTimerArray(timers){
+		if (timers instanceof Array){
+			for (var i=0, len=timers.length; i<len; i++){
+				clearTimeout(timers.splice(i,1));    // splice returns the removed element
+			}
+		}
+	}
+
+	function createIconStyles(styles) {
+		for (var color in styles) {
+			if (styles.hasOwnProperty(color)) {
+				var icon = ge.createIcon('');
+				icon.setHref(styles[color].url);
+				var style = ge.createStyle('');
+				style.getIconStyle().setIcon(icon);
+				styles[color].kmlStyle = style;
+			}
+		}
+	}
+	
+	return my;
+}
+
+
+gadgets.util.registerOnLoadHandler(init);
+
+</script>
+<div id="sky_map" style="height:500px; width:100%;">
+<!-- <input type="button" value="clear KML" onclick="ks.clearKML()"> -->
+</div>
+
+
+
+]]></Content>
+</Module>

@@ -1,0 +1,70 @@
+html {
+  font-family: sans-serif;
+  font-size: 14px/1.4;
+}
+
+body {
+    min-width: 960px;
+    background-color: #A29AC4;
+    margin: 0;
+		padding: 0;
+/*
+background-image: url("./images/backgroundSmall.png");
+background-position: 0 0;
+background-repeat: repeat;
+*/
+}
+
+ul {
+  list-style: none;
+}
+
+header {
+  background: #b3adc6;
+  padding: 10px 10px;
+  box-shadow: 1px 1px 2px #5f5f5f;
+}
+
+.dashboard{
+	margin: 15px;
+}
+
+header h1 {
+ float: left;
+ margin: 0;
+}
+
+header h1 a {
+background: url("/dashboards/images/ascotLogo.png");
+float: left;
+height: 35px;
+overflow: hidden;
+text-indent: -900px;
+width: 143px;
+}
+
+a:link {text-decoration: none}
+a:visited {text-decoration: none}
+a:active {text-decoration: none}
+a:hover {text-decoration: underline; color: white;}
+
+header nav {
+float: right;
+margin: 5px 0 0;
+}
+
+header li {
+float: left;
+}
+
+header nav a {
+font-size: 16px;
+padding: 4px 10px;
+margin: 0 0 0 5px;
+color: #764293;
+float: left;
+overflow: visible;
+-moz-border-radius: 25px;
+-webkit-border-radius: 25px;
+border-radius: 25px;
+}
