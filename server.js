@@ -69,8 +69,6 @@ app.get('/dashboards/state/:id', function(req, res){
 
 app.put('/saveDashboard/:id', function(req, res){
   dashboards.set(req.params.id, req.body);
-    console.log(JSON.stringify(dashboards.find(req.params.id)));
-
 });
 
 app.post('/newDashboard/', function(req, res){
