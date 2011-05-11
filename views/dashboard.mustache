@@ -39,18 +39,8 @@ function loadState(state) {
   
 };
 
-function saveStateRequest() {
-
-  $.ajax({
-    url: '/saveStateRequest/',
-    type: 'GET',
-    success: saveState
-  });
-
-}
-
-function saveState(dashboardId){
-  ASCOT.dashboard.saveState(remoteService + dashboardId);
+function saveDashboard() {
+  ASCOT.dashboard.saveState('/saveDashboard/' + dashboardId);
 }
 
 </script>
@@ -65,7 +55,7 @@ function saveState(dashboardId){
       <nav>
         <ul>
           <li>
-            <a href="#" title="shareDashboard" onClick="saveStateRequest()">Share</a>
+            <a href="#" title="shareDashboard" onClick="saveDashboard()">Save</a>
           </li>
         </ul>
       </nav>

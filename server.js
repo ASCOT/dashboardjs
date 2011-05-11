@@ -3,7 +3,6 @@ var http = require('http');
 var url = require('url');
 var util = require('util');
 
-
 var express = require('express');
 var dashboards = require('./dashboards');
 var XMLHttpRequest = require("./XMLHttpRequest").XMLHttpRequest;
@@ -13,6 +12,7 @@ var app = express.createServer();
 // Configuration
 app.configure(function(){
   app.set('views', __dirname + '/views');
+  app.use(express.bodyParser());
   app.set('view engine', 'mustache');
   app.register(".mustache", require('stache'));
   app.set('view options', {layout: false });
@@ -63,23 +63,21 @@ app.get('/dashboards/:id', function(req, res){
   });
 });
 
-app.get('/saveStateRequest/', function(req, res){
-  res.send(dashboards.length().toString());
-});
-
-app.put('/dashboards/state/:id:state', function(req, res){
-  console.log("PUT");
-  console.log(JSON.stringify(req.params.state));
-});
-
-app.post('/dashboards/state/:id', function(req, res){
-  console.log("POST");
-  console.log(JSON.stringify(req.params.id));
-});
-
 app.get('/dashboards/state/:id', function(req, res){
   res.send(JSON.stringify(dashboards.find(req.params.id)));
 });
+
+app.put('/saveDashboard/:id', function(req, res){
+  dashboards.set(req.params.id, req.body);
+    console.log(JSON.stringify(dashboards.find(req.params.id)));
+
+});
+
+app.post('/newDashboard/', function(req, res){
+  var newDashboardId = dashboards.new();
+  res.send(newDashboardId.toString());
+});
+
 
 if (!module.parent) {
   app.listen(80);
