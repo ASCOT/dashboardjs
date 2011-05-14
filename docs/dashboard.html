@@ -1,0 +1,152 @@
+<!DOCTYPE html>  <html> <head>   <title>dashboard.js</title>   <meta http-equiv="content-type" content="text/html; charset=UTF-8">   <link rel="stylesheet" media="all" href="docco.css" /> </head> <body>   <div id="container">     <div id="background"></div>          <table cellpadding="0" cellspacing="0">       <thead>         <tr>           <th class="docs">             <h1>               dashboard.js             </h1>           </th>           <th class="code">           </th>         </tr>       </thead>       <tbody>                               <tr id="section-1">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-1">&#182;</a>               </div>               <pre><code>Date: 4/11
+Author: Diego Marcos (diego.marcos@gmail.com)
+</code></pre>
+
+<h2>    Dashboard</h2>
+
+<p>Defines the controller mediating in <code>gadget to gadget</code> 
+    and <code>gadget to data set</code> communication </p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-2">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-2">&#182;</a>               </div>               <p>Framework global variable</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="kd">var</span> <span class="nx">UW</span> <span class="o">=</span> <span class="nx">UW</span> <span class="o">||</span> <span class="p">{};</span></pre></div>             </td>           </tr>                               <tr id="section-3">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-3">&#182;</a>               </div>               <p>Represents the gadget state</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="nx">UW</span><span class="p">.</span><span class="nx">GadgetState</span> <span class="o">=</span> <span class="nx">Backbone</span><span class="p">.</span><span class="nx">Model</span><span class="p">.</span><span class="nx">extend</span><span class="p">({});</span></pre></div>             </td>           </tr>                               <tr id="section-4">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-4">&#182;</a>               </div>               <p>The dashboard contains a collection of gadgets</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="nx">UW</span><span class="p">.</span><span class="nx">GadgetsCollection</span> <span class="o">=</span>  <span class="nx">Backbone</span><span class="p">.</span><span class="nx">Collection</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+  <span class="nx">model</span><span class="o">:</span> <span class="nx">UW</span><span class="p">.</span><span class="nx">GadgetState</span>
+<span class="p">});</span></pre></div>             </td>           </tr>                               <tr id="section-5">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-5">&#182;</a>               </div>               <p>Represents a data set</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="nx">UW</span><span class="p">.</span><span class="nx">DataSetModel</span> <span class="o">=</span> <span class="nx">Backbone</span><span class="p">.</span><span class="nx">Model</span><span class="p">.</span><span class="nx">extend</span><span class="p">({});</span></pre></div>             </td>           </tr>                               <tr id="section-6">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-6">&#182;</a>               </div>               <p>The dashboard contains a collection of data sets</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="nx">UW</span><span class="p">.</span><span class="nx">DataSetsCollection</span> <span class="o">=</span>  <span class="nx">Backbone</span><span class="p">.</span><span class="nx">Collection</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+  <span class="nx">model</span><span class="o">:</span> <span class="nx">UW</span><span class="p">.</span><span class="nx">astro</span><span class="p">.</span><span class="nx">Dataset</span>
+<span class="p">});</span></pre></div>             </td>           </tr>                               <tr id="section-7">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-7">&#182;</a>               </div>               <p>The dashboard state</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="nx">UW</span><span class="p">.</span><span class="nx">DashboardState</span> <span class="o">=</span> <span class="nx">Backbone</span><span class="p">.</span><span class="nx">Model</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+
+  <span class="nx">defaults</span><span class="o">:</span> <span class="p">{</span>
+    <span class="nx">id</span><span class="o">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>	
+    <span class="nx">author</span><span class="o">:</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">,</span>
+    <span class="nx">gadgets</span><span class="o">:</span> <span class="k">new</span> <span class="nx">UW</span><span class="p">.</span><span class="nx">GadgetsCollection</span><span class="p">(),</span>
+    <span class="nx">dataSets</span><span class="o">:</span> <span class="k">new</span> <span class="nx">UW</span><span class="p">.</span><span class="nx">DataSetsCollection</span><span class="p">()</span>
+  <span class="p">},</span>
+  
+  <span class="nx">url</span><span class="o">:</span> <span class="kd">function</span><span class="p">(){</span>
+    <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">modelUrl</span><span class="p">;</span>
+  <span class="p">},</span>
+  
+  <span class="nx">setUrl</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">url</span><span class="p">){</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">modelUrl</span> <span class="o">=</span> <span class="nx">url</span><span class="p">;</span>
+  <span class="p">}</span>
+
+<span class="p">});</span></pre></div>             </td>           </tr>                               <tr id="section-8">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-8">&#182;</a>               </div>               <p>The constructor takes the DOM element where the dashboard will be rendered</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="nx">UW</span><span class="p">.</span><span class="nx">Dashboard</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">container</span><span class="p">){</span></pre></div>             </td>           </tr>                               <tr id="section-9">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-9">&#182;</a>               </div>               <p>Gadges contained in the dashboard</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="kd">var</span> <span class="nx">gadgets</span> <span class="o">=</span> <span class="p">{};</span>
+  </pre></div>             </td>           </tr>                               <tr id="section-10">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-10">&#182;</a>               </div>               <p>Renders the gadgets</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="kd">var</span> <span class="nx">renderer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">UW</span><span class="p">.</span><span class="nx">Renderer</span><span class="p">(</span><span class="nx">container</span><span class="p">);</span>
+  </pre></div>             </td>           </tr>                               <tr id="section-11">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-11">&#182;</a>               </div>               <p>Generates ids</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="kd">var</span> <span class="nx">ids</span> <span class="o">=</span> <span class="p">{};</span></pre></div>             </td>           </tr>                               <tr id="section-12">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-12">&#182;</a>               </div>               <p>Auxiliary Variable for Ids generation</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="kd">var</span> <span class="nx">counter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  
+  <span class="kd">var</span> <span class="nx">dashboardState</span><span class="p">;</span></pre></div>             </td>           </tr>                               <tr id="section-13">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-13">&#182;</a>               </div>               <p>Generates unique ids for gadgets</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="kd">function</span> <span class="nx">generateId</span><span class="p">(</span><span class="nx">gadgetName</span><span class="p">){</span>
+
+    <span class="kd">var</span> <span class="nx">newId</span> <span class="o">=</span> <span class="nx">gadgetName</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">(</span><span class="nx">ids</span><span class="p">[</span><span class="nx">newId</span><span class="p">]</span> <span class="o">!=</span> <span class="kc">undefined</span><span class="p">){</span>
+      <span class="nx">newId</span> <span class="o">=</span> <span class="nx">gadgetName</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nx">counter</span><span class="p">;</span>
+      <span class="nx">counter</span><span class="o">++</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;ID &quot;</span> <span class="o">+</span> <span class="nx">newId</span><span class="p">);</span>
+
+    <span class="nx">ids</span><span class="p">[</span><span class="nx">newId</span><span class="p">]</span> <span class="o">=</span> <span class="nx">newId</span><span class="p">;</span>	
+    <span class="k">return</span> <span class="nx">newId</span><span class="p">;</span>
+
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">debugMessage</span><span class="p">(</span><span class="nx">msg</span><span class="p">){</span>
+    <span class="nx">UW</span><span class="p">.</span><span class="nx">debugMessage</span><span class="p">(</span><span class="s2">&quot;MANAGER: &quot;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">);</span>
+  <span class="p">}</span> 
+
+  <span class="nx">_</span><span class="p">.</span><span class="nx">extend</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">Backbone</span><span class="p">.</span><span class="nx">Events</span><span class="p">);</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">addGadget</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gadgetState</span><span class="p">){</span>
+
+    <span class="kd">var</span> <span class="nx">gadgetUrl</span> <span class="o">=</span> <span class="nx">gadgetState</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;url&#39;</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">gadgetId</span> <span class="o">=</span> <span class="nx">generateId</span><span class="p">(</span><span class="nx">parseURL</span><span class="p">(</span><span class="nx">gadgetUrl</span><span class="p">).</span><span class="nx">fileNoExtension</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">newGadget</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">UW</span><span class="p">.</span><span class="nx">Gadget</span><span class="p">(</span><span class="nx">gadgetState</span><span class="p">);</span>
+    <span class="nx">newGadget</span><span class="p">.</span><span class="nx">dashboard</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+    <span class="nx">gadgets</span><span class="p">[</span><span class="nx">gadgetId</span><span class="p">]</span> <span class="o">=</span> <span class="nx">newGadget</span><span class="p">;</span>
+    
+    <span class="nx">dashboardState</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;gadgets&#39;</span><span class="p">).</span><span class="nx">add</span><span class="p">(</span><span class="nx">gadgetState</span><span class="p">);</span>		  
+    <span class="k">return</span> <span class="nx">newGadget</span><span class="p">;</span>
+
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">renderGadgets</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(){</span>
+    <span class="k">for</span><span class="p">(</span><span class="nx">gadgetId</span> <span class="k">in</span> <span class="nx">gadgets</span><span class="p">)</span>
+      <span class="nx">renderer</span><span class="p">.</span><span class="nx">renderGadget</span><span class="p">(</span><span class="nx">gadgets</span><span class="p">[</span><span class="nx">gadgetId</span><span class="p">]);</span>  			
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">bindToGadget</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gadgetId</span><span class="p">,</span> <span class="nx">property</span><span class="p">,</span> <span class="nx">trigger</span><span class="p">){</span>
+    <span class="nx">gadgets</span><span class="p">[</span><span class="nx">gadgetId</span><span class="p">].</span><span class="nx">bind</span><span class="p">(</span><span class="nx">property</span><span class="p">,</span> <span class="nx">trigger</span><span class="p">);</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">setGadgetProperty</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gadgetId</span><span class="p">,</span> <span class="nx">property</span><span class="p">,</span> <span class="nx">value</span><span class="p">){</span>
+    <span class="nx">gadgets</span><span class="p">[</span><span class="nx">gadgetId</span><span class="p">].</span><span class="nx">setProperty</span><span class="p">(</span><span class="nx">property</span><span class="p">,</span> <span class="nx">value</span><span class="p">);</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">createDataSet</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(){</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="nx">UW</span><span class="p">.</span><span class="nx">astro</span><span class="p">.</span><span class="nx">Dataset</span><span class="p">();;</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">getDataSet</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">id</span><span class="p">){</span>
+    <span class="k">return</span> <span class="nx">dashboardState</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;dataSets&#39;</span><span class="p">).</span><span class="nx">get</span><span class="p">(</span><span class="nx">id</span><span class="p">);</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">setDataSet</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">id</span><span class="p">,</span> <span class="nx">newDataSet</span><span class="p">){</span>
+    <span class="kd">var</span> <span class="nx">isNew</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">dashboardState</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;dataSets&#39;</span><span class="p">).</span><span class="nx">get</span><span class="p">(</span><span class="nx">id</span><span class="p">)){</span>
+      <span class="nx">newDataSet</span><span class="p">.</span><span class="nx">setId</span><span class="p">(</span><span class="nx">id</span><span class="p">);</span>
+      <span class="nx">newDataSet</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="s1">&#39;change&#39;</span><span class="p">,</span> <span class="nx">_</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span><span class="k">this</span><span class="p">.</span><span class="nx">trigger</span><span class="p">(</span><span class="s2">&quot;dataSetChanged&quot;</span><span class="p">)},</span> <span class="k">this</span><span class="p">));</span>
+      <span class="nx">dashboardState</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;dataSets&#39;</span><span class="p">).</span><span class="nx">add</span><span class="p">(</span><span class="nx">newDataSet</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">};</span>	
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">getDataSetList</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(){</span>
+    <span class="kd">var</span> <span class="nx">modelsList</span> <span class="o">=</span> <span class="nx">dashboardState</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;dataSets&#39;</span><span class="p">).</span><span class="nx">models</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">modelsNames</span> <span class="o">=</span> <span class="p">[];</span>
+    <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">modelsList</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="o">++</span><span class="nx">i</span><span class="p">)</span>
+      <span class="nx">modelsNames</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">modelsList</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nx">modelsNames</span><span class="p">;</span>
+  <span class="p">};</span>
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">saveState</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">stateUrl</span><span class="p">){</span>
+
+    <span class="kd">var</span> <span class="nx">currentGadget</span><span class="p">;</span>
+    <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">gadgetId</span> <span class="k">in</span> <span class="nx">gadgets</span><span class="p">){</span>
+
+      <span class="nx">currentGadget</span> <span class="o">=</span> <span class="nx">gadgets</span><span class="p">[</span><span class="nx">gadgetId</span><span class="p">];</span>
+      <span class="k">if</span> <span class="p">(</span><span class="k">typeof</span> <span class="nx">currentGadget</span><span class="p">.</span><span class="nx">saveState</span> <span class="o">!=</span> <span class="s1">&#39;undefined&#39;</span><span class="p">){</span>
+        <span class="nx">currentGadget</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">set</span><span class="p">(</span><span class="nx">currentGadget</span><span class="p">.</span><span class="nx">saveState</span><span class="p">());</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;GADGET STATE &quot;</span> <span class="o">+</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">currentGadget</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">toJSON</span><span class="p">()));</span>
+      <span class="p">}</span>
+      <span class="k">else</span>
+        <span class="nx">UW</span><span class="p">.</span><span class="nx">errorMessage</span><span class="p">(</span><span class="s2">&quot;GADGET &quot;</span> <span class="o">+</span> <span class="nx">currentGadget</span><span class="p">.</span><span class="nx">getId</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot; doesn&#39;t define methods for loading and saving state&quot;</span> <span class="p">);</span>
+        
+    <span class="p">}</span>
+    
+    <span class="nx">dashboardState</span><span class="p">.</span><span class="nx">setUrl</span><span class="p">(</span><span class="nx">stateUrl</span><span class="p">);</span>
+    <span class="nx">dashboardState</span><span class="p">.</span><span class="nx">save</span><span class="p">();</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;DASHBOARD STATE: &quot;</span> <span class="o">+</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">dashboardState</span><span class="p">.</span><span class="nx">toJSON</span><span class="p">()));</span>
+
+  <span class="p">};</span>
+  
+  <span class="k">this</span><span class="p">.</span><span class="nx">inflateState</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  
+    <span class="kd">var</span> <span class="nx">gadgetJSON</span> <span class="o">=</span> <span class="nx">dashboardState</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;gadgets&#39;</span><span class="p">);</span>
+    <span class="nx">dashboardState</span><span class="p">.</span><span class="nx">set</span><span class="p">({</span> <span class="nx">gadgets</span><span class="o">:</span> <span class="k">new</span> <span class="nx">UW</span><span class="p">.</span><span class="nx">GadgetsCollection</span><span class="p">()</span> <span class="p">});</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">gadgetJSON</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">addGadget</span><span class="p">(</span><span class="k">new</span> <span class="nx">UW</span><span class="p">.</span><span class="nx">GadgetState</span><span class="p">(</span><span class="nx">gadgetJSON</span><span class="p">[</span><span class="nx">i</span><span class="p">]));</span>
+    
+    <span class="nx">dashboardState</span><span class="p">.</span><span class="nx">set</span><span class="p">({</span> <span class="nx">dataSets</span><span class="o">:</span> <span class="k">new</span> <span class="nx">UW</span><span class="p">.</span><span class="nx">DataSetsCollection</span><span class="p">()</span> <span class="p">});</span>
+    <span class="nx">dashboardState</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;dataSets&#39;</span><span class="p">).</span><span class="nx">bind</span><span class="p">(</span><span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="nx">_</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span><span class="k">this</span><span class="p">.</span><span class="nx">trigger</span><span class="p">(</span><span class="s2">&quot;dataSetListChanged&quot;</span><span class="p">)},</span> <span class="k">this</span><span class="p">));</span>
+            
+    <span class="k">this</span><span class="p">.</span><span class="nx">renderGadgets</span><span class="p">();</span>
+    
+  <span class="p">};</span>
+      
+  <span class="k">this</span><span class="p">.</span><span class="nx">loadState</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">stateUrl</span><span class="p">){</span>
+    
+    <span class="nx">dashboardState</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">UW</span><span class="p">.</span><span class="nx">DashboardState</span><span class="p">();</span>
+    <span class="nx">dashboardState</span><span class="p">.</span><span class="nx">setUrl</span><span class="p">(</span><span class="nx">stateUrl</span><span class="p">);</span>
+    <span class="nx">dashboardState</span><span class="p">.</span><span class="nx">fetch</span><span class="p">({</span><span class="nx">success</span><span class="o">:</span> <span class="nx">_</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span> <span class="k">this</span><span class="p">.</span><span class="nx">inflateState</span><span class="p">();</span> <span class="p">},</span> <span class="k">this</span><span class="p">)</span>
+       
+  <span class="p">});</span>
+       
+  <span class="p">};</span>
+  
+<span class="p">};</span>
+
+</pre></div>             </td>           </tr>                </tbody>     </table>   </div> </body> </html> 
