@@ -1,57 +1,55 @@
-// --------------------------------------------------------
-//    Date: 4/11
-//    Author: Diego Marcos (diego.marcos@gmail.com)
-// --------------------------------------------------------
+//     Date: 4/11
+//     Author: Diego Marcos (diego.marcos@gmail.com)
+//
+//     Gadget
+// ----------
+//     Defines the communication and state persistence for gadgets
 
+// Framework global variable
 var UW = UW || {};
 
-// --------------
-//     GADGET
-// --------------
+UW.Gadget = function(initState){
 
-UW.GadgetState = Backbone.Model.extend({});
-
-UW.Gadget = function(state){
-
-	var gadgetState = state;
+  // Private Variables
+  var state = initState;
   var id = state.get('id');
-	var url = state.get('url');
-	
-	this.properties = {};
-	
-	this.getId = function(){
-		return id;	
-	};
-	
-	this.getURL = function(){
-		return url;
-	};
-	
-	this.loadState = function(state) {};
-	this.saveState = function() {};
-	
-	this.inflateState = function(){
-	 this.loadState(gadgetState.toJSON());
-	}
-	
-	this.setState = function(stateObject){
-    gadgetState.set(stateObject);
+  var url = state.get('url');
+    
+  this.getId = function(){
+    return id;	
+  };
+  
+  this.getURL = function(){
+    return url;
+  };
+  
+  // Default load/save state methods. 
+  // The user must define these functions.
+  this.loadState = function(state) {};
+  this.saveState = function() {};
+  
+  this.inflateState = function(){
+    this.loadState(state.toJSON());
+  }
+  
+  this.setState = function(stateObject){
+    state.set(stateObject);
   };
   
   this.getState = function(){
-    return gadgetState;
+    return state;
   };
   
   this.bind = function(property, trigger){
-    gadgetState.bind('change:' + property, trigger);
+    state.bind('change:' + property, trigger);
   }
   
   this.setProperty = function(property, value){
-    gadgetState.set({property: value });
+    state.set({property: value });
   }
-			
+
 }
 
 UW.Gadget.prototype.debugMessage = function(msg){
-	UW.debugMessage("GADGET " + this.getId() + ": " + msg);
+  UW.debugMessage("GADGET " + this.getId() + ": " + msg);
 }

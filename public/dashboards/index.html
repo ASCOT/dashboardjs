@@ -15,9 +15,9 @@
 
 
 <script type="text/javascript">
-$(function(){
-  $('#linkButton').button();
-});
+//$(function(){
+//  $('#linkButton').button();
+//});
 
 function requestNewDashboard() {
   $.ajax({
@@ -32,25 +32,105 @@ function requestNewDashboard() {
 <style type="text/css">
 
 .centered{
-    margin: 0 auto;
-    width: 284px;
+  margin: 0 auto;
+  width: 284px;
 }
 
+#container{
+  background-image: url(/dashboards/images/loginBox.png);
+  width: 538px;
+  height: 409px;
+  margin: auto;
+  padding-top: 40px;
+  position: relative
+}
+
+.button.primary {
+  padding: 9px 15px;
+  font-size: 14px;
+  -webkit-box-shadow: 0 0 6px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  -moz-box-shadow: 0 0 6px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  -webkit-transition: all 1s ease-in-out;
+  -moz-transition: all 1s ease-in-out;
+  -o-transition: all 1s ease-in-out;
+  -ms-transition: all 1s ease-in-out;
+  transition: all 1s ease-in-out;
+}
+
+#action a {
+width: 100%;
+-webkit-box-sizing: border-box;
+-moz-box-sizing: border-box;
+box-sizing: border-box;
+}
+
+.green .button.primary {
+border-color: #ffffff;
+color: #ffffff;
+background: #8560a6 url(/img/sheen.png) repeat-x;
+}
+
+.green a:link, .green a:visited {
+color: #8560a6;
+}
+
+.button {
+display: block;
+margin: auto;
+border-width: 1px;
+border-style: solid;
+font-weight: bold;
+text-transform: uppercase;
+text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+-webkit-border-radius: 4px;
+-moz-border-radius: 4px;
+border-radius: 4px;
+}
+
+a:link, a:visited {
+text-decoration: none;
+}
+
+#logo {
+  display: block;
+  width: 223px;
+  height: 97px;
+  background-image: url(/dashboards/images/logoLogin.png);
+  margin: auto;
+  margin-bottom: 31px;
+}
+
+#departmentLogo {
+  display: block;
+  position: absolute;
+  bottom: 12px;
+  left: 185px;
+  width: 171px;
+  height: 26px;
+  background-image: url(/dashboards/images/departmentLogo.png);
+}
+
+
 .loginButton{
--moz-box-shadow: 0 0 8px rgba(0, 0, 0, 0.15), 0 1px 0 rgba(255,255,255,0.8) inset; 
--webkit-box-shadow: 0 0 8px rgba(0, 0, 0, 0.15), 0 1px 0 rgba(255,255,255,0.8) inset;
+  -moz-box-shadow: 0 0 8px rgba(0, 0, 0, 0.15), 0 1px 0 rgba(255,255,255,0.8) inset; 
+  -webkit-box-shadow: 0 0 8px rgba(0, 0, 0, 0.15), 0 1px 0 rgba(255,255,255,0.8) inset;
+}
+
+body{
+  margin: 50px;
 }
 
 </style>
 
 
 </head>
-<body>
-    <div style="top: 25%; width: 100%; position: absolute; margin: 0 auto">
-      <img src="/dashboards/images/ascotLogoBig.png" class="centered" style="display: block"> 
-      <div class="centered" style="width: 260px;"> 
-        <a id="linkButton" href="#" onClick="requestNewDashboard()" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only loginButton" style="display: block;" role="button"><span class="ui-button-text">Create Dashboard</span> </a>
-      </div>
-    </div>
+<body class="green">
+    <div id="container">
+    <a href="http://ascot.astro.washington.edu/dashboards/" id="logo"></a>      
+    <a id="createDashboardButton" href="#" onClick="requestNewDashboard()" class="button primary" style="width: 155px; margin-top: 90px; padding: 15px"   role="button">
+        <span>Create Dashboard</span> 
+    </a>
+    <a href="http://www.astro.washington.edu/" id="departmentLogo"></a>      
 </body>
 </html>
