@@ -132,8 +132,8 @@
     // TODO: with range? or bounding box?
     function moveMap(coords){
         if(coords){
-       	  longitude = coords.getLongitude();
-          latitude = coords.getLatitude();
+       	  longitude = coords.longitude;
+          latitude = coords.latitude;
         }
         // check that ra and dec are numbers
          if (!isNaN(longitude) && !isNaN(latitude)){
@@ -175,7 +175,7 @@
                     bottomRight.setLatitude(boxBounds.getSouth());
     
                     curBounds = [topLeft, bottomRight];     // 2-element array of CelestialCoordinates. [topLeft, bottomRight]
-                    gadget.dashboard.trigger('viewBoundsChanged',curBounds);
+                    gadget.dashboard.trigger('viewBoundsChanged', curBounds);
                     
                 }, TIMER_VIEWCHANGEEND);
         // add the new timer id to the array

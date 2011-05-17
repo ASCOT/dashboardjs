@@ -32,8 +32,11 @@ UW.DashboardState = Backbone.Model.extend({
   defaults: {
     id: -1,	
     author: "Unknown",
-    gadgets: new UW.GadgetsCollection(),
-    dataSets: new UW.DataSetsCollection()
+  },
+  
+  initialize: function() {
+    this.gadgets = new UW.GadgetsCollection();
+    this.dataSets = new UW.DataSetsCollection();
   },
   
   url: function(){
@@ -46,23 +49,23 @@ UW.DashboardState = Backbone.Model.extend({
 
 });
 
-
 // The constructor takes the DOM element where the dashboard will be rendered
 UW.Dashboard = function(container){
-
-  // Gadges contained in the dashboard
-  var gadgets = {};
   
   // Renders the gadgets
   var renderer = new UW.Renderer(container);
   
-  // Generates ids
+  // Represents the state of the dashboard that will be saved to and load from the server
+  var dashboardState = new UW.DashboardState();
+    
+  // All generated ids for gadgets
   var ids = {};
 
   // Auxiliary Variable for Ids generation
   var counter = 0;
   
-  var dashboardState;
+  // Realt time interactin using websockets
+  var socket; 
 
   // Generates unique ids for gadgets
   function generateId(gadgetName){
@@ -86,29 +89,25 @@ UW.Dashboard = function(container){
   _.extend(this, Backbone.Events);
 
   this.addGadget = function(gadgetState){
-
-    var gadgetUrl = gadgetState.get('url');
-    var gadgetId = generateId(parseURL(gadgetUrl).fileNoExtension);
-    var newGadget = new UW.Gadget(gadgetState);
-    newGadget.dashboard = this;
-    gadgets[gadgetId] = newGadget;
     
     dashboardState.get('gadgets').add(gadgetState);		  
-    return newGadget;
 
   };
 
   this.renderGadgets = function(){
-    for(gadgetId in gadgets)
-      renderer.renderGadget(gadgets[gadgetId]);  			
+    _.each(dashboardState.get('gadgets').models, 
+            _.bind( function (modelData, index){ 
+              renderer.renderGadget(modelData.id, modelData.get('url'), modelData, this);
+            }, this)
+      );  			
   };
 
   this.bindToGadget = function(gadgetId, property, trigger){
-    gadgets[gadgetId].bind(property, trigger);
+    //gadgets[gadgetId].bind(property, trigger);
   };
 
   this.setGadgetProperty = function(gadgetId, property, value){
-    gadgets[gadgetId].setProperty(property, value);
+    //gadgets[gadgetId].setProperty(property, value);
   };
 
   this.createDataSet = function(){
@@ -138,18 +137,18 @@ UW.Dashboard = function(container){
 
   this.saveState = function(stateUrl){
 
-    var currentGadget;
-    for(var gadgetId in gadgets){
+    //var currentGadget;
+    //for(var gadgetId in gadgets){
 
-      currentGadget = gadgets[gadgetId];
-      if (typeof currentGadget.saveState != 'undefined'){
-        currentGadget.getState().set(currentGadget.saveState());
-        console.log("GADGET STATE " + JSON.stringify(currentGadget.getState().toJSON()));
-      }
-      else
-        UW.errorMessage("GADGET " + currentGadget.getId() + " doesn't define methods for loading and saving state" );
+    //  currentGadget = gadgets[gadgetId];
+    //  if (typeof currentGadget.saveState != 'undefined'){
+    //    currentGadget.getState().set(currentGadget.saveState());
+    //    console.log("GADGET STATE " + JSON.stringify(currentGadget.getState().toJSON()));
+    //  }
+    //  else
+    //    UW.errorMessage("GADGET " + currentGadget.getId() + " doesn't define methods for loading and saving state" );
         
-    }
+    //}
     
     dashboardState.setUrl(stateUrl);
     dashboardState.save();
@@ -157,7 +156,32 @@ UW.Dashboard = function(container){
 
   };
   
+  this.notify = function(notification, data){
+    // Notify to the dashboard
+    this.trigger(notification,data);
+    socket.send({event: 'notification', 'notification': notification, 'data' : data });
+    // Notify to the server
+  };
+  
   this.inflateState = function() {
+  
+    socket = new io.Socket('localhost');
+    socket.connect();
+    socket.on('connect', function(){ console.log("CONNECT"); }); 
+    socket.on('message', _.bind(function(data){
+      
+        console.log('Received:', data);
+ 
+        switch(data.event){
+    
+          case 'notification':
+            this.trigger(data.notification, data.data);
+          break;
+      
+        }
+      }, this));
+     
+    socket.on('disconnect', function(){ console.log("DISCONNECT"); }); 
   
     var gadgetJSON = dashboardState.get('gadgets');
     dashboardState.set({ gadgets: new UW.GadgetsCollection() });
@@ -174,11 +198,8 @@ UW.Dashboard = function(container){
       
   this.loadState = function(stateUrl){
     
-    dashboardState = new UW.DashboardState();
     dashboardState.setUrl(stateUrl);
-    dashboardState.fetch({success: _.bind( function() { this.inflateState(); }, this)
-       
-  });
+    dashboardState.fetch({success: _.bind( function() { this.inflateState(); }, this )});
        
   };
   

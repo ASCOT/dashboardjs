@@ -2,12 +2,28 @@
 var http = require('http');
 var url = require('url');
 var util = require('util');
+var io = require('socket.io');
 
 var express = require('express');
 var dashboards = require('./dashboards');
 var XMLHttpRequest = require("./XMLHttpRequest").XMLHttpRequest;
-
+  
 var app = express.createServer();
+var socket = io.listen(app); 
+
+// socket.io 
+socket.on('connection', function(client){
+
+  // new client is here! 
+  client.on('message', function(data){ 
+    
+    socket.broadcast(data);
+  
+  }); 
+  client.on('disconnect', function(){ console.log("DISCONNECT"); }); 
+}); 
+
+
 
 // Configuration
 app.configure(function(){

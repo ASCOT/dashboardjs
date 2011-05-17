@@ -19,16 +19,16 @@ UW.Renderer = function(pTarget){
 	
 	}
 	
-	this.renderGadget = function(gadget){
+	this.renderGadget = function(gadgetId, gadgetUrl, gadgetModel, dashboard){
 
 		var gadgetIframe = document.createElement('iframe');
-		gadgetIframe.src = gadget.getURL(); 
+		gadgetIframe.src = gadgetUrl; 
 		gadgetIframe.frameBorder = 'no';
 		gadgetIframe.scrolling = 'no';
-		gadgetIframe.id = gadget.getId();
+		gadgetIframe.id = gadgetId;
 		gadgetIframe.width = "100%";
 		gadgetIframe.style.display = "block";
-		gadgetIframe.onload = function(id) { return function() { autoResize(id); }; }(gadget.getId());
+		gadgetIframe.onload = function(id) { return function() { autoResize(id); }; }(gadgetId);
 		
 		var iframeContainer = document.createElement('div');
 		iframeContainer.className = 'gadgetFrame'; 
@@ -38,6 +38,8 @@ UW.Renderer = function(pTarget){
 		layoutManager.addElement(iframeContainer);
 		
 		// Adding reference to the gadget in the global scope of the iframe. The user can have access to the object.
+		var gadget = new UW.Gadget({ model: gadgetModel });
+    gadget.dashboard = dashboard;
 		gadget.resize = function() { autoResize(this.getId()); };
 		gadgetIframe['contentWindow'].gadget = gadget;
 	

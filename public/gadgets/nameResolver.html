@@ -114,7 +114,7 @@ function NameResolve(){
     function writeCoord(cc) {
         showSuccess('<div style="float: right; margin-left: 10px; margin-right: 10px"><b>RA:</b> ' + cc.getRa().toFixed(4) + "&deg <b>DEC:</b> " + cc.getDec().toFixed(4) + "&deg</div>");
         gadget.dashboard.setGadgetProperty('skyView','flySpeed', 1.0);
-        gadget.dashboard.trigger("centerOfCoordinatesChanged",cc);
+        gadget.dashboard.notify("centerOfCoordinatesChanged",{'longitude': cc.getLongitude(), 'latitude': cc.getLatitude()});
     }
 
     // HELPER

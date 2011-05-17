@@ -185,7 +185,7 @@ function Plotter(){
         // write cc to public variable
         var cc = getPointCc(point);
         if (cc !== null && cc !== undefined) {
-            gadget.dashboard.trigger("centerOfCoordinatesChanged",cc);
+            gadget.dashboard.notify("centerOfCoordinatesChanged",cc);
         }
     }
     function getPointColor(point) {

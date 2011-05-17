@@ -8,48 +8,36 @@
 // Framework global variable
 var UW = UW || {};
 
-UW.Gadget = function(initState){
+UW.Gadget = Backbone.View.extend({
 
-  // Private Variables
-  var state = initState;
-  var id = state.get('id');
-  var url = state.get('url');
-    
-  this.getId = function(){
-    return id;	
-  };
+  getId: function(){
+    return this.model.id;	
+  },
   
-  this.getURL = function(){
-    return url;
-  };
+  getURL: function(){
+    return this.model.get('url');
+  },
   
   // Default load/save state methods. 
   // The user must define these functions.
-  this.loadState = function(state) {};
-  this.saveState = function() {};
+  loadState: function(state) {},
   
-  this.inflateState = function(){
-    this.loadState(state.toJSON());
-  }
+  saveState: function() {},
   
-  this.setState = function(stateObject){
-    state.set(stateObject);
-  };
+  inflateState: function(){
+    this.loadState(this.model.toJSON());
+  },
   
-  this.getState = function(){
-    return state;
-  };
+  bind: function(property, trigger){
+    //model.bind('change:' + property, trigger);
+  },
   
-  this.bind = function(property, trigger){
-    state.bind('change:' + property, trigger);
-  }
-  
-  this.setProperty = function(property, value){
-    state.set({property: value });
-  }
+  setProperty: function(property, value){
+    //model.set({property: value });
+  },
 
-}
-
-UW.Gadget.prototype.debugMessage = function(msg){
-  UW.debugMessage("GADGET " + this.getId() + ": " + msg);
-}
+  debugMessage: function(msg){
+    UW.debugMessage("GADGET " + this.getId() + ": " + msg);
+  }
+  
+});
