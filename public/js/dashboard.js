@@ -58,6 +58,9 @@ UW.Dashboard = function(container){
   // Represents the state of the dashboard that will be saved to and load from the server
   var dashboardState = new UW.DashboardState();
     
+  // List of gadgets
+  var gadgets = {};  
+    
   // All generated ids for gadgets
   var ids = {};
 
@@ -90,6 +93,10 @@ UW.Dashboard = function(container){
 
   this.addGadget = function(gadgetState){
     
+    // Adding reference to the gadget in the global scope of the iframe. The user can have access to the object.
+		var newGadget = new UW.Gadget({ model: gadgetState });
+    newGadget.dashboard = this;
+    gadgets[newGadget.getId()] = newGadget;
     dashboardState.get('gadgets').add(gadgetState);		  
 
   };
@@ -97,7 +104,7 @@ UW.Dashboard = function(container){
   this.renderGadgets = function(){
     _.each(dashboardState.get('gadgets').models, 
             _.bind( function (modelData, index){ 
-              renderer.renderGadget(modelData.id, modelData.get('url'), modelData, this);
+              renderer.renderGadget(modelData.get('url'), gadgets[modelData.id]);
             }, this)
       );  			
   };
@@ -159,7 +166,7 @@ UW.Dashboard = function(container){
   this.notify = function(notification, data){
     // Notify to the dashboard
     this.trigger(notification,data);
-    socket.send({event: 'notification', 'notification': notification, 'data' : data });
+    socket.send({event: 'notification', 'notification': notification, 'dashboardId': dashboardState.id, 'data' : data });
     // Notify to the server
   };
   
@@ -182,6 +189,9 @@ UW.Dashboard = function(container){
       }, this));
      
     socket.on('disconnect', function(){ console.log("DISCONNECT"); }); 
+    
+    
+    socket.send({event: 'session', dashboardId: dashboardState.id});
   
     var gadgetJSON = dashboardState.get('gadgets');
     dashboardState.set({ gadgets: new UW.GadgetsCollection() });

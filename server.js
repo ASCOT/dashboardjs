@@ -11,19 +11,60 @@ var XMLHttpRequest = require("./XMLHttpRequest").XMLHttpRequest;
 var app = express.createServer();
 var socket = io.listen(app); 
 
-// socket.io 
-socket.on('connection', function(client){
+// Closure that keeps information of the clients connected to each dashboard
+socket.on('connection', function(){
 
-  // new client is here! 
-  client.on('message', function(data){ 
+    // Dashboards with opened sessions
+    var dashboardConnections = {};
     
-    socket.broadcast(data);
-  
-  }); 
-  client.on('disconnect', function(){ console.log("DISCONNECT"); }); 
-}); 
+    // Clients with opened sessions
+    var sessions = {}
 
+    return function(client){
+    
+      var dashboardClients;
+      
+      // new client is here! 
+      client.on('message', function(message){ 
+      
+        switch (message.event) {
+        
+          case 'notification':
+        
+            dashboardClients = dashboardConnections[message.dashboardId];
+            
+            for(var currentClient in dashboardClients) {
+              if (dashboardClients.hasOwnProperty(currentClient) && dashboardClients[currentClient] != client){
+                dashboardClients[currentClient].send(message);
+              }
+            }
+            //socket.broadcast(message);
+            break;
+            
+          case 'session':
+            
+            if(!dashboardConnections[message.dashboardId])
+              dashboardConnections[message.dashboardId] = {};
+              
+            sessions[client.sessionId] = {'dashboardId': message.dashboardId }; 
+            dashboardConnections[message.dashboardId][client.sessionId] = client;
+              
+            break;      
+        }
+      
+      }); 
+      
+      client.on('disconnect', function(){ 
+          
+        delete dashboardConnections[sessions[client.sessionId].dashboardId][client.sessionId]
+        delete sessions[client.sessionId];
+        console.log("DISCONNECT");
+        
+      }); 
 
+  }
+
+}()); 
 
 // Configuration
 app.configure(function(){
@@ -71,6 +112,7 @@ app.get('/XmlHttpRequest/:request', function(req, res){
 });
 
 app.get('/dashboards/:id', function(req, res){
+
   res.render("dashboard", {
     locals: {
       id: req.params.id,
