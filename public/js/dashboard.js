@@ -172,7 +172,7 @@ UW.Dashboard = function(container){
   
   this.inflateState = function() {
   
-    socket = new io.Socket('localhost');
+    socket = new io.Socket();
     socket.connect();
     socket.on('connect', function(){ console.log("CONNECT"); }); 
     socket.on('message', _.bind(function(data){
