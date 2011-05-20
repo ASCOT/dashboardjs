@@ -20,11 +20,33 @@ ul {
 header {
   background: #b3adc6;
   padding: 10px 10px;
-  box-shadow: 1px 1px 2px #5f5f5f;
+  -moz-box-shadow: 0 0px 0 rgba(0, 0, 0, .0), 0 1px 0 rgba(0, 0, 0, .4);
+  -webkit-box-shadow: 0 0px 0 rgba(0, 0, 0, .0), 0 1px 0  rgba(0, 0, 0, .4);
 }
 
 .dashboard{
-	margin: 15px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: medium;
+  color: #000000;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .7);
+  opacity: .6;
+  margin: 15px;
+}
+
+.chat{
+  height: 410px;
+  background-color: #b7abc3 ;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -moz-box-shadow: 0 -1px 0 rgba(0, 0, 0, .1), 0 1px 0 rgba(255, 255, 255, .3);
+  -webkit-box-shadow: 0 -1px 0 rgba(0, 0, 0, .1), 0 1px 0 rgba(255, 255, 255, .3);
+  float: right;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, .4);  
+  border-width: 1px;
 }
 
 header h1 {

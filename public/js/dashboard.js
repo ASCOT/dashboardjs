@@ -144,18 +144,17 @@ UW.Dashboard = function(container){
 
   this.saveState = function(stateUrl){
 
-    //var currentGadget;
-    //for(var gadgetId in gadgets){
+    var currentGadget;
+    for(var gadgetId in gadgets){
 
-    //  currentGadget = gadgets[gadgetId];
-    //  if (typeof currentGadget.saveState != 'undefined'){
-    //    currentGadget.getState().set(currentGadget.saveState());
-    //    console.log("GADGET STATE " + JSON.stringify(currentGadget.getState().toJSON()));
-    //  }
-    //  else
-    //    UW.errorMessage("GADGET " + currentGadget.getId() + " doesn't define methods for loading and saving state" );
-        
-    //}
+      currentGadget = gadgets[gadgetId];
+      if (currentGadget.saveState){
+        dashboardState.get('gadgets').get(gadgetId).set(currentGadget.saveState());
+        console.log("GADGET STATE " + JSON.stringify(dashboardState.get('gadgets').get(gadgetId).toJSON()));
+      }
+      else
+        UW.errorMessage("GADGET " + currentGadget.getId() + " doesn't define methods for loading and saving state" );    
+    }
     
     dashboardState.setUrl(stateUrl);
     dashboardState.save();

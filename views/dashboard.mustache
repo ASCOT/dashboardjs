@@ -58,13 +58,16 @@ function saveDashboard() {
       <nav>
         <ul>
           <li>
-            <a href="#" title="shareDashboard" onClick="saveDashboard()">Save</a>
+            <a href="#" title="saveDashboard" onClick="saveDashboard()">Save</a>
           </li>
         </ul>
       </nav>
     </div>			
   </div>
   </header>
-  <div id="dashboard" class="container_12 dashboard"></div>
+  <div class="container_12 clearfix" style="margin-top: 15px">
+    <div id="dashboard" class="grid_9 dashboard"></div>
+    <span class="title">Chat</span><div id="chat" class="grid_3 chat"></div>
+  </div>
 </body>
 </html>
