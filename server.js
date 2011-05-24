@@ -16,9 +16,21 @@ socket.on('connection', function(){
 
     // Dashboards with opened sessions
     var dashboardConnections = {};
-    
+        
     // Clients with opened sessions
-    var sessions = {}
+    var sessions = {};
+    
+    function sendToDashboard(id, message, client){
+
+      dashboardClients = dashboardConnections[id];
+            
+      for(var currentClient in dashboardClients) {
+        if (dashboardClients.hasOwnProperty(currentClient) && dashboardClients[currentClient] != client){
+          dashboardClients[currentClient].send(message);
+        }
+      }
+
+    }
 
     return function(client){
     
@@ -26,18 +38,12 @@ socket.on('connection', function(){
       
       // new client is here! 
       client.on('message', function(message){ 
-      
-        switch (message.event) {
         
+        switch (message.event) {
+                
           case 'notification':
         
-            dashboardClients = dashboardConnections[message.dashboardId];
-            
-            for(var currentClient in dashboardClients) {
-              if (dashboardClients.hasOwnProperty(currentClient) && dashboardClients[currentClient] != client){
-                dashboardClients[currentClient].send(message);
-              }
-            }
+            sendToDashboard(message.dashboardId, message, client);
             //socket.broadcast(message);
             break;
             
@@ -49,7 +55,13 @@ socket.on('connection', function(){
             sessions[client.sessionId] = {'dashboardId': message.dashboardId }; 
             dashboardConnections[message.dashboardId][client.sessionId] = client;
               
-            break;      
+            break; 
+            
+          case 'chatMessage':
+            
+            sendToDashboard(message.dashboardId, message, client);
+            console.log(message.message); 
+            break;    
         }
       
       }); 

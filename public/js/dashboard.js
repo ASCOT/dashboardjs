@@ -68,7 +68,27 @@ UW.Dashboard = function(container){
   var counter = 0;
   
   // Realt time interactin using websockets
-  var socket; 
+  var socket = new io.Socket();
+  socket.connect();
+  socket.on('connect', function(){ console.log("CONNECT"); }); 
+  socket.on('message', _.bind(function(data){
+      
+    console.log('Received:', data);
+ 
+    switch(data.event){
+    
+      case 'notification':
+        this.trigger(data.notification, data.data);
+        break;
+      
+    }
+  }, this));
+     
+  socket.on('disconnect', function(){ console.log("DISCONNECT"); }); 
+  
+  // Chat
+  var chatModel = new UW.NodeChatModel(); 
+  var chat = new UW.ChatView({'model': chatModel, 'socket': socket, 'el': $('#dashboardArea'), 'id': dashboardState.id});
 
   // Generates unique ids for gadgets
   function generateId(gadgetName){
@@ -171,25 +191,6 @@ UW.Dashboard = function(container){
   
   this.inflateState = function() {
   
-    socket = new io.Socket();
-    socket.connect();
-    socket.on('connect', function(){ console.log("CONNECT"); }); 
-    socket.on('message', _.bind(function(data){
-      
-        console.log('Received:', data);
- 
-        switch(data.event){
-    
-          case 'notification':
-            this.trigger(data.notification, data.data);
-          break;
-      
-        }
-      }, this));
-     
-    socket.on('disconnect', function(){ console.log("DISCONNECT"); }); 
-    
-    
     socket.send({event: 'session', dashboardId: dashboardState.id});
   
     var gadgetJSON = dashboardState.get('gadgets');

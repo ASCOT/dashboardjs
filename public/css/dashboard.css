@@ -8,7 +8,7 @@ body {
     background-color: #b7abc3;
     margin: 0;
 		padding: 0;
-		font: 12px/1.5 Helvetica, Arial, sans-serif;
+		font: 14px/1 "Helvetica Neue", Arial, sans-serif;
     background-image: url("/dashboards/images/bgImage.png");
     background-repeat: repeat-x;
 }
@@ -18,10 +18,17 @@ ul {
 }
 
 header {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10;
   background: #b3adc6;
   padding: 10px 10px;
-  -moz-box-shadow: 0 0px 0 rgba(0, 0, 0, .0), 0 1px 0 rgba(0, 0, 0, .4);
-  -webkit-box-shadow: 0 0px 0 rgba(0, 0, 0, .0), 0 1px 0  rgba(0, 0, 0, .4);
+  -moz-box-shadow: 0px 0px 0px rgba(0, 0, 0, .4), 0 1px 0 rgba(0, 0, 0, .4);
+  -webkit-box-shadow: 0px 0px 0px rgba(0, 0, 0, .4), 0px 5px 10px  rgba(0, 0, 0, .3);
 }
 
 .dashboard{
@@ -36,6 +43,73 @@ header {
   margin: 15px;
 }
 
+
+#chat {
+  position: absolute;
+  display: block;
+  width: 300px;
+  height: 200px;
+  top: 66px;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+#messageField {
+  width: 90%;
+  padding: 0px;
+  overflow-x: hide;
+  background: #DBDBDB;
+  height: 27px;
+}
+
+#chatList{
+  margin: 0px;
+  width: 90%;
+  height: 180px;
+  background-color: #ff0000;
+  overflow-y: scroll;
+}
+
+#messageSendButton {
+}
+
+#chatTab {
+  position: absolute;
+  width: 30px;
+  height: 100px;
+  right: -30px;
+  color: red;
+  background: rgba(0, 0, 0, 0.8);
+  cursor: pointer;
+  color: #EEE;
+}
+
+#chatTab > .bg {
+position: absolute;
+top: 0;
+right: 0;
+width: 15px;
+height: 100px;
+background: rgba(255, 255, 255, 0.05);
+}
+
+#chatTab > .tabText {
+display: block;
+-webkit-transform: rotate(90deg);
+-moz-transform: rotate(90deg);
+transform: rotate(90deg);
+filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1);
+color: white;
+padding-left: 28px;
+text-shadow: 0 1px 0 black;
+font-family: "ff-din-web-1","ff-din-web-2",Helvetica;
+font-size: 13px;
+z-index: 50;
+}
+
+
+/*
+
 .chat{
   height: 410px;
   background-color: #b7abc3 ;
@@ -48,6 +122,8 @@ header {
   border-color: rgba(0, 0, 0, .4);  
   border-width: 1px;
 }
+
+*/
 
 header h1 {
  float: left;

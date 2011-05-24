@@ -23,6 +23,7 @@
 <script src="/js/layoutManager.js" type="text/javascript"></script> 
 <script src="/js/dataset.js" type="text/javascript"></script> 
 <script src="/js/renderer.js" type="text/javascript"></script>
+<script src="/js/chat.js" type="text/javascript"></script>
 <script src="/js/dashboard.js" type="text/javascript"></script>
 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js" type="text/javascript"></script>
@@ -46,9 +47,37 @@ function saveDashboard() {
   ASCOT.dashboard.saveState('/saveDashboard/' + dashboardId);
 }
 
+function initGUI() {
+
+  var resizeToolBox = function (){
+    $('#toolBox').css({'height':  $(window).height() - 100});
+  }
+  
+  resizeToolBox();
+  $(window).resize(resizeToolBox);
+
+  $("#toolBox").click(function() {
+  
+    //var pos;
+    var newWidth = 10;
+    if($("#toolBox").css('width') == '10px')
+      newWidth = 200;
+
+    $('#toolBox').animate({
+        'width': newWidth,
+    }, 300, function() {
+     // Animation complete.
+    });        
+    return false;
+    
+  });
+
+}
+
 </script>
+
 </head>
-<body onLoad="loadState({{state}});">
+<body onLoad="loadState({{state}}); initGUI();">
   <header>
   <div class="container_12 clearfix">
     <div class="grid_12">
@@ -65,9 +94,36 @@ function saveDashboard() {
     </div>			
   </div>
   </header>
-  <div class="container_12 clearfix" style="margin-top: 15px">
-    <div id="dashboard" class="grid_9 dashboard"></div>
-    <span class="title">Chat</span><div id="chat" class="grid_3 chat"></div>
-  </div>
+  
+  <table id="dashboardArea" width="100%" style="margin-top: 60px">
+    <tr>
+        <td style="vertical-align: top;">
+          <div id="toolBox" style="width: 10px; margin-left: 10px;" class="gadgetFrame"></div>
+         <!-- <span class="title">Chat</span><div id="chat" class="grid_3 chat"></div>
+          <div id="toolBox" style="width: 35px; background-color: #ff0000">
+            <div id="chat" style="left: -300px;">
+             <div id="chatTab">
+                <span class="bg"></span>
+                <span class="tabText">Chat</span>
+              </div>
+            <div id="chatWindow">
+              <div id="chatList"></div>
+              <did id="chatMessagesBox">
+                <form method="post" action="#" onsubmit="return false" id="chatMessageForm">
+                  <input type="text" name="message" size="240" id="messageField">
+                  <input type="submit" value="send" id="messageSendButton">
+                </form>
+              </div>
+            </div>
+          </div>
+        </div> -->
+      </td>
+      <td>
+        <div id="dashboard" style="width: 100%;"></div>
+      </td>
+    </tr>
+  </table>
+  
+  
 </body>
 </html>
