@@ -49,28 +49,79 @@ function saveDashboard() {
 
 function initGUI() {
 
+  var toolBoxOpened = false;
+
   var resizeToolBox = function (){
     $('#toolBox').css({'height':  $(window).height() - 100});
+    if(!toolBoxOpened){
+      $('#toolBoxClickableArea').css({'height':  $(window).height() - 100});
+    }
   }
   
   resizeToolBox();
   $(window).resize(resizeToolBox);
 
-  $("#toolBox").click(function() {
+
+  $("#toolBoxClickableArea").click(function() {
   
     //var pos;
-    var newWidth = 10;
-    if($("#toolBox").css('width') == '10px')
+    var newWidth = 20;
+    var animationDuration = 200;
+    var icon = '+';
+    var display = 'none';
+    var animationEasing = {
+      width: 'linear',
+      height: 'easeOutBounce'
+    };
+    
+    if(!toolBoxOpened){
       newWidth = 200;
+      icon = '-';
+      display = 'inline';
+      toolBoxOpened = true;
+      $('#toolBoxClickableArea').css({'height':  35, 'width': newWidth});
+    }
+    else{
+      toolBoxOpened = false;
+      $('#toolBoxClickableArea').css({'height':  $(window).height() - 100, 'width': newWidth});
+    }
 
-    $('#toolBox').animate({
-        'width': newWidth,
-    }, 300, function() {
+    /* $('#toolBox').animate({
+        'width': newWidth
+    }, animationDuration, function() {
+        $('#toolBoxTitle').css({'display': display});
+        $("#toolBoxButton").html(icon);
+    });*/ 
+    
+    $('#toolBox').css({'width': newWidth });
+    $('#toolBoxColumn').css({'width': newWidth + 30});
+    $('#toolBoxTitle').css({'display': display});
+    $("#toolBoxButton").html(icon);
+    $('#tools').css({'display': display});
+
+   /* $('#toolBoxColumn').animate({
+        'width': newWidth + 30
+    }, animationDuration, function() {
      // Animation complete.
-    });        
+    }); 
+     */      
     return false;
     
   });
+  
+  var inHandler = function(){
+    $("#toolBox").css({'background-color': '#764293'});
+    $("#toolBoxButton").toggleClass("toolBoxText titleHover");
+    $("#toolBoxTitle").toggleClass("toolBoxText titleHover");
+  }
+  
+  var outHandler = function(){
+    $("#toolBox").css({'background-color': '#b7abc3'});
+    $("#toolBoxButton").toggleClass("toolBoxText titleHover");
+    $("#toolBoxTitle").toggleClass("toolBoxText titleHover");
+  }
+  
+  $("#toolBoxClickableArea").hover(inHandler, outHandler);
 
 }
 
@@ -87,7 +138,7 @@ function initGUI() {
       <nav>
         <ul>
           <li>
-            <a href="#" title="saveDashboard" onClick="saveDashboard()">Save</a>
+            <a href="#" title="saveDashboard" class="barButton" onClick="saveDashboard()">Save</a>
           </li>
         </ul>
       </nav>
@@ -96,27 +147,28 @@ function initGUI() {
   </header>
   
   <table id="dashboardArea" width="100%" style="margin-top: 60px">
-    <tr>
-        <td style="vertical-align: top;">
-          <div id="toolBox" style="width: 10px; margin-left: 10px;" class="gadgetFrame"></div>
-         <!-- <span class="title">Chat</span><div id="chat" class="grid_3 chat"></div>
-          <div id="toolBox" style="width: 35px; background-color: #ff0000">
-            <div id="chat" style="left: -300px;">
-             <div id="chatTab">
-                <span class="bg"></span>
-                <span class="tabText">Chat</span>
-              </div>
-            <div id="chatWindow">
-              <div id="chatList"></div>
-              <did id="chatMessagesBox">
-                <form method="post" action="#" onsubmit="return false" id="chatMessageForm">
-                  <input type="text" name="message" size="240" id="messageField">
-                  <input type="submit" value="send" id="messageSendButton">
-                </form>
+    <tr>  
+        <td id="toolBoxColumn" style="width: 40px">
+          <div id="toolBox" style="width: 20px; top: 60px; left: 10px;" class="toolBox">
+            <div id="toolBoxHeader" style="width: 100%">
+              <span id="toolBoxTitle" class="toolBoxText" style="display: none; font-weight: medium;">ToolBox</span>
+              <span id="toolBoxButton" class="toolBoxText" style="float: right; margin-right: 16px">+</span>
+            </div>
+            <div id="tools" style="display: none">
+              <div id="chat" class="tool">
+                <div class="toolTitle" style="width: 100%">Chat</div>
+                <div id="chatList" style="height: 400px"></div>
+                <div id="chatInput">
+                  <form id="chatMessageForm" method="post" action="#" onsubmit="return false">
+                    <input id="messageField" type="text" name="message">
+                    <input id="messageSendButton" type="submit" value="send">
+                  </form>
+                </div>
               </div>
             </div>
           </div>
-        </div> -->
+          </div>
+          <div id="toolBoxClickableArea" style="width: 20px; top: 60px; left: 10px; opacity: 0" class="toolBox" ></div>
       </td>
       <td>
         <div id="dashboard" style="width: 100%;"></div>
