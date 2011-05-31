@@ -51,9 +51,7 @@ socket.on('connection', function(){
               dashboardConnections[message.dashboardId] = {};
               
             sessions[client.sessionId] = {'dashboardId': message.dashboardId }; 
-            dashboardConnections[message.dashboardId][client.sessionId] = client;
-            socket.send("caca")
-              
+            dashboardConnections[message.dashboardId][client.sessionId] = client;              
             break; 
             
           case 'chatMessage':
