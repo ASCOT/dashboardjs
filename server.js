@@ -22,8 +22,8 @@ socket.on('connection', function(){
     
     function sendToDashboard(id, message, client){
 
-      dashboardClients = dashboardConnections[id];
-            
+      var dashboardClients = dashboardConnections[id];
+                              
       for(var currentClient in dashboardClients) {
         if (dashboardClients.hasOwnProperty(currentClient) && dashboardClients[currentClient] != client){
           dashboardClients[currentClient].send(message);
@@ -33,12 +33,10 @@ socket.on('connection', function(){
     }
 
     return function(client){
-    
-      var dashboardClients;
-      
+          
       // new client is here! 
       client.on('message', function(message){ 
-        
+                
         switch (message.event) {
                 
           case 'notification':
@@ -54,22 +52,24 @@ socket.on('connection', function(){
               
             sessions[client.sessionId] = {'dashboardId': message.dashboardId }; 
             dashboardConnections[message.dashboardId][client.sessionId] = client;
+            socket.send("caca")
               
             break; 
             
           case 'chatMessage':
-            
+            //socket.broadcast(message);
             sendToDashboard(message.dashboardId, message, client);
-            console.log(message.message); 
             break;    
         }
       
       }); 
       
       client.on('disconnect', function(){ 
-          
-        delete dashboardConnections[sessions[client.sessionId].dashboardId][client.sessionId]
-        delete sessions[client.sessionId];
+        
+        if(sessions[client.sessionId]){  
+          delete dashboardConnections[sessions[client.sessionId].dashboardId][client.sessionId]
+          delete sessions[client.sessionId];
+        }
         console.log("DISCONNECT");
         
       }); 
@@ -144,8 +144,7 @@ app.put('/saveDashboard/:id', function(req, res){
 app.post('/newDashboard/', function(req, res){
   var newDashboardId = dashboards.new();
   res.send(newDashboardId.toString());
-});
-
+});               
 
 if (!module.parent) {
   app.listen(80);
