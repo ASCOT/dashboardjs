@@ -77,6 +77,7 @@ function Plotter(){
                         
     gadget.dashboard.bind('dataSetListChanged', updateDataSetList); 
     gadget.dashboard.bind('plotRendered', plotDataset);
+    gadget.dashboard.bind('pointsSelected', setSelectedByMinMax);
                                        
      // When the list of public datasets change, rewrite the list of available datasets to plot    
 		function updateDataSetList(){
@@ -95,18 +96,18 @@ function Plotter(){
         return getSelectedOption("selYAxis");
     }
       
-    function setSelectedByMinMax(seriesId, xMin, xMax, yMin, yMax) {
+    function setSelectedByMinMax(obj) {
         
       //debugLog('x: ' + xMin + ', ' + xMax + '\ny: ' + yMin + ', ' + yMax);
       // 'select' all the points in the chart to change the way they look
-      var data = chart1.get(seriesId).data;
+      var data = chart1.get(obj.seriesId).data;
       var ds = gadget.dashboard.getDataSet(getSelectedDataset());
       var selectedIds = [];
        
-      var selectedMarkerColor = getSelectionMarkerColor();
+      var selectedMarkerColor = obj.color; 
       for (var i=0, len=data.length; i<len; i++){
           var point = data[i];
-          if (point.x <= xMax && point.x >= xMin && point.y <= yMax && point.y >= yMin) {
+          if (point.x <= obj.xMax && point.x >= obj.xMin && point.y <= obj.yMax && point.y >= obj.yMin) {
               // point.id looks like: p0 
               // so we strip the first letter to get the db_id
               selectedIds.push(getPointId(point));             
@@ -183,6 +184,7 @@ function Plotter(){
         var cc = getPointCc(point);
         if (cc !== null && cc !== undefined) {
             gadget.dashboard.notify("centerOfCoordinatesChanged",cc);
+            gadget.dashboard.trigger("centerOfCoordinatesChanged",cc);
         }
     }
     function getPointColor(point) {
@@ -201,6 +203,10 @@ function Plotter(){
         // TODO: verify the necessary args were passed
         var xCol = args.xAxis;
         var yCol = args.yAxis;
+        
+        //$('#selXAxis option[value=' + xCol + ']').attr('selected', 'selected');
+        //$('#selYAxis option[value=' + yCol + ']').attr('selected', 'selected');
+        
         var ds = gadget.dashboard.getDataSet(args.dataSetName);
                 
         var graphData = [];
@@ -245,7 +251,8 @@ function Plotter(){
                             // also, only select if there is an xAxis property in event (allows reset zoom)
                             if (!isRadioZoom() && ("xAxis" in event)) {
                                 event.preventDefault();
-                                setSelectedByMinMax(SERIES_NAME, event.xAxis[0].min, event.xAxis[0].max, event.yAxis[0].min, event.yAxis[0].max);
+                                var selectionObj = {'seriesId': SERIES_NAME, 'xMin': event.xAxis[0].min, 'xMax':  event.xAxis[0].max, 'yMin': event.yAxis[0].min, 'yMax':  event.yAxis[0].max, color: getSelectionMarkerColor()};
+                                gadget.dashboard.notify("pointsSelected", selectionObj);                                 
                             }
                         }
                     }
