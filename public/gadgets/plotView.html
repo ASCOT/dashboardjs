@@ -15,6 +15,15 @@
 <link href="/css/960/reset.css" rel="stylesheet" type="text/css">
 <link href="/css/960/text.css" rel="stylesheet" type="text/css"> 
 
+<style type="text/css">
+
+td{
+  padding: 5px;
+}
+
+
+</style>
+
 <script type="text/javascript">
     
 // Plot (pl) object is global
@@ -546,8 +555,8 @@ function Plotter(){
 </head>
 <body onLoad="init();">
 <div id="content">
-	<div id="divSelectDataset" style="width: 100%;">  
-  	<table><tbody>
+	<div id="divSelectDataset" style="display: inline">  
+  	<table style="margin: 0px"><tbody>
   		<tr>
 				<td> Dataset: <select id="selDatasetName" onchange="pl.populateXYSelect(this.options[this.selectedIndex].value);"></select>
   	    </td>
@@ -565,10 +574,9 @@ function Plotter(){
   	  </tr> 
   	</tbody></table>
 	</div>
-
-	<div id="divPlotToolbar" style="padding-left: 5px; display: inline-table;">
+	<div id="divPlotToolbar" style="display: inline">
     <form name="formSelectZoom">
-        <div id="divSelectZoom">
+        <div id="divSelectZoom" style="padding: 5px">
             Selection Color: <select id="selSelectionColor">
             </select>
             <input type="radio" id="radSelectZoom" name="radSelectZoom" value="select" checked="checked" /><label for="radSelect">Select</label>

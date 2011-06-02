@@ -27,6 +27,7 @@ UW.Renderer = function(pTarget){
 		gadgetIframe.scrolling = 'no';
 		gadgetIframe.id = gadget.getId();
 		gadgetIframe.width = "100%";
+		gadgetIframe.height = "0px";
 		gadgetIframe.style.display = "block";
 		gadgetIframe.onload = function(id) { return function() { autoResize(id); }; }(gadget.getId());
 		
@@ -38,6 +39,7 @@ UW.Renderer = function(pTarget){
 		var gadgetFrame = document.createElement('div');
 		gadgetFrame.className = 'gadgetFrame';
 		gadgetFrame.appendChild(iframeContainer);
+		//gadgetFrame.style.height = '0px'
 		
 		layoutManager.addElement(gadgetFrame);
 		
