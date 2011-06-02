@@ -191,9 +191,11 @@ UW.Dashboard = function(container){
     socket.send({event: 'chatMessage', 'message': message, 'dashboardId': dashboardState.id});
   };
   
-  this.notify = function(notification, data){
+  this.notify = function(notification, data, self){
     // Notify to the dashboard
-    this.trigger(notification,data);
+    if(self == undefined || self){
+      this.trigger(notification,data);
+    }
     socket.send({event: 'notification', 'notification': notification, 'dashboardId': dashboardState.id, 'data' : data });
     // Notify to the server
   };

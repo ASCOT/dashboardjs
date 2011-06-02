@@ -55,6 +55,7 @@
     gadget.dashboard.bind('centerOfCoordinatesChanged', moveMap);
     gadget.dashboard.bind('dataSetChanged', redrawAllDatasets); 
     gadget.dashboard.bind('dataSetListChanged', redrawAllDatasets); 
+    gadget.dashboard.bind('skyViewMoved', moveSky); 
     gadget.dashboard.bindToGadget("nameResolver","viewportSpeed", setFlyToSpeed);
     
     // CONSTANTS
@@ -175,11 +176,22 @@
                     bottomRight.setLatitude(boxBounds.getSouth());
     
                     curBounds = [topLeft, bottomRight];     // 2-element array of CelestialCoordinates. [topLeft, bottomRight]
-                    gadget.dashboard.trigger('viewBoundsChanged', curBounds);
-                    
+                    gadget.dashboard.trigger('viewBoundsChanged', curBounds); 
+                    //gadget.dashboard.notify('skyViewMoved', {'longitude': longitude, 'latitude': latitude, 'zoom': lookAt.getRange()}, false);
                 }, TIMER_VIEWCHANGEEND);
         // add the new timer id to the array
         tidsViewchangeend.push(tid);
+    }
+    
+    function moveSky(obj){
+      var lookAt = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+      lookAt.setLatitude(obj.latitude);
+      lookAt.setLongitude(obj.longitude);
+      lookAt.setRange(obj.zoom);
+      google.earth.removeEventListener(ge.getView(), "viewchangeend", writeCurrentBounds);
+      ge.getView().setAbstractView(lookAt);
+      google.earth.addEventListener(ge.getView(), "viewchangeend", writeCurrentBounds);
+      
     }
     
     // KML

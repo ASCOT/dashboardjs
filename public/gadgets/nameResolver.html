@@ -112,7 +112,7 @@ function NameResolve(){
     }
     
     function writeCoord(cc) {
-        showSuccess('<div style="float: right; margin-left: 10px; margin-right: 10px"><b>RA:</b> ' + cc.getRa().toFixed(4) + "&deg <b>DEC:</b> " + cc.getDec().toFixed(4) + "&deg</div>");
+        showSuccess('<div style="display: inline; vertical-align:middle;"><b>Ra:</b>' + cc.getRa().toFixed(4) + "&deg Dec:" + cc.getDec().toFixed(4) + "&deg</div>");
         gadget.dashboard.setGadgetProperty('skyView','flySpeed', 1.0);
         gadget.dashboard.notify("centerOfCoordinatesChanged",{'longitude': cc.getLongitude(), 'latitude': cc.getLatitude()});
     }
@@ -132,7 +132,7 @@ function NameResolve(){
     }
     function showStatus(iconUrl, text){
         if (iconUrl !== ICON.NONE) {
-            setStatus( '<img id="imgStatus" src="' + iconUrl + '" /> ' + text);
+            setStatus( '<div style="display: inline"><img id="imgStatus" src="' + iconUrl + '" style="vertical-align:middle;"/> ' + text + "</div>");
         } else {
             setStatus(text);
         }
@@ -169,8 +169,9 @@ function NameResolve(){
 <div id='content'>
 	<form name="form" action="#" onsubmit="tq.getCoords(document.getElementById('txtInputText').value);return false">
   	<input type="text" id="txtInputText" style="width:15em;"/>
-   	<input type="submit" value="Go"/ style="margin: 5px;"> e.g. "M67" or "190 00 00 -11 37 21.2"
-   	<div id="divStatusText" style="float:right;"></div> 
+   	<input type="submit" value="Go"/ style="margin: 5px;" /> 
+   	<div style="display: inline">e.g. "M67" or "190 00 00 -11 37 21.2"</div>
+   	<div id="divStatusText" style="float: right; margin-top: 1px"></div> 
  </form>
  
 </div>

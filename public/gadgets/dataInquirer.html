@@ -264,7 +264,7 @@ function GetData(){
      
     function showStatus(iconUrl, text){
         if (iconUrl !== ICON.NONE) {
-            setStatus( '<img id="imgStatus" src="' + iconUrl + '" /> ' + text);
+            setStatus( '<img id="imgStatus" style="vertical-align:middle;" src="' + iconUrl + '" /> ' + "<span style='vertical-align:middle;'>" + text + "</span>");
         } else {
             setStatus(text);
         }
@@ -275,7 +275,7 @@ function GetData(){
         var statusDiv = document.getElementById('divStatusText');
         statusDiv.innerHTML = text;
         // make visible
-        statusDiv.style.visibility = 'block';
+        statusDiv.style.visibility = 'inline';
     }
     function xmlStringToDoc(text){
         if (window.DOMParser){
@@ -393,7 +393,6 @@ function GetData(){
 
 	<div id="divQuery">
 	    Dataset Name: <input id="txtDatasetName" type="text" name="dataSetName" />
-	    <div id="divStatusText"></div> 
 	</div>
 	
 	<div id="divQueryButtons" style="margin-top: 10px; margin-bottom: 10px;"></div>
@@ -408,6 +407,7 @@ function GetData(){
 		<textarea id="txtQueryString" rows="5" style="width:99%;"></textarea>
 		<br/>
 		<input id="btGetData" onclick="ga.getData();" type="button" value="Submit"/>  
+		<div id="divStatusText" style="display: inline; margin-left: 10px"></div> 
 	</div>
 
 </div>
