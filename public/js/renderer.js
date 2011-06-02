@@ -30,12 +30,16 @@ UW.Renderer = function(pTarget){
 		gadgetIframe.style.display = "block";
 		gadgetIframe.onload = function(id) { return function() { autoResize(id); }; }(gadget.getId());
 		
-		var iframeContainer = document.createElement('div');
-		iframeContainer.className = 'gadgetFrame'; 
-		iframeContainer.id = gadgetIframe.id + "container";
 		
+		var iframeContainer = document.createElement('div');
+		iframeContainer.className = 'gadgetCanvas'; 
 		iframeContainer.appendChild(gadgetIframe);
-		layoutManager.addElement(iframeContainer);
+		
+		var gadgetFrame = document.createElement('div');
+		gadgetFrame.className = 'gadgetFrame';
+		gadgetFrame.appendChild(iframeContainer);
+		
+		layoutManager.addElement(gadgetFrame);
 		
 		gadget.resize = function() { autoResize(this.getId()); };
 		gadgetIframe['contentWindow'].gadget = gadget;

@@ -76,6 +76,7 @@ function Plotter(){
                         };  
                         
     gadget.dashboard.bind('dataSetListChanged', updateDataSetList); 
+    gadget.dashboard.bind('plotRendered', plotDataset);
                                        
      // When the list of public datasets change, rewrite the list of available datasets to plot    
 		function updateDataSetList(){
@@ -96,33 +97,29 @@ function Plotter(){
       
     function setSelectedByMinMax(seriesId, xMin, xMax, yMin, yMax) {
         
-      
       //debugLog('x: ' + xMin + ', ' + xMax + '\ny: ' + yMin + ', ' + yMax);
       // 'select' all the points in the chart to change the way they look
-        var data = chart1.get(seriesId).data;
-        var ds = gadget.dashboard.getDataSet(getSelectedDataset());
-
-        var selectedIds = [];
+      var data = chart1.get(seriesId).data;
+      var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+      var selectedIds = [];
        
-        var selectedMarkerColor = getSelectionMarkerColor();
-        for (var i=0, len=data.length; i<len; i++){
-            var point = data[i];
-            if (point.x <= xMax && point.x >= xMin && point.y <= yMax && point.y >= yMin) {
-                // point.id looks like: p0 
-                // so we strip the first letter to get the db_id
-                selectedIds.push(getPointId(point));
-                
-                colorChartPoint(point, selectedMarkerColor);
-            }
-        }
-        chart1.redraw();
-        var color = (selectedMarkerColor === "unselect") ? "" : selectedMarkerColor;
+      var selectedMarkerColor = getSelectionMarkerColor();
+      for (var i=0, len=data.length; i<len; i++){
+          var point = data[i];
+          if (point.x <= xMax && point.x >= xMin && point.y <= yMax && point.y >= yMin) {
+              // point.id looks like: p0 
+              // so we strip the first letter to get the db_id
+              selectedIds.push(getPointId(point));             
+              colorChartPoint(point, selectedMarkerColor);
+          }
+      }
+      chart1.redraw();
+      var color = (selectedMarkerColor === "unselect") ? "" : selectedMarkerColor;
 
-        // update the dataset with the selected points
-        // set dataset points colors in bulk
-        ds.setIndexesColor(selectedIds, color);
-        
-        //gadget.dashboard.setDataSet(getSelectedDataset(), ds);
+      // update the dataset with the selected points
+      // set dataset points colors in bulk
+      ds.setIndexesColor(selectedIds, color);  
+      gadget.dashboard.trigger("dataSetListChanged"); 
 
     }
     
@@ -204,8 +201,8 @@ function Plotter(){
         // TODO: verify the necessary args were passed
         var xCol = args.xAxis;
         var yCol = args.yAxis;
-        var ds = args.dataset;
-        
+        var ds = gadget.dashboard.getDataSet(args.dataSetName);
+                
         var graphData = [];
         var dsData = ds.toJSON();
         for (i=0,len=dsData.length; i<len; i++) {
@@ -511,14 +508,14 @@ function Plotter(){
             alert("Choose a dataset, x axis, and y axis");
             return;
         }
-        
-        var ds = gadget.dashboard.getDataSet(datasetName);
-        
-        plotDataset({ dataset:ds,
-                      xAxis: getSelectedXAxis(),
-                      yAxis: getSelectedYAxis()
-                    });
-        
+                
+        var plot = { 'dataSetName': datasetName,
+                      'xAxis': getSelectedXAxis(),
+                      'yAxis': getSelectedYAxis()
+                    };       
+                
+        plotDataset(plot);
+        gadget.dashboard.notify("plotRendered", plot);
         // TODO: need to unregister the previous dataset!
         
     }

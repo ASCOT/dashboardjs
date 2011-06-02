@@ -70,6 +70,7 @@ function GetData(){
     var _catalogs =  [ { name: "SDSS", url: "http://cas.sdss.org/public/en/tools/search/x_sql.asp"  }  ]; // contains info for catalogs and thier urls
         
    gadget.dashboard.bind('viewBoundsChanged', setVPBounds);
+   gadget.dashboard.bind('dataRequested', queryData);
    //gadget.dashboard.bind('dataSetChanged', updateDatasetList); 
     
    function getDatasetNameText () {
@@ -108,14 +109,13 @@ function GetData(){
     }
     
     my.getData = function() {
+        
         var dsName = getDatasetNameText();
+
         if (dsName.length < 1) {
             showError("Enter dataset name");
             return;
         }
- 
-        // TODO: other ways to choose the bounds we want on the gadget
-        showSpinner("Getting objects..."); 
         
         // get query string from the text area
         var query = getQueryString();
@@ -125,22 +125,23 @@ function GetData(){
             showError('Enter query string');
             return;
         }
-       
+        
         // find catalog in the _catalogs object to get the url
         var selectedCatalog = getSelectedOption("selCatalog");
         for (var i=0, len=_catalogs.length; i<len; i++) {
-            if (_catalogs[i].name === selectedCatalog) {
-                url = _catalogs[i].url;
-            }
+          if (_catalogs[i].name === selectedCatalog) {
+              url = _catalogs[i].url;
+          }
         }
-      
-        
+
         if (url === null) {
-            showError('Select a catalog');
-            return;
-        }
-        // finishes with callback "queryResponseCB"
-        makeGETRequest(url, query, queryResponseCB);
+              showError('Select a catalog');
+              return;
+          }
+        
+        var queryObj = {'dataSet': dsName, 'query': query, 'url': url};
+        gadget.dashboard.notify("dataRequested", queryObj);
+        queryData(queryObj);   
     }
     
     my.setQueryText = function(buttonNum) {
@@ -190,11 +191,11 @@ function GetData(){
       
       $.ajax({
        'url': '/XMLHttpRequest/' + encodeURIComponent(url + '?format=xml&cmd=' + encodeURIComponent(query)),
-        success: queryResponseCB 
+        success: callback 
       });
     }
     
-    function queryResponseCB(obj) {
+    function queryResponseCB(obj, dataSet) {
         // parse the XML
         if (obj === ""){
             // returned empty string
@@ -217,7 +218,8 @@ function GetData(){
         // We probably have valid data at this point, so parse it and display it
         // create and write Dataset from the row data
         var ds = createDataset(rows);   
-        gadget.dashboard.setDataSet(getDatasetNameText(), ds); 
+        gadget.dashboard.setDataSet(dataSet, ds);
+         
 				gadget.resize();
     }
     
@@ -295,6 +297,13 @@ function GetData(){
         if (bounds !== null) {
             getField('spViewportBounds').innerHTML = "ra between " + viewportBounds[0].getRa().toFixed(4) + " and " + viewportBounds[1].getRa().toFixed(4) + " dec between " + viewportBounds[1].getDec().toFixed(4) + " and " + viewportBounds[0].getDec().toFixed(4);
         }
+    }
+    
+    function queryData(queryObj){
+      showSpinner("Getting objects..."); 
+      $('textarea#txtQueryString').val(queryObj.query);
+      $('input[name=dataSetName]').val(queryObj.dataSet);
+      makeGETRequest(queryObj.url, queryObj.query, function(dataSet) { return function(obj) { queryResponseCB(obj, dataSet); }; }(queryObj.dataSet));
     }
     
     // HTML Field Getters/Setters
@@ -383,7 +392,7 @@ function GetData(){
 	</div>
 
 	<div id="divQuery">
-	    Dataset Name: <input id="txtDatasetName" type="text" />
+	    Dataset Name: <input id="txtDatasetName" type="text" name="dataSetName" />
 	    <div id="divStatusText"></div> 
 	</div>
 	

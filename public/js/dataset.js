@@ -83,6 +83,10 @@ UW.astro.Dataset = Backbone.Model.extend({
     return this.get("db").stringify();
   },
   
+  query: function(queryObject){
+    this.get("db").get(queryObject);
+  },
+  
   getId: function() {
     return this.get("id");
   },

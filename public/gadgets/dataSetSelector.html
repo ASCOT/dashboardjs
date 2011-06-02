@@ -179,7 +179,7 @@ function datasetSelector(){
         var ds = gadget.dashboard.getDataSet(dsId);
         
         // copy the records from the dataset
-        var subsetData = ds.db.get({db_visible:true});
+        var subsetData = ds.query({visible:true});
         
         // make the new dataset
         var subsetDS = gadget.dashboard.createDataSet();
