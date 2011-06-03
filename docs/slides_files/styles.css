@@ -96,12 +96,12 @@ body {
 }
 
 .slides > article:not(.nobackground):not(.biglogo) {
-  background: url(images/colorbar.png) 0 600px repeat-x,
-              url(images/googleio-logo.png) 640px 625px no-repeat;
+  background: url(./colorbar.png) 0 600px repeat-x,
+              url(./ascotLogo.png) 498px 138px no-repeat;
 
   background-size: 100%, 225px;  
 
-  background-color: white;  
+  background-color: #663091;  
 }
 .slides.layout-widescreen > article:not(.nobackground):not(.biglogo),
 .slides.layout-faux-widescreen > article:not(.nobackground):not(.biglogo) {
@@ -148,9 +148,8 @@ body {
 /* Slide styles */
 
 article.biglogo {
-  background: white url(images/googleio-logo.png) 50% 50% no-repeat;
+  background: #663091 url(./ascotLogo.png) 50% 50% no-repeat;
 
-  background-size: 600px;
 }
 
 /* Slides */
@@ -240,7 +239,7 @@ article.biglogo {
 .slides > article {
   font-family: 'Open Sans', Arial, sans-serif;
 
-  color: rgb(102, 102, 102);
+  color: rgb(179, 173, 198);
   text-shadow: 0 1px 1px rgba(0, 0, 0, .1);
 
   font-size: 30px;
@@ -305,7 +304,7 @@ h1 {
 
   letter-spacing: -3px;
 
-  color: rgb(51, 51, 51);
+  color: white;
 }
 
 h2 {
@@ -323,7 +322,7 @@ h2 {
 
   letter-spacing: -2px;
 
-  color: rgb(51, 51, 51);
+  color: white;
 }
 
 h3 {
@@ -338,7 +337,7 @@ h3 {
 
   letter-spacing: -1px;
 
-  color: rgb(51, 51, 51);
+  color: white;
 }
 
 article.fill h3 {
@@ -406,7 +405,7 @@ code {
   font-size: 95%;
   font-family: 'Droid Sans Mono', 'Courier New', monospace;
 
-  color: black;
+  color: white;
 }
 
 iframe {

@@ -192,8 +192,7 @@ function Plotter(){
         // write cc to public variable
         var cc = getPointCc(point);
         if (cc !== null && cc !== undefined) {
-            gadget.dashboard.notify("centerOfCoordinatesChanged",cc);
-            gadget.dashboard.trigger("centerOfCoordinatesChanged",cc);
+            gadget.dashboard.notify("centerOfCoordinatesChanged",{'longitude': cc.getLongitude(), 'latitude': cc.getLatitude()});
         }
     }
     function getPointColor(point) {

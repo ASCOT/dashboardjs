@@ -221,6 +221,7 @@ UW.astro.Dataset = Backbone.Model.extend({
           }
    			}
    	}, {db_id: indexes});
+   	this.change();
   },
   
   // Private
