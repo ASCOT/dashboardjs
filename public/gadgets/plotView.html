@@ -214,8 +214,8 @@ function Plotter(){
         var xCol = args.xAxis;
         var yCol = args.yAxis;
         
-        //$('#selXAxis option[value=' + xCol + ']').attr('selected', 'selected');
-        //$('#selYAxis option[value=' + yCol + ']').attr('selected', 'selected');
+        $("#selXAxis").val(xCol).attr("selected", "selected");
+        $("#selYAxis").val(yCol).attr("selected", "selected");
         
         var ds = gadget.dashboard.getDataSet(args.dataSetName);
                 
@@ -482,6 +482,26 @@ function Plotter(){
           my.doPlot();
       }
   
+    }
+    
+    function renderPlot(){
+      this._currentDatasetName = getSelectedDataset();
+      var datasetName = this._currentDatasetName;
+      var xAxisName = getSelectedXAxis();
+      var yAxisName = getSelectedYAxis();
+  
+      //TODO: confirm dataset actually exists with this name
+      if (datasetName ===  "" || xAxisName === "" || yAxisName === "") {
+          alert("Choose a dataset, x axis, and y axis");
+          return;
+      }
+              
+      var plot = { 'dataSetName': datasetName,
+                    'xAxis': getSelectedXAxis(),
+                    'yAxis': getSelectedYAxis()
+                  };       
+              
+      plotDataset(plot);      
     }
                     
     //activePointsList = gadget.addProperty("activePointsList");
