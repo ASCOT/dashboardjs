@@ -87,6 +87,8 @@ function Plotter(){
     gadget.dashboard.bind('dataSetListChanged', updateDataSetList); 
     gadget.dashboard.bind('plotRendered', plotDataset);
     gadget.dashboard.bind('pointsSelected', setSelectedByMinMax);
+    gadget.dashboard.bind('axisInverted', invertAxis);
+                                       
                                        
      // When the list of public datasets change, rewrite the list of available datasets to plot    
 		function updateDataSetList(){
@@ -468,6 +470,19 @@ function Plotter(){
         }
         return _myFields[field];
     }
+    
+    function invertAxis(axis){
+      
+      if(axis === "x")
+        _axisInverted.x = !_axisInverted.x;
+      else
+        _axisInverted.y = !_axisInverted.y;
+      
+      if (chart1 !== null && chart1 !== undefined) {
+          my.doPlot();
+      }
+  
+    }
                     
     //activePointsList = gadget.addProperty("activePointsList");
     //skyViewPointsList = gadget.addProperty("skyViewPointsList");                 
@@ -480,10 +495,7 @@ function Plotter(){
         } else {
             anchor.value = ">";
         }
-        _axisInverted.x = !_axisInverted.x;
-        if (chart1 !== null && chart1 !== undefined) {
-            this.doPlot();
-        }
+        gadget.dashboard.notify("axisInverted",{axis: "x"})
     }
 
     my.invertY = function() {
@@ -493,10 +505,7 @@ function Plotter(){
         } else {
             anchor.value = "^";
         }
-        _axisInverted.y = !_axisInverted.y;
-        if (chart1 !== null && chart1 !== undefined) {
-            this.doPlot();
-        }
+        gadget.dashboard.notify("axisInverted",{axis: "y"})
     }
     
     // Populates the X/Y axis dropdowns with values from the chosen datasets column names

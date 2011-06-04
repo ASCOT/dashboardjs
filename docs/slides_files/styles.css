@@ -96,9 +96,6 @@ body {
 }
 
 .slides > article:not(.nobackground):not(.biglogo) {
-  background: url(./colorbar.png) 0 600px repeat-x,
-              url(./ascotLogo.png) 498px 138px no-repeat;
-
   background-size: 100%, 225px;  
 
   background-color: #663091;  
@@ -149,7 +146,6 @@ body {
 
 article.biglogo {
   background: #663091 url(./ascotLogo.png) 50% 50% no-repeat;
-
 }
 
 /* Slides */
