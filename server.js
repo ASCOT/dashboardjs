@@ -9,72 +9,90 @@ var dashboards = require('./dashboards');
 var XMLHttpRequest = require("./XMLHttpRequest").XMLHttpRequest;
   
 var app = express.createServer();
-var socket = io.listen(app); 
+var nowjs = require('now')
+var everyone = nowjs.initialize(app);
+//var socket = io.listen(app); 
+
+everyone.now.sendMessageToDashboard = function(message, dashboardId){
+  var dashboardChannel = nowjs.getGroup(dashboardId);
+  dashboardChannel.now.receiveMessage(message);
+}
+
+everyone.now.addUserToDashboardChannel = function(dashboardId){
+   var dashboardChannel = nowjs.getGroup(dashboardId);
+   dashboardChannel.addUser(this.user.clientId);
+}
+
+everyone.now.notifyToDashboard = function(dashboardId, notification){
+   var dashboardChannel = nowjs.getGroup(dashboardId);
+   console.log("NOT " + dashboardId + " " + notification.notification);
+   dashboardChannel.now.receiveNotification(notification);
+} 
 
 // Closure that keeps information of the clients connected to each dashboard
-socket.on('connection', function(){
-
-    // Dashboards with opened sessions
-    var dashboardConnections = {};
-        
-    // Clients with opened sessions
-    var sessions = {};
-    
-    function sendToDashboard(id, message, client){
-
-      var dashboardClients = dashboardConnections[id];
-                              
-      for(var currentClient in dashboardClients) {
-        if (dashboardClients.hasOwnProperty(currentClient) && dashboardClients[currentClient] != client){
-          dashboardClients[currentClient].send(message);
-        }
-      }
-
-    }
-
-    return function(client){
-          
-      // new client is here! 
-      client.on('message', function(message){ 
-                
-        switch (message.event) {
-                
-          case 'notification':
-        
-            sendToDashboard(message.dashboardId, message, client);
-            //socket.broadcast(message);
-            break;
-            
-          case 'session':
-            
-            if(!dashboardConnections[message.dashboardId])
-              dashboardConnections[message.dashboardId] = {};
-              
-            sessions[client.sessionId] = {'dashboardId': message.dashboardId }; 
-            dashboardConnections[message.dashboardId][client.sessionId] = client;              
-            break; 
-            
-          case 'chatMessage':
-            //socket.broadcast(message);
-            sendToDashboard(message.dashboardId, message, client);
-            break;    
-        }
-      
-      }); 
-      
-      client.on('disconnect', function(){ 
-        
-        if(sessions[client.sessionId]){  
-          delete dashboardConnections[sessions[client.sessionId].dashboardId][client.sessionId]
-          delete sessions[client.sessionId];
-        }
-        console.log("DISCONNECT");
-        
-      }); 
-
-  }
-
-}()); 
+// socket.on('connection', function(){
+// 
+//     // Dashboards with opened sessions
+//     var dashboardConnections = {};
+//         
+//     // Clients with opened sessions
+//     var sessions = {};
+//     
+//     function sendToDashboard(id, message, client){
+// 
+//       var dashboardClients = dashboardConnections[id];
+//                               
+//       for(var currentClient in dashboardClients) {
+//         if (dashboardClients.hasOwnProperty(currentClient) && dashboardClients[currentClient] != client){
+//           dashboardClients[currentClient].send(message);
+//         } 
+//       }
+// 
+//     }
+// 
+//     return function(client){
+//           
+//       // new client is here! 
+//       client.on('message', function(message){ 
+//                 
+//         switch (message.event) {
+//                 
+//           case 'notification':
+//         
+//             sendToDashboard(message.dashboardId, message, client);
+//             //socket.broadcast(message);
+//             break;
+//             
+//           case 'session':
+//             
+//             if(!dashboardConnections[message.dashboardId])
+//               dashboardConnections[message.dashboardId] = {};
+//               
+//             sessions[client.sessionId] = {'dashboardId': message.dashboardId }; 
+//             dashboardConnections[message.dashboardId][client.sessionId] = client;              
+//             break; 
+//             
+//           case 'chatMessage':
+//             //socket.broadcast(message);
+//             sendToDashboard(message.dashboardId, message, client);
+//             break;    
+//         }
+//       
+//       }); 
+//       
+//       client.on('disconnect', function(){ 
+//         
+//         if(sessions[client.sessionId]){  
+//           delete dashboardConnections[sessions[client.sessionId].dashboardId][client.sessionId]
+//           delete sessions[client.sessionId];
+//         }
+//         console.log("DISCONNECT");
+//         
+//       }); 
+// 
+//   }
+// 
+// }()); 
 
 // Configuration
 app.configure(function(){

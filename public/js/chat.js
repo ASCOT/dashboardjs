@@ -63,9 +63,8 @@ UW.ChatView = Backbone.View.extend({
   sendMessage: function(){
       var chatMessage = $('input[name=chatMessage]').val();
       $('input[name=chatMessage]').val("");
-      this.addChat("<span style='font-weight: bold'>Me: </span>" + chatMessage);
       //var chatEntry = new models.ChatEntry({name: nameField.val(), text: inputField.val()});
-      this.dashboard.sendChatMessage("<span style='font-weight: bold'>Anonymous: </span>" + chatMessage);      
+      this.dashboard.sendChatMessage(chatMessage);      
       //inputField.val('');
   }
 });

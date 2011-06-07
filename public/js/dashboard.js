@@ -68,32 +68,35 @@ UW.Dashboard = function(container){
   var counter = 0;
   
   // Realt time interactin using websockets
-  var socket = new io.Socket();
-  socket.connect();
-  socket.on('connect', function(){ console.log("CONNECT"); }); 
-  socket.on('message', _.bind(function(data){
-      
-    //console.log('Received:', data);
- 
-    switch(data.event){
-    
-      case 'notification':
-        this.trigger(data.notification, data.data);
-        break;
-        
-      case 'chatMessage':
-        chat.addChat(data.message);
-        //this.trigger(data.notification, data.data);
-        break;  
-      
-    }
-  }, this));
-     
-  socket.on('disconnect', function(){ console.log("DISCONNECT"); }); 
-  
+  // var socket = new io.Socket();
+  //   socket.connect();
+  //   socket.on('connect', function(){ console.log("CONNECT"); }); 
+  //   socket.on('message', _.bind(function(data){
+  //       
+  //     //console.log('Received:', data);
+  //  
+  //     switch(data.event){
+  //     
+  //       case 'notification':
+  //         this.trigger(data.notification, data.data);
+  //         break; 
+  //       
+  //     }
+  //   }, this));
+  //      
+  //   socket.on('disconnect', function(){ console.log("DISCONNECT"); }); 
+  //   
   // Chat
   var chatModel = new UW.NodeChatModel(); 
   var chat = new UW.ChatView({'model': chatModel, 'dashboard': this, 'el': $('#dashboardArea'), 'id': dashboardState.id});
+
+  now.receiveMessage = function(message){
+    chat.addChat("<span style='font-weight: bold'>Anonymous: </span>" + message);
+  };
+  
+  now.receiveNotification = _.bind(function(notification){
+    this.trigger(notification.notification, notification.data);
+  }, this);
 
   // Generates unique ids for gadgets
   function generateId(gadgetName){
@@ -188,7 +191,8 @@ UW.Dashboard = function(container){
   };
   
   this.sendChatMessage = function(message){
-    socket.send({event: 'chatMessage', 'message': message, 'dashboardId': dashboardState.id});
+    now.sendMessageToDashboard(message, dashboardState.id);
+    //socket.send({event: 'chatMessage', 'message': message, 'dashboardId': dashboardState.id});
   };
   
   this.notify = function(notification, data, self){
@@ -196,14 +200,16 @@ UW.Dashboard = function(container){
     if(self == undefined || self){
       this.trigger(notification,data);
     }
-    socket.send({event: 'notification', 'notification': notification, 'dashboardId': dashboardState.id, 'data' : data });
+    now.notifyToDashboard(dashboardState.id, {'notification': notification, 'data': data});
+    //socket.send({event: 'notification', 'notification': notification, 'dashboardId': dashboardState.id, 'data' : data });
     // Notify to the server
   };
   
   this.inflateState = function() {
   
-    socket.send({event: 'session', dashboardId: dashboardState.id});
-  
+    //socket.send({event: 'session', dashboardId: dashboardState.id});
+    now.addUserToDashboardChannel(dashboardState.id);
+    
     var gadgetJSON = dashboardState.get('gadgets');
     dashboardState.set({ gadgets: new UW.GadgetsCollection() });
 
