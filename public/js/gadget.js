@@ -22,7 +22,7 @@ UW.Gadget = Backbone.View.extend({
   // The user must define these functions.
   loadState: function(state) {},
   
-  saveState: function() {},
+  saveState: function() { return {}; },
   
   inflateState: function(){
     this.loadState(this.model.toJSON());

@@ -141,7 +141,6 @@ function GetData(){
         
         var queryObj = {'dataSet': dsName, 'query': query, 'url': url};
         gadget.dashboard.notify("dataRequested", queryObj);
-        queryData(queryObj);   
     }
     
     my.setQueryText = function(buttonNum) {
@@ -193,7 +192,7 @@ function GetData(){
        'url': '/XMLHttpRequest/' + encodeURIComponent(url + '?format=xml&cmd=' + encodeURIComponent(query)),
         success: callback 
       });
-    }
+    } 
     
     function queryResponseCB(obj, dataSet) {
         // parse the XML
@@ -217,16 +216,14 @@ function GetData(){
         
         // We probably have valid data at this point, so parse it and display it
         // create and write Dataset from the row data
-        var ds = createDataset(rows);   
-        gadget.dashboard.setDataSet(dataSet, ds);
-         
+        var ds = createDataset(dataSet, rows);   
 				gadget.resize();
     }
     
   
     // Accepts "rows" as an ObjectHTML collection
     // and creates a Dataset from it and returns it
-    function createDataset(rows) {
+    function createDataset(id, rows) {
         var json = [];
         for (var i=0,len=rows.length; i<len; i++){
             var row = rows[i];
@@ -242,7 +239,7 @@ function GetData(){
         }
 
         // create dataset
-        ds = gadget.dashboard.createDataSet(); 
+        ds = gadget.dashboard.createDataSet(id); 
         ds.init(json);
         return ds;
         

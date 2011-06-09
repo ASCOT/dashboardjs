@@ -13,7 +13,7 @@ document.write('<script src="/js/taffy.js" type="text/javascript"></script>');
 if (!UW) var UW={};
 if (!UW.astro) UW.astro={};
 
-UW.astro.Dataset = Backbone.Model.extend({
+UW.Dataset = Backbone.Model.extend({
 
   defaults: {
     id: "",	
@@ -22,6 +22,11 @@ UW.astro.Dataset = Backbone.Model.extend({
   },
 
   initialize: function(){},
+  
+  toJSON : function() {
+    return this.map(function(model){ return model.toJSON(); });
+    console.log("MY toJSON");
+  },
     
   /**
   * Create a new Dataset.
@@ -36,7 +41,7 @@ UW.astro.Dataset = Backbone.Model.extend({
   init: function(json){
     	
     // TODO: verify json is an array of objects (in json form)
-    this.set({ db: new TAFFY(json)});
+    this.set({ db: new TAFFY(json)}, {silent: true});
    
     // add a color column to the db
     if (!this.hasColor()) {
@@ -64,6 +69,8 @@ UW.astro.Dataset = Backbone.Model.extend({
         return rec;
       });
     }
+    
+    this.change();
   
   },
   

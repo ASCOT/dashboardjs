@@ -232,7 +232,7 @@ function datasetSelector(){
         var subsetData = ds.db.get({db_visible:true});
         
         // make the new dataset
-        var subsetDS = new UW.astro.Dataset(subsetData);
+        var subsetDS = new UW.Dataset(subsetData);
         // get the new name
         var newName = prompt("Enter name for new dataset");
         if (newName === "" || newName === null) {

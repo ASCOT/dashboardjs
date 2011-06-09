@@ -17,11 +17,11 @@ var dashboards = [
     id: 1,
     author : 'GalaxyZOO',
     gadgets: [
-     {"id":"skyView","url":"/gadgets/skyView.html","property":1,"longitude":10,"latitude":-11.622555555555556, "flySpeed":1},
-     {"id":"nameResolver","url":"/gadgets/nameResolver.html"},
-     {"id":"dataInquirer","url":"/gadgets/dataInquirer.html"},
+      {"id":"skyView","url":"/gadgets/skyView.html","property":1,"longitude":10,"latitude":-11.622555555555556, "flySpeed":1},
+      {"id":"nameResolver","url":"/gadgets/nameResolver.html"},
+      {"id":"dataInquirer","url":"/gadgets/dataInquirer.html"},
     ],
-    "dataSets": []
+    dataSets: [],
   },
   {
     id: 2,

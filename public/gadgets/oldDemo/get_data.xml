@@ -344,7 +344,7 @@ function GetData(){
         }
 
         // create dataset
-        ds = new UW.astro.Dataset(json);
+        ds = new UW.Dataset(json);
 
         return ds;
     }

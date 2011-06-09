@@ -113,7 +113,6 @@ function NameResolve(){
     
     function writeCoord(cc) {
         showSuccess('<div style="display: inline; vertical-align:middle;"><b>Ra:</b>' + cc.getRa().toFixed(4) + "&deg Dec:" + cc.getDec().toFixed(4) + "&deg</div>");
-        gadget.dashboard.setGadgetProperty('skyView','flySpeed', 1.0);
         gadget.dashboard.notify("centerOfCoordinatesChanged",{'longitude': cc.getLongitude(), 'latitude': cc.getLatitude()});
     }
 
