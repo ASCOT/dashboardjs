@@ -17,11 +17,11 @@ var dashboards = [
     id: 1,
     author : 'GalaxyZOO',
     gadgets: [
-      {"id":"skyView","url":"/gadgets/skyView.html","property":1,"longitude":10,"latitude":-11.622555555555556, "flySpeed":1},
-      {"id":"nameResolver","url":"/gadgets/nameResolver.html"},
-      {"id":"dataInquirer","url":"/gadgets/dataInquirer.html"},
+     {"id":"skyView","url":"/gadgets/skyView.html","property":1,"longitude":10,"latitude":-11.622555555555556, "flySpeed":1},
+     {"id":"nameResolver","url":"/gadgets/nameResolver.html"},
+     {"id":"dataInquirer","url":"/gadgets/dataInquirer.html"},
     ],
-    dataSets: [],
+    "dataSets": []
   },
   {
     id: 2,
@@ -29,6 +29,17 @@ var dashboards = [
     gadgets: [
      {"id":"skyView","url":"/gadgets/skyView.html","property":1,"longitude":0,"latitude":0,"flySpeed":1},
      {"id":"nameResolver","url":"/gadgets/nameResolver.html"},
+    ],
+    "dataSets": []
+  },
+  {
+    id: 3,
+    name : 'ScalableScatterPlot',
+    gadgets: [
+     {"id":"scalableScatter","url":"/gadgets/scalableScatter.html"},
+     {"id":"dataInquirer","url":"/gadgets/dataInquirer.html"},
+     {"id":"plotView","url":"/gadgets/plotView.html"},
+     {"id":"tableView","url":"/gadgets/tableView.html"}
     ],
     "dataSets": []
   }

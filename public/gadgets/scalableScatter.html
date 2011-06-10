@@ -10,7 +10,6 @@
 <!-- chart dependencies -->
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js" type="text/javascript"></script>
 <script src="../js/highcharts/highcharts.js" type="text/javascript"></script>
-<script type="text/javascript" src="scalableScatter.js"></script>
 
 <!-- ASCOT Basic Style Sheets -->
 <link href="/css/960/reset.css" rel="stylesheet" type="text/css">
@@ -30,7 +29,7 @@ var chart1;                  // The highcharts chart object
 var dataToPlot;              // The data that is going to be plotted
 var maxDensity;              // The maximum number of points allowed in a bin before a rectangle is drawn
 var numBinsX;                // The number of bins along the x-axis. Y-axis bins are scaled accordingly
-var imgPath = 'images/grid.gif'; // The path to the background image
+var imgPath; 					  // The path to the background image
 var imgPosX = 100;           // The x and y coordinates of the upper right corner of the background image (in the same units as the axes, not pixels)
 var imgPosY = 0.75;
 var imgWidth = 300;          // The height and width of the background image (in the same units as the axes, not pixels)
@@ -39,6 +38,7 @@ var imgHeight = 0.5;
 // Create the Plotter object
 function init() {
 	pl = new Plotter();
+	pl.setSelectOptions("selSelectionColor", ["red", "green", "blue", "yellow", "unselect"]);
 	gadget.resize();
 }
 
@@ -57,18 +57,84 @@ function Plotter() {
 	var dataExtremes;         // Find the extremes of the dataset to be plotted to set the initial window bounds
 	var bins;                 // Holds information about the density of each part of the plot
 	var sparsePoints;         // Points far enough apart to be drawn individually
+	var tooltip;				  // Reference to the current tooltip object on the screen
+	var selectedPts = []		  // Points that have been selected by the user
 	
 	var currentDatasetName = ""; // The name of the dataset to be loaded
 	myFields = { }				     // Pointers to HTML fields on the page
+	
+	// The invert buttons have been left out for now
+	// There are a few issues with the invert function that need to be fixed such as
+	// the background image needing to be flipped and problems with the selection box
+	// when the axes are flipped
 	axisInverted = { x: false,   // Tells whether the x and y axis should be inverted
                     y: false };
+                    
+   // CHART CONSTANTS
+   var DEFAULT_MARKER_COLOR = 'rgba(0, 0, 0, 0)';
+       SELECTED_MARKER_COLOR = 'rgba(210,30,100,.9)'
+       MARKER_COLOR = { red: 'rgba(255, 0, 0, .7)',
+                        green: 'rgba(0, 255, 0, .7)',
+                        blue: 'rgba(0, 0, 255, .7)',
+                        yellow: 'rgba(220, 220, 0, .7)',
+                        unselect: DEFAULT_MARKER_COLOR
+                       }
 	
 	gadget.dashboard.bind('dataSetListChanged', updateDataSetList);
 	
 	// When the list of public datasets change, rewrite the list of available datasets to plot    
 	function updateDataSetList(){
     	setSelectOptions("selDatasetName", gadget.dashboard.getDataSetList());
+    	updateSelectedPoints();
 	}
+	
+	// Given a list of point ids, change those points in the public dataset to a given color
+	function setSelectedColor(obj) {
+		var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+		var useColor = obj.color;
+		if (obj.color == 'unselect') {
+			useColor = '';
+		}
+		ds.setIndexesColor(obj.modifiedPointIds,useColor);
+      gadget.dashboard.trigger('dataSetListChanged');
+		return;
+	}
+	
+	// Checks the public dataset to update the selection status of all the points in the chart
+   // TODO: set the color according to the ds color
+   function updateSelectedPoints() {
+    
+   	if(chart1 == null)
+    		return;	
+    	// select or unselect all the points in the chart to change the way they look
+    	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+    	if (ds === undefined || ds === null) {
+   	 	return;
+   	 }
+    	var colorIndexArray = ds.getColoredIndexArray();
+        
+    	// color selected points
+   	for (var i=0, len=colorIndexArray.length; i<len; i++){
+   		var point;
+    		for (var j=0; j < dataToPlot.length; j++) {
+    			if (("p" + colorIndexArray[i][0]) == dataToPlot[i].id)
+    				point = dataToPlot[i];
+    		}
+     		if (point !== null) {
+      		colorChartPoint(point, colorIndexArray[i][1] );  // color is [1]
+      	}
+    	}
+    	chart1.redraw();
+    	//gadget.dashboard.setDataSet(getSelectedDataset(), ds);
+	}
+	
+	 // Colors a selected point on chart by the color name
+    function colorChartPoint(point, colorName) {
+        if (colorName === "") {
+            colorName = "unselect";
+        }
+        point.color = MARKER_COLOR[colorName];
+    }
 	
 	// GETS for the HTML controls on the page       
    function getSelectedDataset() {
@@ -96,11 +162,194 @@ function Plotter() {
    		// each point has unique id so a pointer to point can be had by chart.get(id)
       	var id = "p" + dsData[i]["db_id"];
       	if (xVal !== NaN && yVal !== NaN){
-      		graphData.push([xVal,yVal]);
+      		graphData.push({id: id, x: xVal, y: yVal, color: DEFAULT_MARKER_COLOR});
      		}
      	}
      	
      	return graphData;
+	}
+	
+	// Find the domain and range max and min of a dataset
+	function getDataExtremes(data) {
+		var extremes = { range: {
+			min: Number.MAX_VALUE,
+			max: Number.MIN_VALUE
+		},
+		domain: {
+			min: Number.MAX_VALUE,
+			max: Number.MIN_VALUE
+		}
+		};
+
+		// Loop through the data and find the min and max values
+		for (var i = 0; i < data.length; i++) {
+
+			// Domain
+			if (data[i].x < extremes.domain.min) {
+				extremes.domain.min = data[i].x;
+			}
+			if (data[i].x > extremes.domain.max) {
+				extremes.domain.max = data[i].x;
+			}	
+
+			// Range
+			if (data[i].y < extremes.range.min) {
+				extremes.range.min = data[i].y;
+			}
+			if (data[i].y > extremes.range.max) {
+				extremes.range.max = data[i].y;
+			}
+		}
+
+		return extremes;
+	}
+	
+	// Break a plot up into a certain number of bins given a dataset
+	function getBins(data) {
+
+		// Get the extremes for each axis to determine the vertices of each bin
+		var domainExtremes = chart1.xAxis[0].getExtremes();
+		var rangeExtremes = chart1.yAxis[0].getExtremes();
+
+		// Set the width and height of each box
+		var binHeight = (domainExtremes.max-domainExtremes.min)/numBinsX;
+		var binWidth = (rangeExtremes.max-rangeExtremes.min)/numBinsY;
+
+		// Initalize the 2D array of bins, set inital values to 0	
+		var _bins = new Array(numBinsX);
+		for (var i = 0; i < numBinsX; i++) {
+			_bins[i] = new Array(numBinsY);
+		}
+		for (var row = 0; row < numBinsX; row++) {
+			for (var col = 0; col < numBinsY; col++) {
+				_bins[row][col] = new Array();
+			}
+		}
+
+		// Loop through the data points and place each one in the correct bin
+		for (var i = 0; i < data.length; i++) {
+			// Determine the correct x and y bin to place this data element into
+			var xBin = Math.floor(((data[i].x - domainExtremes.min)/
+					(domainExtremes.max-domainExtremes.min))*numBinsX);
+			var yBin = Math.floor(((data[i].y - rangeExtremes.min)/
+					(rangeExtremes.max-rangeExtremes.min))*numBinsY);
+	
+			// Push this data point onto the array of bins in the correct place
+			_bins[xBin][yBin].push(data[i]);
+
+		}
+
+		return _bins;
+	}
+	
+	// Determine which points in the current plot window are of low enough density
+	// to be plotted individually
+	function getIndividualPts(data) {
+
+		// The individual points that are sparse enough to be plotted
+		var pointsToPlot = []
+
+		// Get the extremes for each axis
+		var domainExtremes = chart1.xAxis[0].getExtremes();
+		var rangeExtremes = chart1.yAxis[0].getExtremes();
+
+		for (var i = 0; i < data.length; i++) {	
+			// Figure out which bin this point belongs in
+			var xBin = Math.floor(((data[i].x - domainExtremes.min)/
+					(domainExtremes.max-domainExtremes.min))*bins.length);
+			var yBin = Math.floor(((data[i].y - rangeExtremes.min)/
+					(rangeExtremes.max-rangeExtremes.min))*bins[0].length);
+	
+			// Add this point to the plot list if the bin is not over the density limit
+			if (bins[xBin][yBin].length < maxDensity) {
+				pointsToPlot.push(data[i]);
+			}
+		}
+
+		return pointsToPlot;
+	}
+	
+	// Draw the rectangles and points on the chart
+	function drawData(sparsePts) {
+
+		// An array that stores references to all of the primitive objects created
+		var primitiveObjects = []
+
+		// Figure out how many pixels large each bin is
+		var binPixelWidth = chart1.plotWidth/bins.length;
+		var binPixelHeight = chart1.plotHeight/bins[0].length;
+		
+		// Find the range of densities in the graph
+		var largestDensity = Number.MIN_VALUE;
+		for (var i = 0; i < bins.length; i++) {
+			for (var j = 0; j < bins[0].length; j++) {
+				if (bins[i][j].length > largestDensity) {
+					largestDensity = bins[i][j].length;
+				}
+			}
+		}
+		var densityRange = largestDensity - maxDensity;
+
+		// Draw the rectangles over areas with high density
+		for (var i = 0; i < bins.length; i++) {
+			for (var j = 0; j < bins[0].length; j++) {
+				if (bins[i][j].length > maxDensity) {
+		
+					// Scale the opacity of the fill color based on the density
+					var fillColor = 'rgba(255,0,0,'+ ((bins[i][j].length - maxDensity)/densityRange) +')';
+					
+					var xPos = i*binPixelWidth+chart1.plotLeft;
+					var yPos = chart1.plotHeight+chart1.plotTop-binPixelHeight-j*binPixelHeight;
+					
+					if (axisInverted.x) {
+						xPos = (chart1.plotWidth+chart1.plotLeft-binPixelWidth)-i*binPixelWidth;
+					}
+					if (axisInverted.y) {
+						yPos = chart1.plotTop+j*binPixelHeight;
+					}
+					
+					var strokeWidth = 0;
+					var strokeColor = '#0000FF';
+					// Bins with selected points have a blue border
+					for (var k = 0; k < bins[i][j].length; k++) {
+						if (bins[i][j][k].color != DEFAULT_MARKER_COLOR) {
+							strokeWidth = 1;
+							strokeColor = bins[i][j][k].color;
+							break;
+						}
+					}
+											
+					primitiveObjects.push(chart1.renderer.rect(xPos,yPos,binPixelWidth,binPixelHeight,0)
+										.attr({stroke: strokeColor,'stroke-width': strokeWidth,fill: fillColor,zIndex: 100}).add());
+				}
+			}
+		}
+
+		// Draw the individual points in areas with low density
+		for (var i = 0; i < sparsePts.length; i++) {
+	
+			var xPos = chart1.xAxis[0].translate(sparsePts[i].x)+chart1.plotLeft;
+			var yPos = chart1.plotHeight-chart1.yAxis[0].translate(sparsePts[i].y)+chart1.plotTop;
+			
+			primitiveObjects.push(chart1.renderer.circle(xPos,yPos,4).attr({fill: sparsePts[i].color,stroke: 'black','stroke-width': 1,zIndex: 100}).add());	
+		}
+
+		return primitiveObjects;
+	}
+	
+	// Draw a tooltip box on the chart
+	function drawTooltip(text,position) {
+		var primitiveObjects = {}
+	
+		// Draw the text
+		primitiveObjects.text = chart1.renderer.text(text,position.x,position.y).attr({ zIndex: 5 }).add();
+		var bBox = primitiveObjects.text.getBBox();
+	
+		// Draw the box around it
+		primitiveObjects.box = chart1.renderer.rect(bBox.x - 5, bBox.y - 5, bBox.width + 10, bBox.height + 10, 5)
+         	       .attr({fill: '#FFFFEF',stroke: 'gray','stroke-width': 1,zIndex: 4}).add();
+				 
+		return primitiveObjects;
 	}
 	
 	function displayPlot(args) {
@@ -112,12 +361,25 @@ function Plotter() {
 				events: {
 					load: function() { handleLoadEvent(this); },
 					redraw: function() { handleRedrawEvent(this); },
-					click: function(event) { handleClickEvent(this,event); }
+					click: function(event) { handleClickEvent(this,event); },
+					selection: function(event) { handleSelectEvent(this,event); }
 				}
 			},
+			legend: {
+         	layout: 'horizontal',
+      	 	floating: false,
+     	   	backgroundColor: '#FFFFFF',
+    	    	align: 'left',
+     	   	verticalAlign: 'top',
+     	   	y: 60,
+     	   	x: -60
+         },
 			title: {
 				text: 'Generic Density Plot'
 			},
+			credits: {
+                    enabled: false
+         },
 			xAxis: {
 				title: {
 					enabled: true,
@@ -167,6 +429,7 @@ function Plotter() {
       originalSizeY = chart.yAxis[0].getExtremes().max - originalMinY;
 	}
 	
+	// TODO: Figure out a way to flip the image when the axes are inverted
 	function handleRedrawEvent(chart) {
 		gadget.resize();
 		// Remove all of the exisiting primitive objects
@@ -182,12 +445,18 @@ function Plotter() {
       var currentSizeX = chart.xAxis[0].getExtremes().max - currentMinX;
       var currentMinY = chart.yAxis[0].getExtremes().min;
       var currentSizeY = chart.yAxis[0].getExtremes().max - currentMinY;
-      primitiveObjects.push(chart.renderer.image(imgPath, 
-          						(imgPosX-currentMinX)*(chart.plotWidth/currentSizeX)+chart.plotLeft, 				       // X position
-          						chart.plotHeight-((imgPosY-currentMinY)*(chart.plotHeight/currentSizeY)-chart.plotTop), // Y position
-          						imgWidth*(chart.plotWidth/originalSizeX)*(originalSizeX/currentSizeX), 			          // Width
-          						imgHeight*(chart.plotHeight/originalSizeY)*(originalSizeY/currentSizeY))			       // Height
-          						.attr({ zIndex: 0}).add());
+      
+      var xPos = chart.xAxis[0].translate(imgPosX)+chart.plotLeft;
+      var yPos = chart.yAxis[0].translate(imgPosY)+chart.plotTop;
+      var width = imgWidth*(chart.plotWidth/originalSizeX)*(originalSizeX/currentSizeX);
+      var height = imgHeight*(chart.plotHeight/originalSizeY)*(originalSizeY/currentSizeY);
+      
+      primitiveObjects.push(chart.renderer.image(imgPath,
+      							(imgPosX-currentMinX)*(chart.plotWidth/currentSizeX)+chart.plotLeft,                // X position
+      							chart.plotHeight-((imgPosY-currentMinY)*(chart.plotHeight/currentSizeY)-chart.plotTop), // Y position
+      							imgWidth*(chart.plotWidth/originalSizeX)*(originalSizeX/currentSizeX),						// Width
+      							imgHeight*(chart.plotHeight/originalSizeY)*(originalSizeY/currentSizeY))             // Height
+      							.attr({ zIndex: 0}).add());
       // Draw white rectangles over the edges of the chart to prevent the background image from
       // appearing outside of the plot window
       primitiveObjects.push(chart.renderer.rect(0,chart.plotHeight+chart.plotTop,					// Bottom
@@ -206,23 +475,27 @@ function Plotter() {
    	// Figure out which data points fall within the current window of the plot
       pointsInBounds = []
       for (var i = 0; i < dataToPlot.length; i++) {
-      	if (dataToPlot[i][0] >= chart.xAxis[0].getExtremes().min && 
-         	dataToPlot[i][0] <= chart.xAxis[0].getExtremes().max &&
-            dataToPlot[i][1] >= chart.yAxis[0].getExtremes().min &&
-            dataToPlot[i][1] <= chart.yAxis[0].getExtremes().max) {
+      	if (dataToPlot[i].x >= chart.xAxis[0].getExtremes().min && 
+         	dataToPlot[i].x <= chart.xAxis[0].getExtremes().max &&
+            dataToPlot[i].y >= chart.yAxis[0].getExtremes().min &&
+            dataToPlot[i].y <= chart.yAxis[0].getExtremes().max) {
             pointsInBounds.push(dataToPlot[i]);
         	}
      	}
      	
      	// Determine the density of each part of the plot
-		bins = getBins(chart,numBinsX,numBinsY,pointsInBounds);
+		bins = getBins(pointsInBounds);
 		// Figure out which points to draw individually
-		sparsePoints = getIndividualPts(chart,pointsInBounds,bins,maxDensity);
+		sparsePoints = getIndividualPts(pointsInBounds);
 		// Draw the rectangles and points
-      primitiveObjects = drawData(chart,bins,sparsePoints,maxDensity,axisInverted);
+      primitiveObjects = drawData(sparsePoints);
 	}
 	
 	function handleClickEvent(chart,event) {
+		// If the radio button is set to zoom, click does nothing
+		if (isRadioZoom())
+			return;
+	
 		// Figure out which bin was clicked on
 		var xBinClicked = Math.floor((event.xAxis[0].value-chart.xAxis[0].getExtremes().min)/
 								(chart.xAxis[0].getExtremes().max-chart.xAxis[0].getExtremes().min)*numBinsX);
@@ -231,43 +504,79 @@ function Plotter() {
 
 		// If the bin we clicked on has more than maxDensity points in it
 		if (bins[xBinClicked][yBinClicked].length > maxDensity) {
-			alert('Bin ['+xBinClicked+','+yBinClicked+'] selected');
-			// List all of the points in the bin
-			// Only list the first ten for now
-			for (var i = 0; i < bins[xBinClicked][yBinClicked].length; i++) {
-				if (i > 10) {
-					break;
+			// Determine the bounding box of this bin
+			var binBox = { x: { min: chart.xAxis[0].getExtremes().min+((chart.xAxis[0].getExtremes().max-chart.xAxis[0].getExtremes().min)/numBinsX)*xBinClicked,
+									  max: chart.xAxis[0].getExtremes().min+((chart.xAxis[0].getExtremes().max-chart.xAxis[0].getExtremes().min)/numBinsX)*(xBinClicked+1)},
+								y: { min: chart.yAxis[0].getExtremes().min+((chart.yAxis[0].getExtremes().max-chart.yAxis[0].getExtremes().min)/numBinsY)*yBinClicked,
+									  max: chart.yAxis[0].getExtremes().min+((chart.yAxis[0].getExtremes().max-chart.yAxis[0].getExtremes().min)/numBinsY)*(yBinClicked+1)}
+							 };
+			
+			// Select all of the points in the bin
+			var modifiedPointIds = []
+			for (var i = 0; i < dataToPlot.length; i++) {
+				if (dataToPlot[i].x < binBox.x.max && dataToPlot[i].x > binBox.x.min) {
+					if (dataToPlot[i].y < binBox.y.max && dataToPlot[i].y > binBox.y.min) {
+						// Need to strip the first letter from dataToPlot.id to use to query database
+						var databaseId = dataToPlot[i].id;
+						modifiedPointIds.push(databaseId.substr(1));
+					}
 				}
-									
-				//alert("[" + bins[xBinClicked][yBinClicked][i][0] + "," + bins[xBinClicked][yBinClicked][i][1] + "]");
 			}
+			var selectionObj = {modifiedPointIds: modifiedPointIds, color: getSelectionMarkerColor()};
+			setSelectedColor(selectionObj);
 		}
 		// Otherwise, we must be clicking on an individual point
 		else {
 			// If the mouse click falls within the bounds of one of the individual points
 			// Get that data point from the sparsePoints array
+			
+			// Need to translate mouse click and data point coordinates into pixel coordinates
+			var mousePixelX = chart.xAxis[0].translate(event.xAxis[0].value);
+			var mousePixelY = chart.yAxis[0].translate(event.yAxis[0].value);
+												
 			for (var i = 0; i < sparsePoints.length; i++) {
-				// Find the distance in pixels between the mouse click and the drawn point
-				// Need to translate mouse click and data point coordinates into pixel coordinates
-				var mousePixelX = Math.ceil((event.xAxis[0].value-chart.xAxis[0].getExtremes().min)/
-													(chart.xAxis[0].getExtremes().max-chart.xAxis[0].getExtremes().min)*chart.plotSizeX);
-				var mousePixelY = Math.ceil((event.yAxis[0].value-chart.yAxis[0].getExtremes().min)/
-													(chart.yAxis[0].getExtremes().max-chart.yAxis[0].getExtremes().min)*chart.plotSizeY);
-																
-				var coordPixelX = Math.ceil((sparsePoints[i][0]-chart.xAxis[0].getExtremes().min)/
-													(chart.xAxis[0].getExtremes().max-chart.xAxis[0].getExtremes().min)*chart.plotSizeX);
-				var coordPixelY = Math.ceil((sparsePoints[i][1]-chart.yAxis[0].getExtremes().min)/
-													(chart.yAxis[0].getExtremes().max-chart.yAxis[0].getExtremes().min)*chart.plotSizeY);
+				// Find the distance in pixels between the mouse click and the drawn point					
+				var coordPixelX = chart.xAxis[0].translate(sparsePoints[i].x);
+				var coordPixelY = chart.yAxis[0].translate(sparsePoints[i].y);
 																
 				var clickDist = Math.sqrt((mousePixelX-coordPixelX)*(mousePixelX-coordPixelX) + 
 													(mousePixelY-coordPixelY)*(mousePixelY-coordPixelY))
 																
 				if (clickDist < 5) {
-					alert("[" + sparsePoints[i][0] + ", " + sparsePoints[i][1] + "]");
+					setSelectedColor({modifiedPointIds: [sparsePoints[i].id.substr(1)], color: getSelectionMarkerColor()});
 				}
 			} 
 		}
+		chart.redraw();
 	}
+	
+	function handleSelectEvent(chart,event) {
+		if (!isRadioZoom() && ("xAxis" in event)) {
+			event.preventDefault();
+			// Check which data points are inside the selection box
+			var modifiedPointIds = []
+			for (var i = 0; i < dataToPlot.length; i++) {
+				if (dataToPlot[i].x < event.xAxis[0].max && dataToPlot[i].x > event.xAxis[0].min) {
+					if (dataToPlot[i].y < event.yAxis[0].max && dataToPlot[i].y > event.yAxis[0].min) {
+						// Need to strip the first letter from dataToPlot.id to use to query database
+						var databaseId = dataToPlot[i].id;
+						modifiedPointIds.push(databaseId.substr(1));
+					}
+				}
+			}
+			var selectionObj = {modifiedPointIds: modifiedPointIds, color: getSelectionMarkerColor()};
+			setSelectedColor(selectionObj);
+		}
+	}
+	
+	// returns the color name in the selection color dropdown
+   function getSelectionMarkerColor() {
+   	return colorText = getSelectedOption("selSelectionColor");
+   }
+   // returns the value in the selection color dropdown as an 'rgba(r,g,b,a)' string for chart
+   function getSelectionMarkerRgba() {
+   	return MARKER_COLOR[getSelectionMarkerColor()];
+   }
 	
 	// accepts name of select box
    // returns the value in the select box, or ""
@@ -310,6 +619,27 @@ function Plotter() {
    	return myFields[field];
 	}
 	
+	function getRadioValue(radio) {
+   	if (!radio) {
+   		return "";
+   	}
+   	for (var i=0, len=radio.length; i<len; i++) {
+   		if (radio[i].checked) {
+   			return radio[i].value;
+   		}
+   	}
+   	return "";
+   }
+	
+	function isRadioZoom() {
+   	return (getRadioValue(document.formSelectZoom.radSelectZoom) === "zoom");
+   }
+   
+   // returns the color name in the selection color dropdown
+   function getSelectionMarkerColor() {
+   	return colorText = getSelectedOption("selSelectionColor");
+   }
+	
 	// PUBLIC METHODS
 	my.invertX = function() {
    	var anchor = document.getElementById('butXInvert');
@@ -320,7 +650,7 @@ function Plotter() {
       }
         axisInverted.x = !axisInverted.x;
         if (chart1 !== null && chart1 !== undefined) {
-            this.doPlot();
+            chart1.redraw();
         }
     }
     
@@ -333,7 +663,7 @@ function Plotter() {
       }
         axisInverted.y = !axisInverted.y;
         if (chart1 !== null && chart1 !== undefined) {
-            this.doPlot();
+            chart1.redraw();
         }
     }
 	
@@ -354,6 +684,7 @@ function Plotter() {
 		// Read the values in from the forms
 		maxDensity = document.getElementById('maxDensityInput').value;
 		numBinsX = document.getElementById('numBinsXInput').value;
+		imgPath = document.getElementById('imgURLInput').value;
 		imgPosX = document.getElementById('imgPosXInput').value;
 		imgPosY = document.getElementById('imgPosYInput').value;
 		imgWidth = document.getElementById('imgWidthInput').value;
@@ -382,6 +713,10 @@ function Plotter() {
 		
 		displayPlot(dataInput);
 	}
+	
+	my.setSelectOptions = function(sel, array) {
+   	setSelectOptions(sel, array);
+   }
 
 	return my;	
 }
@@ -395,16 +730,24 @@ function Plotter() {
 
 	<!-- The plot controls -->
 	Dataset: <select id="selDatasetName" onchange="pl.populateXYSelect(this.options[this.selectedIndex].value);"></select>
-	X-Axis: <input id="butXInvert" type="button" title="Invert X Axis" value=">" onclick="pl.invertX();"></input><select id="selXAxis"></select>
-	Y-Axis: <input id="butYInvert" type="button" title="Invert Y Axis" value="^" onclick="pl.invertY();"></input><select id="selYAxis"></select><br>
+	X-Axis: <!--<input id="butXInvert" type="button" title="Invert X Axis" value=">" onclick="pl.invertX();"></input>--><select id="selXAxis"></select>
+	Y-Axis: <!--<input id="butYInvert" type="button" title="Invert Y Axis" value="^" onclick="pl.invertY();"></input>--><select id="selYAxis"></select><br>
 	<input id="btDoPlot" onclick="pl.doPlot();" type="button" value="Plot"/><br>
 	
 	maxDensity: <input type="text" id="maxDensityInput" value="2" /><br>
 	numBinsX: <input type="text" id="numBinsXInput" value="35" /><br>
-	imgPosX: <input type="text" id="imgPosXInput" value="100" /><br>
-	imgPosY: <input type="text" id="imgPosYInput" value="0.75" /><br>
-	imgWidth: <input type="text" id="imgWidthInput" value="300" /><br>
-	imgHeight: <input type="text" id="imgHeightInput" value="0.5" />
+	imgURL: <input type="text" id="imgURLInput" value="http://www.stlukeseye.com/images/img-amsler-grid.gif" /><br>
+	imgPosX: <input type="text" id="imgPosXInput" value="11.8" /><br>
+	imgPosY: <input type="text" id="imgPosYInput" value="11.8" /><br>
+	imgWidth: <input type="text" id="imgWidthInput" value="0.1" /><br>
+	imgHeight: <input type="text" id="imgHeightInput" value="0.1" /><br>
+   <form name="formSelectZoom">
+   	<div id="divSelectZoom" style="padding: 5px">
+      	Selection Color: <select id="selSelectionColor"></select>
+         <input type="radio" id="radSelectZoom" name="radSelectZoom" value="select" checked="checked" /><label for="radSelect">Select</label>
+         <input type="radio" id="radSelectZoom" name="radSelectZoom" value="zoom" /><label for="radZoom">Zoom</label>
+   	</div>
+	</form>
 </div>
 
 </body>
