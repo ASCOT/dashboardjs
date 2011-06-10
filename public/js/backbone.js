@@ -878,7 +878,7 @@
     Backbone.Controller.extend = Backbone.View.extend = extend;
 
   // Map from CRUD to HTTP for our default `Backbone.sync` implementation.
-  var methodMap = {
+  methodMap = {
     'create': 'POST',
     'update': 'PUT',
     'delete': 'DELETE',
@@ -987,7 +987,7 @@
 
   // Helper function to get a URL from a Model or Collection as a property
   // or as a function.
-  var getUrl = function(object) {
+  getUrl = function(object) {
     if (!(object && object.url)) throw new Error("A 'url' property or function must be specified");
     return _.isFunction(object.url) ? object.url() : object.url;
   };

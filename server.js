@@ -18,8 +18,9 @@ everyone.now.sendMessageToDashboard = function(message, dashboardId){
   dashboardChannel.now.receiveMessage(message);
 }
 
+
 everyone.now.sendModel = function(model){
- var obj = model;
+ everyone.now.serializedObj = model;
  console.log("MOLO MAZO"); 
 }
 

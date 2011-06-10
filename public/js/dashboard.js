@@ -28,6 +28,47 @@ UW.DataSetsCollection =  Backbone.Collection.extend({
 
 UW.Models = {};
 
+
+// Backbone.sync = function(method, model, success, error) {
+//   var type = Backbone.methodMap[method];
+//   var modelJSON = (method === 'create' || method === 'update') ?
+//                   JSON.stringify(model.toJSON()) : null;
+// 
+//   // Default JSON-request options.
+//   var params = {
+//     url:          Backbone.getUrl(model),
+//     type:         type,
+//     contentType:  'application/json',
+//     data:         modelJSON,
+//     dataType:     'json',
+//     processData:  false,
+//     success:      success,
+//     error:        error
+//   };
+// 
+//   // For older servers, emulate JSON by encoding the request into an HTML-form.
+//   if (Backbone.emulateJSON) {
+//     params.contentType = 'application/x-www-form-urlencoded';
+//     params.processData = true;
+//     params.data        = modelJSON ? {model : modelJSON} : {};
+//   }
+// 
+//   // For older servers, emulate HTTP by mimicking the HTTP method with `_method`
+//   // And an `X-HTTP-Method-Override` header.
+//   if (Backbone.emulateHTTP) {
+//     if (type === 'PUT' || type === 'DELETE') {
+//       if (Backbone.emulateJSON) params.data._method = type;
+//       params.type = 'POST';
+//       params.beforeSend = function(xhr) {
+//         xhr.setRequestHeader("X-HTTP-Method-Override", type);
+//       };
+//     }
+//   }
+// 
+//   // Make the request.
+//   $.ajax(params);
+// };
+
 // The dashboard state
 UW.DashboardModel = Backbone.Model.extend({
 
@@ -54,10 +95,6 @@ UW.DashboardModel = Backbone.Model.extend({
     this[label].bind('publish', _(this.notify).bind(this));
     this[id].parent = this;
     return this[id];
-  },
-  
-  fetch : function(options) {
-    Backbone.Model.prototype.fetch.call(this, options);
   },
   
   export: function (opt) {
@@ -95,7 +132,6 @@ UW.DashboardModel = Backbone.Model.extend({
          if (data.collections) {
            _.each(data.collections, function (collection, name) {
              targetObj[name].id = collection.id;
-             Capsule.models[collection.id] = targetObj[name];
              _.each(collection.models, function (modelData, index) {
                var nextObject = targetObj[name].get(modelData.attrs.id) || targetObj[name]._add({}, {silent: silent});
                process(nextObject, modelData);
@@ -243,6 +279,7 @@ UW.Dashboard = function(container){
     
     var obj = dashboardState.export();
     now.sendModel(obj);
+    var returnObj = dashboardState.import(now.serializedObj);
     console.log("DASHBOARD STATE: " + JSON.stringify(dashboardState.export()));
 
   };
