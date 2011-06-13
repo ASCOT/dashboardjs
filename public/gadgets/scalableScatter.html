@@ -427,6 +427,7 @@ function Plotter() {
       originalSizeX = chart.xAxis[0].getExtremes().max - originalMinX;
       originalMinY = chart.yAxis[0].getExtremes().min;
       originalSizeY = chart.yAxis[0].getExtremes().max - originalMinY;
+      updateSelectedPoints();
 	}
 	
 	// TODO: Figure out a way to flip the image when the axes are inverted

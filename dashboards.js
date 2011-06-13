@@ -42,6 +42,17 @@ var dashboards = [
      {"id":"tableView","url":"/gadgets/tableView.html"}
     ],
     "dataSets": []
+  },
+  {
+    id: 4,
+    name : 'histView',
+    gadgets: [
+     {"id":"histView","url":"/gadgets/histView.html"},
+     {"id":"dataInquirer","url":"/gadgets/dataInquirer.html"},
+     {"id":"scalableScatter","url":"/gadgets/scalableScatter.html"},
+     {"id":"tableView","url":"/gadgets/tableView.html"}
+    ],
+    "dataSets": []
   }
 
 ];
