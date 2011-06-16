@@ -33,7 +33,7 @@ var dashboards = [
                       {"attrs":{"id":"nameResolver","url":"/gadgets/nameResolver.html"}},{"attrs":{"id":"dataSetSelector","url":"/gadgets/dataSetSelector.html"}}]}
       }
   },
-   { attrs: { 
+  { attrs: { 
         id :3,
         author: 'Spencer',
         name: 'ScalableScatterPlot' 
@@ -43,8 +43,20 @@ var dashboards = [
                       {"attrs":{"id":"skyView","url":"/gadgets/skyView.html","property":1,"longitude":-47.17500000000001,"latitude":11.8,"flySpeed":1}},
                       {"attrs":{"id":"nameResolver","url":"/gadgets/nameResolver.html"}},{"attrs":{"id":"dataSetSelector","url":"/gadgets/dataSetSelector.html"}}]}
       }
+  },
+  { attrs: { 
+        id: 4,
+        author: 'Spencer',
+        name: 'histView' 
+      },
+      collections: {
+        "gadgets": {  "models": [
+                      {"attrs":{"id":"histView","url":"/gadgets/histView.html"}},
+                      {"attrs":{"id":"dataInquirer","url":"/gadgets/dataInquirer.html"}},
+                      {"attrs":{"id":"scalableScatter","url":"/gadgets/scalableScatter.html"}},
+                      {"attrs":{"id":"tableView","url":"/gadgets/tableView.html"}}]}
+      }
   }
-  
 ];
 
 module.exports.all = dashboards;
