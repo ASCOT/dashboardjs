@@ -32,7 +32,7 @@ UW.astro.CelestialCoordinate = function(ra, dec){
 
     this.DEFAULT_KEY = "",                                
     this.DEFAULT_NAME = "",
-	this.DEFAULT_ID = "",
+	  this.DEFAULT_ID = "",
     this.DEFAULT_DESCRIPTION = "";
 
     // PRIVATE

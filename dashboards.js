@@ -1,70 +1,62 @@
 var dashboards = [
 
-  {
-    id: 0,
-    author : 'UW',
-    gadgets: [
-     {"id":"skyView","url":"/gadgets/skyView.html","property":1,"longitude":-47.17500000000001,"latitude":11.8,"flySpeed":1},
-     {"id":"nameResolver","url":"/gadgets/nameResolver.html"},
-     {"id":"dataSetSelector","url":"/gadgets/dataSetSelector.html"},
-     {"id":"dataInquirer","url":"/gadgets/dataInquirer.html"},
-     {"id":"tableView","url":"/gadgets/tableView.html"},
-     {"id":"plotView","url":"/gadgets/plotView.html"}
-    ],
-    "dataSets": []
+  { attrs: { 
+      id :0,
+      author:"UW" 
+    },
+    collections: {
+      gadgets: {  "models": [
+                    {"attrs":{"id":"skyView","url":"/gadgets/skyView.html","property":1,"longitude":-47.17500000000001,"latitude":11.8,"flySpeed":1}},
+                    {"attrs":{"id":"nameResolver","url":"/gadgets/nameResolver.html"}},{"attrs":{"id":"dataSetSelector","url":"/gadgets/dataSetSelector.html"}},
+                    {"attrs":{"id":"dataInquirer","url":"/gadgets/dataInquirer.html"}},{"attrs":{"id":"tableView","url":"/gadgets/tableView.html"}},
+                    {"attrs":{"id":"plotView","url":"/gadgets/plotView.html"}}]}
+    }
   },
-  {
-    id: 1,
-    author : 'GalaxyZOO',
-    gadgets: [
-     {"id":"skyView","url":"/gadgets/skyView.html","property":1,"longitude":10,"latitude":-11.622555555555556, "flySpeed":1},
-     {"id":"nameResolver","url":"/gadgets/nameResolver.html"},
-     {"id":"dataInquirer","url":"/gadgets/dataInquirer.html"},
-    ],
-    "dataSets": []
+  { attrs: { 
+       id :1,
+       author: 'GalaxyZOO'
+     },
+     collections: {
+       gadgets: {  "models": [
+                     {"attrs":{"id":"skyView","url":"/gadgets/skyView.html","property":1,"longitude":-47.17500000000001,"latitude":11.8,"flySpeed":1}},
+                     {"attrs":{"id":"nameResolver","url":"/gadgets/nameResolver.html"}},{"attrs":{"id":"dataSetSelector","url":"/gadgets/dataSetSelector.html"}},
+                     {"attrs":{"id":"dataInquirer","url":"/gadgets/dataInquirer.html"}},{"attrs":{"id":"tableView","url":"/gadgets/tableView.html"}}]}
+     }
+   },
+   { attrs: { 
+        id :2,
+        author: "GalaxyZoo" 
+      },
+      collections: {
+        "gadgets": {  "models": [
+                      {"attrs":{"id":"skyView","url":"/gadgets/skyView.html","property":1,"longitude":-47.17500000000001,"latitude":11.8,"flySpeed":1}},
+                      {"attrs":{"id":"nameResolver","url":"/gadgets/nameResolver.html"}},{"attrs":{"id":"dataSetSelector","url":"/gadgets/dataSetSelector.html"}}]}
+      }
   },
-  {
-    id: 2,
-    name : 'GalaxyZoo',
-    gadgets: [
-     {"id":"skyView","url":"/gadgets/skyView.html","property":1,"longitude":0,"latitude":0,"flySpeed":1},
-     {"id":"nameResolver","url":"/gadgets/nameResolver.html"},
-    ],
-    "dataSets": []
-  },
-  {
-    id: 3,
-    name : 'ScalableScatterPlot',
-    gadgets: [
-     {"id":"scalableScatter","url":"/gadgets/scalableScatter.html"},
-     {"id":"dataInquirer","url":"/gadgets/dataInquirer.html"},
-     {"id":"plotView","url":"/gadgets/plotView.html"},
-     {"id":"tableView","url":"/gadgets/tableView.html"}
-    ],
-    "dataSets": []
+   { attrs: { 
+        id :3,
+        author: 'Spencer',
+        name: 'ScalableScatterPlot' 
+      },
+      collections: {
+        "gadgets": {  "models": [
+                      {"attrs":{"id":"skyView","url":"/gadgets/skyView.html","property":1,"longitude":-47.17500000000001,"latitude":11.8,"flySpeed":1}},
+                      {"attrs":{"id":"nameResolver","url":"/gadgets/nameResolver.html"}},{"attrs":{"id":"dataSetSelector","url":"/gadgets/dataSetSelector.html"}}]}
+      }
   }
-
+  
 ];
 
 module.exports.all = dashboards;
 
 module.exports.find = function(id) {
   id = parseInt(id, 10);
-  var found = null;
-  dashboardLoop: for(dashboard_index in dashboards) {
-    var dashboard = dashboards[dashboard_index];
-    if (dashboard.id == id) {
-      found = dashboard;
-      break dashboardLoop;
-    }    
-  };
-  return found;
+  return dashboards[id];
 }
 
 module.exports.set = function(id, dashboard) {
   id = parseInt(id, 10);
-  dashboard.id = id;
-  dashboards[id - 1] = dashboard;
+  dashboards[id] = dashboard;
 };
 
 module.exports.length = function() {
@@ -74,26 +66,24 @@ module.exports.length = function() {
 module.exports.new = function() {
   var newId = dashboards.length;
   dashboards.push({
-    id: newId,
-    author : 'UW',
-    gadgets: [
-     {"id":"skyView","url":"/gadgets/skyView.html","property":1,"longitude": 0,"latitude": 0,"flySpeed":1},
-     {"id":"nameResolver","url":"/gadgets/nameResolver.html"},
-     {"id":"dataSetSelector","url":"/gadgets/dataSetSelector.html"},
-     {"id":"dataInquirer","url":"/gadgets/dataInquirer.html"},
-     {"id":"tableView","url":"/gadgets/tableView.html"},
-     {"id":"plotView","url":"/gadgets/plotView.html"}
-    ],
-    "dataSets": []
+    attrs: { 
+      id: newId,
+      author:"UW" 
+    },
+    collections: {
+      gadgets: {  models: [
+                      {"attrs":{"id":"skyView","url":"/gadgets/skyView.html","property":1,"longitude":-47.17500000000001,"latitude":11.8,"flySpeed":1}},
+                      {"attrs":{"id":"nameResolver","url":"/gadgets/nameResolver.html"}},{"attrs":{"id":"dataSetSelector","url":"/gadgets/dataSetSelector.html"}},
+                      {"attrs":{"id":"dataInquirer","url":"/gadgets/dataInquirer.html"}},{"attrs":{"id":"tableView","url":"/gadgets/tableView.html"}},
+                      {"attrs":{"id":"plotView","url":"/gadgets/plotView.html"}}]},
+    }
   });
-  
   return newId;
-
 }
 
 module.exports.insert = function(dashboard) {
   var id = dashboards.length + 1;
-  dashboard.id = id;
+  dashboard.attrs.id = id;
   dashboards[id - 1] = dashboard;
   return id;
 }

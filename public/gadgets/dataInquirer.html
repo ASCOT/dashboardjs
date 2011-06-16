@@ -39,10 +39,10 @@ var dataSetList;
 var viewportBounds;
 
 // create HR object
-function init(){
+gadget.init = function(callback){
     ga = new GetData();
     ga.setFields();
-    gadget.resize();
+    callback();
 }
 
 function GetData(){
@@ -379,8 +379,7 @@ function GetData(){
 }
 </script>
 </head>
-<body onload="init();">
-
+<body>
 <div id="content" class="extraPadding">
 
 	<div id="divVPBounds" style="float: right">

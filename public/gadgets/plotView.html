@@ -39,13 +39,12 @@ var skyViewPointsList;
 var dataSetList;
 
 // create new Plotter object
-function init(){
+gadget.init = function(callback){
     setHtmlStyles();
 		pl = new Plotter();
     // add colors to the select box (pass the select Name and color array)
     pl.setSelectOptions("selSelectionColor", ["red", "green", "blue", "yellow", "unselect"]);
-    gadget.resize();
-
+    callback();
 }
 
 function setHtmlStyles() {
@@ -91,10 +90,11 @@ function Plotter(){
                                        
                                        
      // When the list of public datasets change, rewrite the list of available datasets to plot    
-		function updateDataSetList(){
-    	setSelectOptions("selDatasetName", gadget.dashboard.getDataSetList());
-    	updateSelectedPoints();
-		}
+    function updateDataSetList(){
+      setSelectOptions("selDatasetName", gadget.dashboard.getDataSetList());
+      updateSelectedPoints();
+      renderPlot();
+    }
     
     // GETS for the HTML controls on the page       
     function getSelectedDataset() {
@@ -139,8 +139,8 @@ function Plotter(){
     // TODO: set the color according to the ds color
     function updateSelectedPoints() {
     
-    		if(chart1 == null)
-    			return;	
+        if(chart1 == null)
+          return;	
         
         chart1.showLoading();
         // select or unselect all the points in the chart to change the way they look
@@ -220,7 +220,7 @@ function Plotter(){
         var ds = gadget.dashboard.getDataSet(args.dataSetName);
                 
         var graphData = [];
-        var dsData = ds.toJSON();
+        var dsData = ds.getPoints();
         for (i=0,len=dsData.length; i<len; i++) {
             var xVal = parseFloat(dsData[i][xCol]);
             var yVal = parseFloat(dsData[i][yCol]);
@@ -433,7 +433,6 @@ function Plotter(){
         }
     }
  
- 
     // Accepts the name of a select object, and an array of strings
     // replaces the options with the array of strings
     function setSelectOptions(selectName, options) {
@@ -581,28 +580,28 @@ function Plotter(){
 
 </script>
 </head>
-<body onLoad="init();">
+<body>
 <div id="content">
-	<div id="divSelectDataset" style="display: inline">  
-  	<table style="margin: 0px"><tbody>
-  		<tr>
-				<td> Dataset: <select id="selDatasetName" onchange="pl.populateXYSelect(this.options[this.selectedIndex].value);"></select>
-  	    </td>
-  	    <td>    
-					X Axis: <input id="butXInvert" type="button" title="Invert X Axis" value=">" onclick="pl.invertX();"></input> <select id="selXAxis"></select>
-				</td>
-				<td>
-					Y Axis: <input id="butYInvert" type="button" title="Invert Y Axis" value="^" onclick="pl.invertY();"></input> <select id="selYAxis"></select>
-				</td>
-  	  </tr>
-  	  <tr>
-				<td>
-					<input id="btDoPlot" onclick="pl.doPlot();" type="button" value="Plot"/>
-				</td> 
-  	  </tr> 
-  	</tbody></table>
-	</div>
-	<div id="divPlotToolbar" style="display: inline">
+  <div id="divSelectDataset" style="display: inline">  
+    <table style="margin: 0px"><tbody>
+      <tr>
+        <td> Dataset: <select id="selDatasetName" onchange="pl.populateXYSelect(this.options[this.selectedIndex].value);"></select>
+        </td>
+        <td>    
+          X Axis: <input id="butXInvert" type="button" title="Invert X Axis" value=">" onclick="pl.invertX();"></input> <select id="selXAxis"></select>
+        </td>
+        <td>
+          Y Axis: <input id="butYInvert" type="button" title="Invert Y Axis" value="^" onclick="pl.invertY();"></input> <select id="selYAxis"></select>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <input id="btDoPlot" onclick="pl.doPlot();" type="button" value="Plot"/>
+        </td> 
+      </tr> 
+    </tbody></table>
+  </div>
+  <div id="divPlotToolbar" style="display: inline">
     <form name="formSelectZoom">
         <div id="divSelectZoom" style="padding: 5px">
             Selection Color: <select id="selSelectionColor">
@@ -612,7 +611,7 @@ function Plotter(){
             &nbsp;&nbsp; Info: <input type='checkbox' id='ckVerboseInfo'  onclick="pl.redrawChart();" value="0"/>
         </div>
     </form>
-	</div>
+  </div>
 
 <div id="divChart1">
 </div>

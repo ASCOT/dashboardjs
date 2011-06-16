@@ -22,11 +22,10 @@ var dataSetList;
 var newDataSetName;
 
 // Creates gadget object
-function init(){
+gadget.init = function(callback){
     myGadget = new datasetSelector();
-    gadget.resize();
+    callback();
 }
-
 
 function datasetSelector(){
     var my = new Object();
@@ -225,7 +224,7 @@ function datasetSelector(){
 
 </script>
 </head>
-<body onLoad="init();">
+<body>
 <div id="content">
 	<div id="divDataset_List"></div>
 </div>
