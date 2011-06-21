@@ -121,7 +121,7 @@ function Histogram() {
    	var colorIndexArray = ds.getColoredIndexArray();
                 
   	 	var graphData = [];
-  		var dsData = ds.toJSON();
+  		var dsData = ds.getPoints();
    	for (i=0,len=dsData.length; i<len; i++) {
    		var xVal = parseFloat(dsData[i][xCol]);
    		// each point has unique id so a pointer to point can be had by chart.get(id)

@@ -44,7 +44,8 @@ var dashboards = [
                       {"attrs":{"id":"dataInquirer","url":"/gadgets/dataInquirer.html"}},
                       {"attrs":{"id":"dataSetSelector","url":"/gadgets/dataSetSelector.html"}},
                       {"attrs":{"id":"scalableScatter","url":"/gadgets/scalableScatter.html"}},
-                      {"attrs":{"id":"histView","url":"/gadgets/histView.html"}}]}
+                      {"attrs":{"id":"histView","url":"/gadgets/histView.html"}},
+                      {"attrs":{"id":"tableView","url":"/gadgets/tableView.html"}}]}
       }
   }
 ];

@@ -156,7 +156,7 @@ function Plotter() {
    	var colorIndexArray = ds.getColoredIndexArray();
                 
   	 	var graphData = [];
-  		var dsData = ds.toJSON();
+  		var dsData = ds.getPoints();
    	for (i=0,len=dsData.length; i<len; i++) {
    		var xVal = parseFloat(dsData[i][xCol]);
    		var yVal = parseFloat(dsData[i][yCol]);
@@ -166,7 +166,6 @@ function Plotter() {
       		graphData.push({id: id, x: xVal, y: yVal, color: colorIndexArray[i][1] });
      		}
      	}
-     	
      	return graphData;
 	}
 	
