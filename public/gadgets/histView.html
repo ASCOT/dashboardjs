@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- histView.xml -->
+<!-- Author: Spencer Wallace (spencerw@email.arizona.edu) -->
+<html lang="en">
+<meta http-equiv="Pragma" content="no-cache">
+
+<head>
+<title>Histogram View</title>
+
+<!-- chart dependencies -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js" type="text/javascript"></script>
+<script src="../js/highcharts/highcharts.js" type="text/javascript"></script>
+
+<!-- ASCOT Basic Style Sheets -->
+<link href="/css/960/reset.css" rel="stylesheet" type="text/css">
+<link href="/css/960/text.css" rel="stylesheet" type="text/css"> 
+
+<script type="text/javascript">
+
+// The histogram gadget
+var hi = null;
+
+// GLOBAL CONSTANTS
+var chart1;                  // The highcharts chart object
+var bins;						  // A 2d array containing the data points held in each bin
+
+// Create the Histogram object
+function init() {
+	hi = new Histogram();
+	hi.setSelectOptions("selSelectionColor", ["red", "green", "blue", "yellow", "unselect"]);
+	gadget.resize();
+}
+
+function Histogram() {	
+	var my = new Object();
+	
+	// PRIVATE
+	var dataToChart;				  // The collection of points going into the histogram
+	var numBins;
+	var currentDatasetName = ""; // The name of the dataset to be loaded
+	myFields = { }				     // Pointers to HTML fields on the page
+	
+	 // CHART CONSTANTS
+   var DEFAULT_MARKER_COLOR = 'rgba(51, 102,255, 1)';
+       SELECTED_MARKER_COLOR = 'rgba(210,30,100,.9)'
+       MARKER_COLOR = { red: 'rgba(255, 0, 0, .7)',
+                        green: 'rgba(0, 255, 0, .7)',
+                        blue: 'rgba(0, 0, 255, .7)',
+                        yellow: 'rgba(220, 220, 0, .7)',
+                        unselect: DEFAULT_MARKER_COLOR
+                       }
+	
+	gadget.dashboard.bind('dataSetListChanged', updateDataSetList);
+	
+	// GETS for the HTML controls on the page       
+   function getSelectedDataset() {
+   	return getSelectedOption("selDatasetName");
+   }
+   function getSelectedXAxis() {
+      return getSelectedOption("selXAxis");
+   }
+	
+	// When the list of public datasets change, rewrite the list of available datasets to plot    
+	function updateDataSetList(){
+    	setSelectOptions("selDatasetName", gadget.dashboard.getDataSetList());
+    	updateSelectedPoints();
+	}
+	
+	// Given a list of point ids, change those points in the public dataset to a given color
+	function setSelectedColor(obj) {
+		var useColor = obj.color;
+		if (obj.color == 'unselect') {
+			useColor = '';
+		}
+		var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+		ds.setIndexesColor(obj.modifiedPointIds,useColor);
+      gadget.dashboard.trigger('dataSetListChanged');
+		return;
+	}
+	
+	// Checks the public dataset to update the selection status of all the points in the chart
+   // TODO: set the color according to the ds color
+   function updateSelectedPoints() {
+   	if(chart1 == null)
+    		return;	
+    	// select or unselect all the points in the chart to change the way they look
+    	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+    	if (ds === undefined || ds === null) {
+   	 	return;
+   	 }
+    	var colorIndexArray = ds.getColoredIndexArray();
+    	// color selected points
+   	for (var i=0, len=colorIndexArray.length; i<len; i++){
+   		var point;
+    		for (var j=0; j < dataToChart.length; j++) {
+    			if (("p" + colorIndexArray[i][0]) == dataToChart[i].id)
+    				point = dataToChart[i];
+    		}
+     		if (point !== null) {
+      		colorChartPoint(point, colorIndexArray[i][1] );  // color is [1]
+      	}
+    	}
+    	my.doChart();
+    	//gadget.dashboard.setDataSet(getSelectedDataset(), ds);
+	}
+	
+	// Colors a selected point on chart by the color name
+   function colorChartPoint(point, colorName) {
+       if (colorName === "") {
+           colorName = "unselect";
+       }
+       point.color = MARKER_COLOR[colorName];
+   }
+	
+	// Load the data into a format that highcharts can read
+	function parseData(args) {
+   	// TODO: verify the necessary args were passed
+   	var xCol = args.xAxis;
+        
+   	var ds = gadget.dashboard.getDataSet(args.dataSetName);
+   	var colorIndexArray = ds.getColoredIndexArray();
+                
+  	 	var graphData = [];
+  		var dsData = ds.toJSON();
+   	for (i=0,len=dsData.length; i<len; i++) {
+   		var xVal = parseFloat(dsData[i][xCol]);
+   		// each point has unique id so a pointer to point can be had by chart.get(id)
+      	var id = "p" + dsData[i]["db_id"];
+      	if (xVal !== NaN){
+      		graphData.push({id: id, x: xVal, color: MARKER_COLOR[colorIndexArray[i][1]]});
+     		}
+     	}
+     	
+     	return graphData;
+	}
+	
+	// Organize the data into an array of bins containing the data points
+	// Returns the array of bins along with an array of strings that describe
+	// the bounds of each bin
+	function makeBins(data) {
+		// Find the extremes of the dataset
+		var extremes = { min: Number.MAX_VALUE,
+							  max: Number.MIN_VALUE };					  
+		for (var i = 0; i < data.length; i++) {
+			if (data[i].x < extremes.min)
+				extremes.min = data[i].x;
+			if (data[i].x > extremes.max)
+				extremes.max = data[i].x;
+		}
+	
+		// Create an array of length numBins and push data into each bin
+		var obj = {bins: new Array(),
+					  bounds: new Array() };		// The boundary values between each bin
+		var boundNums = new Array();
+		for (var i = 0; i < numBins; i++) {
+			boundNums[i] = (((extremes.max - extremes.min)/numBins)*(i+1)+extremes.min).toFixed(3);
+			obj.bins[i] = new Array();
+		}
+		for (var i = 0; i < data.length; i++) {
+			var binToInsert = Math.floor(((data[i].x - extremes.min)/(extremes.max-extremes.min))*numBins);
+			if (binToInsert == numBins)
+				binToInsert = numBins-1;
+			obj.bins[binToInsert].push(data[i]);
+		}
+		
+		obj.bounds[0] = extremes.min.toFixed(3) + ' to ' + boundNums[0];
+		for (var i = 1; i < numBins; i++) {
+			obj.bounds[i] = boundNums[i-1] + ' to ' + boundNums[i];
+		}
+		
+		return obj;
+	}
+	
+	function displayHistogram(args) {
+	chart1 = new Highcharts.Chart({
+			chart: {
+				renderTo: 'divChart1',
+				animation: false,
+				defaultSeriesType: 'column',
+				zoomType: 'x',
+				events: {
+					selection: function(event) { handleSelectEvent(this,event); }
+				}
+			},
+			title: {
+				text: args.dataName
+			},
+			credits: {
+            enabled: false
+         },
+         legend: {
+         	layout: 'horizontal',
+      	 	floating: false,
+     	   	backgroundColor: '#FFFFFF',
+    	    	align: 'left',
+     	   	verticalAlign: 'top',
+     	   	y: 60,
+     	   	x: -60
+         },
+			xAxis: {
+				categories: args.categories,
+				tickmarkPlacement: 'between',
+				labels: {
+            	enabled: false
+        		},
+        		title: {
+        			text: getSelectedXAxis()
+        		}
+			},
+			yAxis: {
+				title: {
+					text: 'Occurrences'
+				}
+			},
+			plotOptions: {
+        		series: {
+            	groupPadding: 0,
+            	pointPadding: 0
+        		}
+    		},
+			series: [{
+				name: args.dataName,
+				data: args.series,
+				showInLegend: false,
+				animation: false,
+				color: DEFAULT_MARKER_COLOR
+			}]
+		});
+	}
+	
+	function handleSelectEvent(chart,event) {
+		// If the radio button is set to zoom, click does nothing
+		if (isRadioZoom())
+			return;
+	
+		event.preventDefault();
+		
+		// Determine which bins the selection box falls onto
+		var minBin = Math.floor(event.xAxis[0].min-0.5)+1;
+		var maxBin = Math.floor(event.xAxis[0].max+0.5);
+		
+		// Select all of the bars in this range
+		var modifiedPointIds = []
+		for (var i = minBin; i <= maxBin; i++) {
+			// Get the ids of every point contained in the selected bars
+			for (var j = 0; j < bins[i].length; j++) {
+				var databaseId = bins[i][j].id;
+				modifiedPointIds.push(databaseId.substr(1));
+			}
+      }
+      
+      // Change the color of the points in the public database
+      var selectionObj = {modifiedPointIds: modifiedPointIds, color: getSelectionMarkerColor() };
+		setSelectedColor(selectionObj);
+	}
+	
+	// accepts name of select box
+   // returns the value in the select box, or ""
+   function getSelectedOption(select) {
+	   var selName = getField(select);
+      if (selName.length > 0){
+ 	     return selName.options[selName.selectedIndex].value;
+      } else {
+	      return "";
+      }
+	}
+	
+	// Accepts the name of a select object, and an array of strings
+   // replaces the options with the array of strings
+	function setSelectOptions(selectName, options) {
+   	var select = getField(selectName);
+      if (select === null) {
+  	   	return;
+      }
+      // save old selected option so maybe it can be reselected
+      var selectedOption = getSelectedOption(selectName);
+      // Default. First option selected
+      if (selectedOption == "")
+     		 selectedOption == options[0];
+      // clear options
+      select.length = 0;
+      // add options
+      for (var i=0, len=options.length; i<len; i++) {
+      	// if oldOption is in the list, then select it
+         select.add(new Option(options[i], options[i], false, (selectedOption == options[i])), null);
+      }
+      if(select.onchange)
+      	select.onchange();
+	}
+	
+	function getField(field) {
+   	if (!(field in myFields) || (myFields[field] === null)) {
+     		myFields[field] = document.getElementById(field);
+      }
+   	return myFields[field];
+	}
+	
+	function getRadioValue(radio) {
+   	if (!radio) {
+   		return "";
+   	}
+   	for (var i=0, len=radio.length; i<len; i++) {
+   		if (radio[i].checked) {
+   			return radio[i].value;
+   		}
+   	}
+   	return "";
+   }
+	
+	function isRadioZoom() {
+   	return (getRadioValue(document.formSelectZoom.radSelectZoom) === "zoom");
+   }
+	
+	// returns the color name in the selection color dropdown
+   function getSelectionMarkerColor() {
+   	return colorText = getSelectedOption("selSelectionColor");
+   }
+	
+	// PUBLIC METHODS
+	
+	// Populates the X axis dropdown with values from the chosen datasets column names
+   // If no dataset is chosen, then it blanks them
+   my.populateXSelect = function(datasetName) {
+  		// TODO get dataset names
+		var columnNames = [""];
+      if (datasetName !== "") {
+      	var ds = gadget.dashboard.getDataSet(datasetName);
+         columnNames = ds.getNonDBColumns();
+  		}
+   	setSelectOptions("selXAxis", columnNames);
+   }
+   
+   my.exportSelected = function() {
+   
+   	// Get the dataset name
+   	var dsName = document.getElementById('exportSelectedInput').value;
+   	if (dsName.length < 1) {
+      	showError("Enter export name");
+      	return;
+      }
+      
+      // Create a new dataset of points with the selected color
+      var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+   	var colorIndexArray = ds.getColoredIndexArray();
+   	var dsData = ds.toJSON();
+   	
+      var newDb = [];
+      for (var i = 0; i < colorIndexArray.length; i++) {
+      	if (getSelectionMarkerColor() == colorIndexArray[i][1]) {
+      		newDb.push(dsData[i]);
+      	}
+      }
+      
+      var newDs = gadget.dashboard.createDataSet(dsName);
+      newDs.init(newDb);
+       
+   }
+   
+	my.doChart = function() {
+		numBins = document.getElementById('numBinsInput').value;
+		
+		// Init the dataset
+		currentDatasetName = getSelectedDataset();
+      var datasetName = currentDatasetName;
+      var xAxisName = getSelectedXAxis();
+      
+      if (datasetName ===  "" || xAxisName === "") {
+      	alert("Choose a dataset, x axis, and y axis");
+      	return;
+      }
+      
+      var dataInputObj = { 'dataSetName': datasetName,
+                        'xAxis': getSelectedXAxis() };
+                      
+      dataToChart = parseData(dataInputObj);
+      var obj = makeBins(dataToChart);
+      bins = obj.bins;
+      
+      var highchartsData = { dataName: datasetName,
+      							  categories: obj.bounds,
+      							  series: new Array() };
+      for (var i = 0; i < numBins; i++) {
+      	var targetColor = DEFAULT_MARKER_COLOR;
+      	for (var j = 0; j < bins[i].length; j++) {
+      		if (bins[i][j].color!= SELECTED_MARKER_COLOR) {
+      			targetColor = bins[i][j].color;
+      		}
+      	}
+      	highchartsData.series[i] = { y: bins[i].length, color: targetColor };
+      }
+		
+		displayHistogram(highchartsData);
+	}
+	
+	my.setSelectOptions = function(sel, array) {
+   	setSelectOptions(sel, array);
+   }
+	
+	return my;
+}
+
+</script>
+</head>
+<body onload="init();">
+<div id="content">
+	<!-- The scatter plot -->
+	<div id="divChart1" style="width: 600px; height: 400px; margin: 0 auto"></div>
+	
+	<!-- The plot controls -->
+	<input id="btDoPlot" onclick="hi.doChart();" type="button" value="Plot"/>
+	Dataset: <select id="selDatasetName" onchange="hi.populateXSelect(this.options[this.selectedIndex].value);"></select>
+	X-Axis:  <select id="selXAxis"></select><br>
+	
+	numBins: <input type="text" id="numBinsInput" value="10" /><br>
+	<form name="formSelectZoom">
+   	<div id="divSelectZoom" style="padding: 5px">
+      	Selection Color: <select id="selSelectionColor"></select>
+         <input type="radio" id="radSelectZoom" name="radSelectZoom" value="select" checked="checked" /><label for="radSelect">Select</label>
+         <input type="radio" id="radSelectZoom" name="radSelectZoom" value="zoom" /><label for="radZoom">Zoom</label>
+   	</div>
+	</form>
+	
+	<input id="btExportSelected" onclick="hi.exportSelected();" type="button" value="Export Selection"/>
+	Name: <input type="text" id="exportSelectedInput" value="selected" />
+</div>
+</body>
+</html>
