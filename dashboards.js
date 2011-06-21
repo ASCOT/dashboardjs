@@ -34,19 +34,10 @@ var dashboards = [
   },
   {
     id: 3,
-    name : 'ScalableScatterPlot',
+    author: 'Spencer',
+    name : 'histViewAndScatterPlot',
     gadgets: [
-     {"id":"scalableScatter","url":"/gadgets/scalableScatter.html"},
-     {"id":"dataInquirer","url":"/gadgets/dataInquirer.html"},
-     {"id":"plotView","url":"/gadgets/plotView.html"},
-     {"id":"tableView","url":"/gadgets/tableView.html"}
-    ],
-    "dataSets": []
-  },
-  {
-    id: 4,
-    name : 'histView',
-    gadgets: [
+     {"id":"ASCIIDataLoader","url":"/gadgets/ASCIIDataLoader.html"},
      {"id":"histView","url":"/gadgets/histView.html"},
      {"id":"dataInquirer","url":"/gadgets/dataInquirer.html"},
      {"id":"scalableScatter","url":"/gadgets/scalableScatter.html"},

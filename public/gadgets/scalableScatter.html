@@ -153,6 +153,7 @@ function Plotter() {
    	var yCol = args.yAxis;
         
    	var ds = gadget.dashboard.getDataSet(args.dataSetName);
+   	var colorIndexArray = ds.getColoredIndexArray();
                 
   	 	var graphData = [];
   		var dsData = ds.toJSON();
@@ -162,7 +163,7 @@ function Plotter() {
    		// each point has unique id so a pointer to point can be had by chart.get(id)
       	var id = "p" + dsData[i]["db_id"];
       	if (xVal !== NaN && yVal !== NaN){
-      		graphData.push({id: id, x: xVal, y: yVal, color: DEFAULT_MARKER_COLOR});
+      		graphData.push({id: id, x: xVal, y: yVal, color: colorIndexArray[i][1] });
      		}
      	}
      	
@@ -680,6 +681,32 @@ function Plotter() {
    	setSelectOptions("selXAxis", columnNames);
    	setSelectOptions("selYAxis", columnNames);
    }
+   
+   my.exportSelected = function() {
+   
+   	// Get the dataset name
+   	var dsName = document.getElementById('exportSelectedInput').value;
+   	if (dsName.length < 1) {
+      	showError("Enter export name");
+      	return;
+      }
+      
+      // Create a new dataset of points with the selected color
+      var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+   	var colorIndexArray = ds.getColoredIndexArray();
+   	var dsData = ds.toJSON();
+   	
+      var newDb = [];
+      for (var i = 0; i < colorIndexArray.length; i++) {
+      	if (getSelectionMarkerColor() == colorIndexArray[i][1]) {
+      		newDb.push(dsData[i]);
+      	}
+      }
+      
+      var newDs = gadget.dashboard.createDataSet(dsName);
+      newDs.init(newDb);
+       
+   }
 	
 	my.doPlot = function() {
 		// Read the values in from the forms
@@ -749,6 +776,9 @@ function Plotter() {
          <input type="radio" id="radSelectZoom" name="radSelectZoom" value="zoom" /><label for="radZoom">Zoom</label>
    	</div>
 	</form>
+	
+	<input id="btExportSelected" onclick="pl.exportSelected();" type="button" value="Export Selection"/>
+	Name: <input type="text" id="exportSelectedInput" value="selected" />
 </div>
 
 </body>
