@@ -18,12 +18,6 @@ everyone.now.sendMessageToDashboard = function(message, dashboardId){
   dashboardChannel.now.receiveMessage(message);
 }
 
-
-everyone.now.sendModel = function(model){
- everyone.now.serializedObj = model;
- console.log("MOLO MAZO"); 
-}
-
 everyone.now.addUserToDashboardChannel = function(dashboardId){
    var dashboardChannel = nowjs.getGroup(dashboardId);
    dashboardChannel.addUser(this.user.clientId);
@@ -31,7 +25,6 @@ everyone.now.addUserToDashboardChannel = function(dashboardId){
 
 everyone.now.notifyToDashboard = function(dashboardId, notification){
    var dashboardChannel = nowjs.getGroup(dashboardId);
-   console.log("NOT " + dashboardId + " " + notification.notification);
    dashboardChannel.now.receiveNotification(notification);
 } 
 
@@ -164,6 +157,7 @@ app.put('/saveDashboard/:id', function(req, res){
 });
 
 app.post('/saveDashboard/:id', function(req, res){
+  console.log("STATE: " + req.body);
   dashboards.set(req.params.id, req.body);
 });
 

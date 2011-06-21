@@ -22,52 +22,9 @@ UW.GadgetsCollection =  Backbone.Collection.extend({
 UW.DataSetModel = Backbone.Model.extend({});
 
 // The dashboard contains a collection of data sets
-UW.DataSetsCollection =  Backbone.Collection.extend({
+UW.DataSetsCollection =  Backbone.Collection.extend({  
   model: UW.Dataset
 });
-
-UW.Models = {};
-
-
-// Backbone.sync = function(method, model, success, error) {
-//   var type = Backbone.methodMap[method];
-//   var modelJSON = (method === 'create' || method === 'update') ?
-//                   JSON.stringify(model.toJSON()) : null;
-// 
-//   // Default JSON-request options.
-//   var params = {
-//     url:          Backbone.getUrl(model),
-//     type:         type,
-//     contentType:  'application/json',
-//     data:         modelJSON,
-//     dataType:     'json',
-//     processData:  false,
-//     success:      success,
-//     error:        error
-//   };
-// 
-//   // For older servers, emulate JSON by encoding the request into an HTML-form.
-//   if (Backbone.emulateJSON) {
-//     params.contentType = 'application/x-www-form-urlencoded';
-//     params.processData = true;
-//     params.data        = modelJSON ? {model : modelJSON} : {};
-//   }
-// 
-//   // For older servers, emulate HTTP by mimicking the HTTP method with `_method`
-//   // And an `X-HTTP-Method-Override` header.
-//   if (Backbone.emulateHTTP) {
-//     if (type === 'PUT' || type === 'DELETE') {
-//       if (Backbone.emulateJSON) params.data._method = type;
-//       params.type = 'POST';
-//       params.beforeSend = function(xhr) {
-//         xhr.setRequestHeader("X-HTTP-Method-Override", type);
-//       };
-//     }
-//   }
-// 
-//   // Make the request.
-//   $.ajax(params);
-// };
 
 // The dashboard state
 UW.DashboardModel = Backbone.Model.extend({
@@ -77,10 +34,14 @@ UW.DashboardModel = Backbone.Model.extend({
     author: "Unknown",
   },
   
+  initialize: function (spec) {
+     //this.register();
+     this.addChildCollection('gadgets', UW.GadgetsCollection);
+     this.addChildCollection('dataSets', UW.DataSetsCollection);
+  },
+  
   addChildCollection: function(id, constructor){
     var newCollection = new constructor();
-    var obj = {};
-    obj[id] = newCollection;
     this[id] = newCollection; 
     //newCollection.bind('publish', _(this.publishProxy).bind(this));
     newCollection.bind('remove', _(this.notify).bind(this));
@@ -148,9 +109,6 @@ UW.DashboardModel = Backbone.Model.extend({
     return this;
   },
   
-  initialize: function() {
-  },
-  
   notify: function() {
   },
   
@@ -169,12 +127,9 @@ UW.Dashboard = function(container){
   
   // Renders the gadgets
   var renderer = new UW.Renderer(container);
-  
-  // Represents the state of the dashboard that will be saved to and load from the server
-  var dashboardState = new UW.DashboardModel();
     
   // List of gadgets
-  var gadgets = {};  
+  var gadgets = {}; 
     
   // All generated ids for gadgets
   var ids = {};
@@ -182,17 +137,12 @@ UW.Dashboard = function(container){
   // Auxiliary Variable for Ids generation
   var counter = 0;
  
+  // Represents the state of the dashboard that will be saved to and load from the server
+  var dashboardState;
+   
   // Chat
-  var chatModel = new UW.NodeChatModel(); 
-  var chat = new UW.ChatView({'model': chatModel, 'dashboard': this, 'el': $('#dashboardArea'), 'id': dashboardState.id});
-
-  now.receiveMessage = function(message){
-    chat.addChat("<span style='font-weight: bold'>Anonymous: </span>" + message);
-  };
-  
-  now.receiveNotification = _.bind(function(notification){
-    this.trigger(notification.notification, notification.data);
-  }, this);
+  var chatModel; 
+  var chat;
 
   // Generates unique ids for gadgets
   function generateId(gadgetName){
@@ -214,6 +164,8 @@ UW.Dashboard = function(container){
   } 
 
   _.extend(this, Backbone.Events);
+
+  this.loadedGadgets = 0;
 
   this.addGadget = function(gadgetState){
     
@@ -238,21 +190,12 @@ UW.Dashboard = function(container){
       );  			
   };
 
-  this.createDataSet = function(id, data){
-    
-    var dataSets; 
-    if ( dashboardState.dataSets instanceof Backbone.Collection)
-      dataSets = dashboardState.dataSets; 
-    else{
-      dataSets = dashboardState.addChildCollection('dataSets', UW.DataSetsCollection);
-    }
+  this.createDataSet = function(id){
     
     var newDataSet = new UW.Dataset({'id': id});
     newDataSet.bind('change', _.bind(function() {this.trigger("dataSetChanged")}, this));
-    dataSets.add(newDataSet);
+    dashboardState.dataSets.add(newDataSet);
     this.notify("dataSetListChanged");
-    if(data)
-      newDataSet.set({ db: new TAFFY(dataSetsJSON[i].data)});
     return newDataSet;
   };
 
@@ -275,12 +218,19 @@ UW.Dashboard = function(container){
     for(gadget in gadgets){
       gadgetCollection.get(gadget).set(gadgets[gadget].saveState());
     }    
-    dashboardState.save();
+    //dashboardState.save();
+    $.ajax({
+        type: 'POST',
+        url: '/saveDashboard/' + dashboardState.id,
+        data: JSON.stringify(dashboardState.export()),
+        contentType: "application/json",
+        dataType: "text",
+        success: _.bind( function(resp) { }, this )
+      });
     
-    var obj = dashboardState.export();
-    now.sendModel(obj);
-    var returnObj = dashboardState.import(now.serializedObj);
-    console.log("DASHBOARD STATE: " + JSON.stringify(dashboardState.export()));
+    var objStr = JSON.stringify(dashboardState.export());
+    var obj = JSON.parse(objStr);
+    console.log("DASHBOARD STATE: " + objStr);
 
   };
   
@@ -296,30 +246,85 @@ UW.Dashboard = function(container){
     now.notifyToDashboard(dashboardState.id, {'notification': notification, 'data': data});
   };
   
-  this.inflateState = function() { 
+  this.init = function(state){
     
-    var gadgetsJSON = dashboardState.get('gadgets');
-    var newDataSet;
-    var dataSetsJSON;
+    var callback = _.bind(function(state) { var that = this; return function() { that.inflateState(state); }}, this); 
+    now.ready(callback(state));
     
-    now.addUserToDashboardChannel(dashboardState.id);
-    dashboardState.addChildCollection('gadgets', UW.GadgetsCollection);
-    
-    for (var i=0; i < gadgetsJSON.length; i++)
-      this.addGadget(new UW.GadgetModel(gadgetsJSON[i]));
-    
-    this.renderGadgets();
-    
-    //dataSetsJSON = dashboardState.get('dataSets');
-    //dashboardState.addChildCollection('dataSets', UW.DataSetsCollection);
-    
-    //for (var i=0; i < dataSetsJSON.length; i++){
-    //  newDataSet this.createDataSet(dataSetsJSON[i].id, dataSetsJSON[i].data);    
   };
+  
+  this.initConnection = function(){
+    
+    now.addUserToDashboardChannel(dashboardState.id); 
+    now.receiveMessage = function(message){
+       chat.addChat("<span style='font-weight: bold'>Anonymous: </span>" + message);
+     }; 
+    now.receiveNotification = _.bind(function(notification){
+       this.trigger(notification.notification, notification.data);
+    },this);
+     
+  };
+  
+  this.inflateState = function(state) { 
+    
+    var newGadget;
+    var gadgetModels;
+    var stateObj
+    
+    if(dashboardState){
+      this.initConnection();
+    }
+    else{
+    
+      stateObj = JSON.parse(state);
+      //console.log("State: " + state);
+      dashboardState = new UW.DashboardModel;
+      dashboardState.import(JSON.parse(state));
+      
+      this.initConnection();  
+      
+      gadgetModels = dashboardState.gadgets.models;
+      for(gadget in gadgetModels){
+        newGadget = new UW.Gadget({ model: gadgetModels[gadget] });    
+        newGadget.dashboard = this;
+        gadgets[newGadget.getId()] = newGadget;
+      }
+     
+      chatModel = new UW.NodeChatModel(); 
+      chat = new UW.ChatView({'model': chatModel, 'dashboard': this, 'el': $('#dashboardArea'), 'id': dashboardState.id}); 
+      this.renderGadgets();
+      
+    }
+    
+  };
+  
+  this.gadgetLoaded = function() { 
+    this.loadedGadgets++; 
+    if(this.loadedGadgets === dashboardState.gadgets.models.length){ 
+      // We need a timeout due to a now.js bug that makes initialization asyncronous when syncronous behavior is expected
+      setTimeout(_.bind(this.inflateData, this), 1000); 
+    } 
+  }
+  
+  this.inflateData = function(){
+    
+    var dataSetsModels;
+    dataSetsModels = dashboardState.dataSets.models;
+      for(model in dataSetsModels){
+        dataSetsModels[model].bind('change', _.bind(function() {this.trigger("dataSetChanged")}, this));
+        dataSetsModels[model].init(dataSetsModels[model].get("db"));
+        this.notify("dataSetListChanged");
+    }
+    
+  }
       
   this.loadState = function(stateUrl){
-    dashboardState.setUrl(stateUrl);
-    dashboardState.fetch({success: _.bind( function() { this.inflateState(); }, this )});     
+    
+    $.ajax({
+      url: stateUrl,
+      type: 'GET',
+      success: _.bind(function(resp) { this.init(resp); },this)
+    });    
   };
   
 };

@@ -20,13 +20,6 @@ UW.Dataset = Backbone.Model.extend({
     visible: true,
     db: {}
   },
-
-  initialize: function(){},
-  
-  toJSON : function() {
-    return this.map(function(model){ return model.toJSON(); });
-    console.log("MY toJSON");
-  },
     
   /**
   * Create a new Dataset.
@@ -74,6 +67,14 @@ UW.Dataset = Backbone.Model.extend({
   
   },
   
+  getPoints: function() {
+    return this.get("db").get();
+  },
+  
+  toJSON: function() {
+    return {id: this.get('id'), visible: this.get('visible'), db: this.get("db").get()};
+  },
+  
   setVisible: function(vis) {
     this.set({'visible': vis});
   },
@@ -118,10 +119,6 @@ UW.Dataset = Backbone.Model.extend({
       }
     }
     return columns;
-  },
-  
-  toJSON: function() {
-    return this.get("db").get();
   },
   
   getColoredIndexArray: function() {

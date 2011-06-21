@@ -27,9 +27,10 @@ var flySpeed;
 //    $("#txtInputText").watermark("Enter object or RA and DEC");
 
 // create gadget object
-function init(){
-    tq = new NameResolve();
-    gadget.resize();
+gadget.init = function(callback){
+  tq = new NameResolve();
+  gadget.resize();
+  callback();
 }
 
 function NameResolve(){
@@ -164,7 +165,7 @@ function NameResolve(){
 
 </script>
 </head>
-<body onLoad="init();">
+<body>
 <div id='content'>
 	<form name="form" action="#" onsubmit="tq.getCoords(document.getElementById('txtInputText').value);return false">
   	<input type="text" id="txtInputText" style="width:15em;"/>

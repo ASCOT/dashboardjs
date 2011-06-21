@@ -44,11 +44,10 @@ var myGadget = null;
 var dataSetList;
 
 // Creates gadget object
-function init(){
+gadget.init = function(callback){
     myGadget = new dataTable();  
-    gadget.resize();
+    callback();
 }
-
 
 function dataTable(){
     var my = new Object();
@@ -72,7 +71,7 @@ function dataTable(){
             return;
         }
         var columnNames = sortColumns(ds.getColumns());     // custom column order for this table
-        var myDataSource = new YAHOO.util.DataSource(ds.toJSON());
+        var myDataSource = new YAHOO.util.DataSource(ds.getPoints());
         var myColumnDefs = [];
         for (var i=0, len=columnNames.length; i<len; i++) {
             var obj = {};
@@ -161,7 +160,7 @@ function dataTable(){
 }
 </script>
 </head>
-<body onLoad="init();">
+<body>
 <div id="content" class="yui-skin-sam">
 	<div id="divSelectDataset" style="display: none">
   	Dataset: <select id="selDatasetName" onchange="myGadget.chooseDataset(this.options[this.selectedIndex].value);"></select>

@@ -36,6 +36,14 @@ UW.Gadget = Backbone.View.extend({
     //model.set({property: value });
   },
 
+  init: function(success, failure){
+    console.log("Not initialization routine provided for gadget " + this.model.id);
+  },
+  
+  loaded: function(){
+    this.dashboard.gadgetLoaded();
+  },
+
   debugMessage: function(msg){
     UW.debugMessage("GADGET " + this.getId() + ": " + msg);
   }

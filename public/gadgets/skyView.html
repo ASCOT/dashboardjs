@@ -16,9 +16,8 @@
 	<script type="text/javascript"> 
    
   var skyView = null;
-  var ge;
-  google.load("earth", "1");
-		
+  var ge;		
+	
   function SkyView() {
 
     var self = new Object();
@@ -229,7 +228,7 @@
         if (!ds.isVisible()) {
             return;
         }
-        var pubDataset = ds.toJSON();
+        var pubDataset = ds.getPoints();
         var toPlotStrings = [];
     
         for (var i=0, len=pubDataset.length; i<len; i++) {
@@ -355,13 +354,15 @@
   	
   };
   
-  function init(){
-  	skyView = new SkyView();
-  };
-    		
-  google.setOnLoadCallback(init);
-      
-	</script>
+  gadget.init = function(callback){
+      skyView = new SkyView();
+      callback();
+  }
+  
+  google.load("earth", "1");
+  google.setOnLoadCallback();  
+  
+  </script>
 
 </head>
 <body>
