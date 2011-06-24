@@ -11,12 +11,16 @@
 	<link href="/css/960/reset.css" rel="stylesheet" type="text/css">
 	<link href="/css/960/text.css" rel="stylesheet" type="text/css"> 
 
-	<script src="/js/astroObjectLib.js" type="text/javascript"></script>
-	<script src="http://google.com/jsapi?key=ABQIAAAAVGHgv2pouycqhAw5tCmtChT2yXp_ZAY8_ufC3CFXhHIE1NvwkxSq6qELjXXLwllm-seMw-iKrnLcNQ" type="text/javascript"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js" type="text/javascript"></script>
+  <script src="/js/underscore.js" type="text/javascript"></script>
+  <script src="/js/backbone.js" type="text/javascript"></script>
+  <script src="/js/astroObjectLib.js" type="text/javascript"></script>	<script src="http://google.com/jsapi?key=ABQIAAAAVGHgv2pouycqhAw5tCmtChT2yXp_ZAY8_ufC3CFXhHIE1NvwkxSq6qELjXXLwllm-seMw-iKrnLcNQ" type="text/javascript"></script>
 	<script type="text/javascript"> 
    
   var skyView = null;
   var ge;		
+	
+	var DEFAULT_ICON_URL = "http://sky.astro.washington.edu/gadgets/images/target_grey.png";
 	
   function SkyView() {
 
@@ -165,11 +169,13 @@
                     latitude = lookAt.getLatitude();
                     longitude = lookAt.getLongitude();
             
-                    topLeft = new UW.astro.CelestialCoordinate(0,0);
+                    topLeft = new UW.AstroMetaData;
+                    topLeft.setRa(0);
+                    topLeft.setDec(0);
                     topLeft.setLongitude(boxBounds.getWest());
                     topLeft.setLatitude(boxBounds.getNorth());
     
-                    bottomRight = new UW.astro.CelestialCoordinate(0,0);
+                    bottomRight = new UW.AstroMetaData;
                     bottomRight.setLongitude(boxBounds.getEast());
                     bottomRight.setLatitude(boxBounds.getSouth());
     
@@ -228,13 +234,12 @@
         if (!ds.isVisible()) {
             return;
         }
-        var pubDataset = ds.getPoints();
+        var pubDataset = ds.getRecords();
         var toPlotStrings = [];
     
         for (var i=0, len=pubDataset.length; i<len; i++) {
-            if (pubDataset[i].hasOwnProperty("db_CelestialCoord") && pubDataset[i].db_visible) { // check the visible property of the record
-                var cc = pubDataset[i].db_CelestialCoord;
-                toPlotStrings.push(cc.getKML());
+            if (pubDataset[i].metaData.get('visible')) { // check the visible property of the record
+                toPlotStrings.push(toKML(pubDataset[i]));
             }
         }
         
@@ -250,6 +255,71 @@
             }
         }
     
+    }
+    
+  function getColorIcon(color){
+    	// change the color and the iconUrl
+    	var iconUrl;     	
+    	switch(color){
+    		case "red":
+    			iconUrl = "http://sky.astro.washington.edu/gadgets/images/target_red.gif";
+    			break;
+    		case "green":
+    			iconUrl = "http://sky.astro.washington.edu/gadgets/images/target_green.gif";
+    			break;
+    		case "yellow":
+    			iconUrl = "http://sky.astro.washington.edu/gadgets/images/target_yellow.gif";
+    			break;
+    		case "blue":
+    			iconUrl = "http://sky.astro.washington.edu/gadgets/images/target_blue.png";
+    			break;
+    		default:
+    			iconUrl = DEFAULT_ICON_URL;
+    			break;
+    	}
+    	return iconUrl
+  };
+    
+    
+   function toKML(record) {
+     var lon = record.get('ra') - 180;
+     var lat = record.get('dec');
+     var iconUrl = getColorIcon(record.metaData.get('color'));
+     var name = record.metaData.getName();
+   	 // translate multiline desc into html
+     desc = "<p>" + record.metaData.get('description').replace(new RegExp('\n', "g"), '<br \>') + '<\p>';
+
+     var placemarkText = '<?xml version="1.0" encoding="utf-8"?>' +
+     '<kml xmlns="http://www.opengis.net/kml/2.2" hint="target=sky">' +
+     '<Placemark ID="' + name + '">' +
+     '<name>' + name + '</name>' +
+     '<description>' +
+      '<![CDATA[' +
+        desc +
+      ']]>' +
+      '</description>' +
+      '<LookAt>' +
+      '<longitude>' + lon + '</longitude>' +
+      '<latitude>' + lat + '</latitude>' +
+      '<altitude>0</altitude>' +
+      '<heading>-3</heading>' +
+      '<tilt>0</tilt>' +
+      '<range>3768</range>' +
+      '</LookAt>' +
+      '<Style>' +
+      '<IconStyle>' +
+      '<Icon>' +
+      '<href>' + iconUrl + '</href>' +
+      '</Icon>' +
+      '</IconStyle>' +
+      '</Style>' +
+      '<Point>' +
+      '<coordinates>' + lon + ',' + lat + ',0</coordinates>' +
+      '</Point>' +
+      '</Placemark>' +
+      '</kml>';
+      return placemarkText;  
+
     }
     
     //

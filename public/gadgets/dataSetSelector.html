@@ -13,6 +13,9 @@
 <link href="/css/960/text.css" rel="stylesheet" type="text/css"> 
 
 <!-- Contains UW.astro objects -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js" type="text/javascript"></script>
+<script src="/js/underscore.js" type="text/javascript"></script>
+<script src="/js/backbone.js" type="text/javascript"></script>
 <script src="/js/astroObjectLib.js" type="text/javascript"></script>
 <script type="text/javascript">
 
@@ -107,7 +110,7 @@ function datasetSelector(){
     
         // create the dataset name span
         var spanDSName = document.createElement("span");
-        spanDSName.innerHTML = "<b>" + dsName + "</b> (" +  ds.getSize() + ")";
+        spanDSName.innerHTML = "<b>" + dsName + "</b> (" +  ds.length() + ")";
         dsDiv.appendChild(spanDSName);
         
         // create the shape selector
@@ -126,7 +129,7 @@ function datasetSelector(){
     function createDSSubsetList(ds) {
         var dsId = ds.getId();
         var subDiv = document.createElement("div");
-        var colorList = ds.getUniqueColors();
+        var colorList = ds.getIndexKeys('color');
         
         // indent the colors
         var spanIndent = document.createElement("span");
@@ -156,7 +159,7 @@ function datasetSelector(){
             if (color === "") {
                 spanColor.innerHTML = "default";
             }
-            spanColor.innerHTML += " (" + ds.getColorIndexes(color).length + ")";
+            spanColor.innerHTML += " (" + ds.getIndexEntries('color',color).length + ")";
             subDiv.appendChild(spanColor);
         }
 
@@ -198,15 +201,15 @@ function datasetSelector(){
     
     function getDSVisibility(dsId) {
         var ds = gadget.dashboard.getDataSet(dsId);
-        return ds.getVisible();
+        return ds.isVisible();
     }
     function toggleDSVisibility(dsId) {
         var ds = gadget.dashboard.getDataSet(dsId);
-        ds.setVisible(!ds.getVisible());
+        ds.setVisible(!ds.isVisible());
     }
-    function toggleDSColorVisibility(dsId, color, vis) {
+    function toggleDSColorVisibility(dsId, color, visible) {
         var ds = gadget.dashboard.getDataSet(dsId);
-        ds.setIndexesVisible(ds.getColorIndexes(color), vis);
+        ds.setRecordsMetaData({'visible': visible}, ds.getIndexEntries('color', color));
     }
 
     // returns true if arr contains el
@@ -220,7 +223,6 @@ function datasetSelector(){
     }
     return my;
 }
-
 
 </script>
 </head>

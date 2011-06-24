@@ -11,23 +11,16 @@
 var UW = UW || {};
 
 // Represents the gadget state
-UW.GadgetModel = Backbone.Model.extend({});
+UW.GadgetModel = Backbone.Model.extend({
+});
 
 // The dashboard contains a collection of gadgets
-UW.GadgetsCollection =  Backbone.Collection.extend({
+UW.GadgetsCollection = Backbone.Collection.extend({
   model: UW.GadgetModel
-});
-
-// Represents a data set
-UW.DataSetModel = Backbone.Model.extend({});
-
-// The dashboard contains a collection of data sets
-UW.DataSetsCollection =  Backbone.Collection.extend({  
-  model: UW.Dataset
-});
+}); 
 
 // The dashboard state
-UW.DashboardModel = Backbone.Model.extend({
+UW.DashboardModel = UW.AbstractModel.extend({
 
   defaults: {
     id: -1,	
@@ -38,78 +31,6 @@ UW.DashboardModel = Backbone.Model.extend({
      //this.register();
      this.addChildCollection('gadgets', UW.GadgetsCollection);
      this.addChildCollection('dataSets', UW.DataSetsCollection);
-  },
-  
-  addChildCollection: function(id, constructor){
-    var newCollection = new constructor();
-    this[id] = newCollection; 
-    //newCollection.bind('publish', _(this.publishProxy).bind(this));
-    newCollection.bind('remove', _(this.notify).bind(this));
-    newCollection.bind('add', _(this.notify).bind(this));
-    newCollection.bind('move', _(this.notify).bind(this));
-    newCollection.parent = this;
-    return newCollection;
-  },
-  
-  addChildModel: function (id, constructor) {
-    this[id] = new constructor();
-    this[label].bind('publish', _(this.notify).bind(this));
-    this[id].parent = this;
-    return this[id];
-  },
-  
-  export: function (opt) {
-    var result = {},
-      settings = _({
-        recurse: true
-      }).extend(opt || {});
-    
-    function process(targetObj, source) {
-      targetObj.attrs = source.toJSON();
-      _.each(source, function (value, key) {
-        if (settings.recurse) {
-          if (key !== 'collection' && source[key] instanceof Backbone.Collection) {
-            targetObj.collections = targetObj.collections || {};
-            targetObj.collections[key] = {};
-            targetObj.collections[key].models = [];
-            targetObj.collections[key].id = source[key].id || null;
-            _.each(source[key].models, function (value, index) {
-              process(targetObj.collections[key].models[index] = {}, value);
-            });
-          } else if (key !== 'parent' && source[key] instanceof Backbone.Model) {
-            targetObj.models = targetObj.models || {};
-            process(targetObj.models[key] = {}, value);
-          }
-        }
-      });
-    }
-    process(result, this);
-    return result;
-  },
-  
-  import: function (data, silent) {
-       function process(targetObj, data) {
-         targetObj.set(data.attrs, {silent: silent});
-         if (data.collections) {
-           _.each(data.collections, function (collection, name) {
-             targetObj[name].id = collection.id;
-             _.each(collection.models, function (modelData, index) {
-               var nextObject = targetObj[name].get(modelData.attrs.id) || targetObj[name]._add({}, {silent: silent});
-               process(nextObject, modelData);
-             });
-           });
-         }
-       if (data.models) {
-         _.each(data.models, function (modelData, name) {
-          process(targetObj[name], modelData);
-        });
-      }
-    }
-    process(this, data);
-    return this;
-  },
-  
-  notify: function() {
   },
   
   url: function(){
@@ -179,7 +100,7 @@ UW.Dashboard = function(container){
   
   this.addDataSet = function(dataSet){
     var dataSetsJSON = dashboardState.get('dataSets');
-    dashboardState.addChildCollection('dataSets', UW.DataSetsCollection);
+    dashboardState.addChildCollection('dataSets', UW.DataModel);
   };
 
   this.renderGadgets = function(){
@@ -191,8 +112,7 @@ UW.Dashboard = function(container){
   };
 
   this.createDataSet = function(id){
-    
-    var newDataSet = new UW.Dataset({'id': id});
+    var newDataSet = new UW.DataSetModel({'id': id});
     newDataSet.bind('change', _.bind(function() {this.trigger("dataSetChanged")}, this));
     dashboardState.dataSets.add(newDataSet);
     this.notify("dataSetListChanged");
@@ -310,10 +230,10 @@ UW.Dashboard = function(container){
     
     var dataSetsModels;
     dataSetsModels = dashboardState.dataSets.models;
-      for(model in dataSetsModels){
-        dataSetsModels[model].bind('change', _.bind(function() {this.trigger("dataSetChanged")}, this));
-        dataSetsModels[model].init(dataSetsModels[model].get("db"));
-        this.notify("dataSetListChanged");
+    for(model in dataSetsModels){
+      dataSetsModels[model].bind('change', _.bind(function() {this.trigger("dataSetChanged")}, this));
+      //dataSetsModels[model].init(dataSetsModels[model].get("db"));
+      this.notify("dataSetListChanged");
     }
     
   }

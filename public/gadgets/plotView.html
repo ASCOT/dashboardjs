@@ -21,7 +21,6 @@ td{
   padding: 5px;
 }
 
-
 </style>
 
 <script type="text/javascript">
@@ -56,137 +55,137 @@ function setHtmlStyles() {
 }
 
 function Plotter(){
-    var my = new Object();
-    // CONSTANTS
-    var PLOT_HEIGHT = 400,
-        PLOT_WIDTH = 300;
     
-        // CHART CONSTANTS
-    var DEFAULT_MARKER_COLOR = 'rgba(100, 100, 100, .7)'; //  old red: 'rgba(223, 83, 83, .5)';
-        SELECTED_MARKER_COLOR = 'rgba(210,30,100,.9)'// old yellow: 'rgba(210,210,0,.5)',
-        DEFAULT_MARKER_SHAPE = 'circle',
-        SERIES_NAME = 'series1',
-        MARKER_COLOR = { red: 'rgba(255, 0, 0, .7)',
-                         green: 'rgba(0, 255, 0, .7)',
-                         blue: 'rgba(0, 0, 255, .7)',
-                         yellow: 'rgba(220, 220, 0, .7)',
-                         unselect: DEFAULT_MARKER_COLOR
-                        }
+  var my = new Object();
+  // CONSTANTS
+  var PLOT_HEIGHT = 400;
+  var PLOT_WIDTH = 300;
     
-    // PRIVATE
-        _objList = [],
-        _lastSelectedObjs = [],
-        _currentDatasetName = "",
-        // contains pointers to HTML fields on page so we can avoid many document.getElementById() calls
-        _myFields = { },
-        _axisInverted = { x: false,
-                          y: false
-                        };  
+  // CHART CONSTANTS
+  var DEFAULT_MARKER_COLOR = 'rgba(100, 100, 100, .7)'; //  old red: 'rgba(223, 83, 83, .5)';
+  var SELECTED_MARKER_COLOR = 'rgba(210,30,100,.9)'// old yellow: 'rgba(210,210,0,.5)';
+  var DEFAULT_MARKER_SHAPE = 'circle';
+  var SERIES_NAME = 'series1';
+  var MARKER_COLOR = { red: 'rgba(255, 0, 0, .7)',
+                        green: 'rgba(0, 255, 0, .7)',
+                        blue: 'rgba(0, 0, 255, .7)',
+                        yellow: 'rgba(220, 220, 0, .7)',
+                        unselect: DEFAULT_MARKER_COLOR };
+    
+  // PRIVATE
+  _objList = [],
+  _lastSelectedObjs = [],
+  _currentDatasetName = "",
+  // contains pointers to HTML fields on page so we can avoid many document.getElementById() calls
+  _myFields = { },
+  _axisInverted = { x: false, y: false};  
                         
-    gadget.dashboard.bind('dataSetListChanged', updateDataSetList); 
-    gadget.dashboard.bind('plotRendered', plotDataset);
-    gadget.dashboard.bind('pointsSelected', setSelectedByMinMax);
-    gadget.dashboard.bind('axisInverted', invertAxis);
-                                       
-                                       
-     // When the list of public datasets change, rewrite the list of available datasets to plot    
-    function updateDataSetList(){
-      setSelectOptions("selDatasetName", gadget.dashboard.getDataSetList());
-      updateSelectedPoints();
-      renderPlot();
-    }
+  gadget.dashboard.bind('dataSetListChanged', updateDataSetList); 
+  gadget.dashboard.bind('plotRendered', plotDataset);
+  gadget.dashboard.bind('pointsSelected', setSelectedByMinMax);
+  gadget.dashboard.bind('axisInverted', invertAxis);
+                                                                            
+  // When the list of public datasets change, rewrite the list of available datasets to plot    
+  function updateDataSetList(){
+    setSelectOptions("selDatasetName", gadget.dashboard.getDataSetList());
+    updateSelectedPoints();
+    renderPlot();
+  }
     
-    // GETS for the HTML controls on the page       
-    function getSelectedDataset() {
-        return getSelectedOption("selDatasetName");
-    }
-    function getSelectedXAxis() {
-        return getSelectedOption("selXAxis");
-    }
-    function getSelectedYAxis() {
-        return getSelectedOption("selYAxis");
-    }
+  // GETS for the HTML controls on the page       
+  function getSelectedDataset() {
+    return getSelectedOption("selDatasetName");
+  }
+  function getSelectedXAxis() {
+    return getSelectedOption("selXAxis");
+  }
+  function getSelectedYAxis() {
+    return getSelectedOption("selYAxis");
+  }
       
-    function setSelectedByMinMax(obj) {
+  function setSelectedByMinMax(obj) {
         
-      //debugLog('x: ' + xMin + ', ' + xMax + '\ny: ' + yMin + ', ' + yMax);
-      // 'select' all the points in the chart to change the way they look
-      var data = chart1.get(obj.seriesId).data;
-      var ds = gadget.dashboard.getDataSet(getSelectedDataset());
-      var selectedIds = [];
-       
-      var selectedMarkerColor = obj.color; 
-      for (var i=0, len=data.length; i<len; i++){
-          var point = data[i];
-          if (point.x <= obj.xMax && point.x >= obj.xMin && point.y <= obj.yMax && point.y >= obj.yMin) {
-              // point.id looks like: p0 
-              // so we strip the first letter to get the db_id
-              selectedIds.push(getPointId(point));             
-              colorChartPoint(point, selectedMarkerColor);
-          }
+    //debugLog('x: ' + xMin + ', ' + xMax + '\ny: ' + yMin + ', ' + yMax);
+    // 'select' all the points in the chart to change the way they look
+    var data = chart1.get(obj.seriesId).data;
+    var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+    var selectedIds = [];  
+    var selectedMarkerColor = obj.color; 
+    
+    for (var i=0, len=data.length; i<len; i++){
+      var point = data[i];
+      if (point.x <= obj.xMax && point.x >= obj.xMin && point.y <= obj.yMax && point.y >= obj.yMin) {
+        // point.id looks like: p0 
+        // so we strip the first letter to get the db_id
+        selectedIds.push(point.id);             
+        colorChartPoint(point, selectedMarkerColor);
       }
-      chart1.redraw();
-      var color = (selectedMarkerColor === "unselect") ? "" : selectedMarkerColor;
-
-      // update the dataset with the selected points
-      // set dataset points colors in bulk
-      ds.setIndexesColor(selectedIds, color);  
-      gadget.dashboard.trigger("dataSetListChanged"); 
-
     }
+    chart1.redraw();
+    var color = (selectedMarkerColor === "unselect") ? "" : selectedMarkerColor;
+
+    // update the dataset with the selected points
+    // set dataset points colors in bulk
+    ds.setRecordsMetaData({'color': color}, selectedIds);  
+    gadget.dashboard.trigger("dataSetListChanged"); 
+
+  }
     
-    // Checks the public dataset to update the selection status of all the points in the chart
-    // TODO: set the color according to the ds color
-    function updateSelectedPoints() {
+  // Checks the public dataset to update the selection status of all the points in the chart
+  // TODO: set the color according to the ds color
+  function updateSelectedPoints() {
     
-        if(chart1 == null)
-          return;	
+    var colorIndexArray;
+    var colorIndex;
+    var ds;
+    var point;
+    
+    if(chart1 == null)
+      return;	
         
-        chart1.showLoading();
-        // select or unselect all the points in the chart to change the way they look
-        var ds = gadget.dashboard.getDataSet(getSelectedDataset());
-        if (ds === undefined || ds === null) {
-            return;
-        }
-        var colorIndexArray = ds.getColoredIndexArray();
-        
-        // color selected points
-        for (var i=0, len=colorIndexArray.length; i<len; i++){
-            var point = chart1.get("p" + colorIndexArray[i][0]);  // id is [0]
-            if (point !== null) {
-                colorChartPoint(point, colorIndexArray[i][1] );  // color is [1]
-            }
-        }
-        chart1.redraw();
-        chart1.hideLoading();
-        //gadget.dashboard.setDataSet(getSelectedDataset(), ds);
+    chart1.showLoading();
+    // select or unselect all the points in the chart to change the way they look
+    ds = gadget.dashboard.getDataSet(getSelectedDataset());
+    if (ds === undefined || ds === null) {
+      return;
     }
+    colorIndexArray = ds.getIndex('color');
+    // color selected points
+    for (color in colorIndexArray){
+      colorIndex = colorIndexArray[color];
+      for (var j=0, lenj=colorIndex.length; j<lenj; j++){
+        point = chart1.get(colorIndex[j]);  // id is [0]
+        if (point !== null) {
+          colorChartPoint(point, color);  
+        }
+      }
+    }
+    chart1.redraw();
+    chart1.hideLoading();
+  }
 
-    // Colors a selected point on chart by the color name
-    function colorChartPoint(point, colorName) {
-        if (colorName === "") {
-            colorName = "unselect";
-        }
-        point.update({color: MARKER_COLOR[colorName], marker: {fillColor: MARKER_COLOR[colorName]}}, false);
+  // Colors a selected point on chart by the color name
+  function colorChartPoint(point, colorName) {
+    if (colorName === "") {
+      colorName = "unselect";
     }
+    point.update({color: MARKER_COLOR[colorName], marker: {fillColor: MARKER_COLOR[colorName]}}, false);
+  }
     
-    // colors chart point and writes it to dataset
-    function setPointColor(point, colorName) {
-        //debugLog("setPointColor(" + colorName + ")");
-
-        if (colorName === "unselect") {
-            colorName = "";
-        }
-        colorChartPoint(point, colorName);
-        // write to dataset
-        setTimeout( function() {
-                    var dsName = getCurrentDatasetName();
-                    var ds = gadget.dashboard.getDataSet(dsName);
-                    ds.setIndexesColor( [ getPointId(point) ], colorName);
-                    //gadget.dashboard.setDataSet(dsName, newDataSetList);
-                }, 1 );
-            
+  // colors chart point and writes it to dataset
+  function setPointColor(point, colorName) {
+    //debugLog("setPointColor(" + colorName + ")");
+    if (colorName === "unselect") {
+      colorName = "";
     }
+    colorChartPoint(point, colorName);
+    // write to dataset
+    setTimeout( function() {
+                  var dsName = getCurrentDatasetName();
+                  var ds = gadget.dashboard.getDataSet(dsName);
+                  ds.setIndexesColor([point.id], colorName);
+                }, 1 );            
+  }
     
     // Zooms the viewport to point by writing CelestialCoordinate to public variable
     function zoomToPoint(point) {
@@ -194,20 +193,18 @@ function Plotter(){
         // write cc to public variable
         var cc = getPointCc(point);
         if (cc !== null && cc !== undefined) {
-            gadget.dashboard.notify("centerOfCoordinatesChanged",{'longitude': cc.getLongitude(), 'latitude': cc.getLatitude()});
+            gadget.dashboard.notify("centerOfCoordinatesChanged",{'longitude': parseFloat(cc.get('ra')) - 180, 'latitude': parseFloat(cc.get('dec'))});
         }
     }
+    
     function getPointColor(point) {
         var ds = gadget.dashboard.getDataSet(getCurrentDatasetName());
-        return ds.getColorByIndex(getPointId(point));
+        return ds.getRecord(point.id);
     }
     
-    function getPointId(point) {
-        return point.id.substr(1);
-    }
     function getPointCc(point) {
         var ds = gadget.dashboard.getDataSet(getCurrentDatasetName());
-        return ds.getCelestialCoordByIndex(getPointId(point));
+        return ds.getRecord(point.id);
     }
     function plotDataset(args) {
         // TODO: verify the necessary args were passed
@@ -220,15 +217,15 @@ function Plotter(){
         var ds = gadget.dashboard.getDataSet(args.dataSetName);
                 
         var graphData = [];
-        var dsData = ds.getPoints();
+        var dsData = ds.getRecords();
         for (i=0,len=dsData.length; i<len; i++) {
-            var xVal = parseFloat(dsData[i][xCol]);
-            var yVal = parseFloat(dsData[i][yCol]);
+            var xVal = parseFloat(dsData[i].get(xCol));
+            var yVal = parseFloat(dsData[i].get(yCol));
             // each point has unique id so a pointer to point can be had by chart.get(id)
-            var id = "p" + dsData[i]["db_id"];
+            var id = dsData[i]["id"];
             if (xVal !== NaN && yVal !== NaN){
                 graphData.push( {
-                        id: id,
+                        'id': id,
                         x: xVal, 
                         y: yVal,
                         color: DEFAULT_MARKER_COLOR,
