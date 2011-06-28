@@ -28,7 +28,6 @@ UW.DashboardModel = UW.AbstractModel.extend({
   },
   
   initialize: function (spec) {
-     //this.register();
      this.addChildCollection('gadgets', UW.GadgetsCollection);
      this.addChildCollection('dataSets', UW.DataSetsCollection);
   },
@@ -40,7 +39,7 @@ UW.DashboardModel = UW.AbstractModel.extend({
   setUrl: function(url){
     this.modelUrl = url;
   }
-
+  
 });
 
 // The constructor takes the DOM element where the dashboard will be rendered
@@ -94,13 +93,8 @@ UW.Dashboard = function(container){
 		var newGadget = new UW.Gadget({ model: gadgetState });
     newGadget.dashboard = this;
     gadgets[newGadget.getId()] = newGadget;
-    dashboardState.gadgets.add(gadgetState);		  
+    dashboardState.gadgets.add(gadgetState, {silent: true});		  
 
-  };
-  
-  this.addDataSet = function(dataSet){
-    var dataSetsJSON = dashboardState.get('dataSets');
-    dashboardState.addChildCollection('dataSets', UW.DataModel);
   };
 
   this.renderGadgets = function(){
@@ -113,9 +107,7 @@ UW.Dashboard = function(container){
 
   this.createDataSet = function(id){
     var newDataSet = new UW.DataSetModel({'id': id});
-    newDataSet.bind('change', _.bind(function() {this.trigger("dataSetChanged")}, this));
     dashboardState.dataSets.add(newDataSet);
-    this.notify("dataSetListChanged");
     return newDataSet;
   };
 
@@ -134,7 +126,7 @@ UW.Dashboard = function(container){
   this.saveState = function(stateUrl){
    
     dashboardState.setUrl(stateUrl);
-    var gadgetCollection = dashboardState['gadgets'];
+    var gadgetCollection = dashboardState.gadgets;
     for(gadget in gadgets){
       gadgetCollection.get(gadget).set(gadgets[gadget].saveState());
     }    
@@ -200,7 +192,6 @@ UW.Dashboard = function(container){
       //console.log("State: " + state);
       dashboardState = new UW.DashboardModel;
       dashboardState.import(JSON.parse(state));
-      
       this.initConnection();  
       
       gadgetModels = dashboardState.gadgets.models;
@@ -212,6 +203,9 @@ UW.Dashboard = function(container){
      
       chatModel = new UW.NodeChatModel(); 
       chat = new UW.ChatView({'model': chatModel, 'dashboard': this, 'el': $('#dashboardArea'), 'id': dashboardState.id}); 
+      
+      dashboardState.bind('publish', _.bind(function(data) {this.notify("dataSetChanged", data)}, this));
+      
       this.renderGadgets();
       
     }
@@ -222,24 +216,11 @@ UW.Dashboard = function(container){
     this.loadedGadgets++; 
     if(this.loadedGadgets === dashboardState.gadgets.models.length){ 
       // We need a timeout due to a now.js bug that makes initialization asyncronous when syncronous behavior is expected
-      setTimeout(_.bind(this.inflateData, this), 1000); 
+      setTimeout(_.bind(function() { this.notify("dataSetChanged"); }, this), 1000); 
     } 
   }
-  
-  this.inflateData = function(){
-    
-    var dataSetsModels;
-    dataSetsModels = dashboardState.dataSets.models;
-    for(model in dataSetsModels){
-      dataSetsModels[model].bind('change', _.bind(function() {this.trigger("dataSetChanged")}, this));
-      //dataSetsModels[model].init(dataSetsModels[model].get("db"));
-      this.notify("dataSetListChanged");
-    }
-    
-  }
       
-  this.loadState = function(stateUrl){
-    
+  this.loadState = function(stateUrl){ 
     $.ajax({
       url: stateUrl,
       type: 'GET',

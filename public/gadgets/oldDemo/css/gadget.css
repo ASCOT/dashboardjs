@@ -155,7 +155,7 @@ td pre {
     font: 12px;
 }
 
-.dsListElement {
+.dataSetListItem {
    background: rgb(230,230,255);
    border: solid 1px #bbbbbb;
    padding: 3px;

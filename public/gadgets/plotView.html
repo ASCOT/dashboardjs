@@ -80,7 +80,7 @@ function Plotter(){
   _myFields = { },
   _axisInverted = { x: false, y: false};  
                         
-  gadget.dashboard.bind('dataSetListChanged', updateDataSetList); 
+  gadget.dashboard.bind('dataSetChanged', updateDataSetList); 
   gadget.dashboard.bind('plotRendered', plotDataset);
   gadget.dashboard.bind('pointsSelected', setSelectedByMinMax);
   gadget.dashboard.bind('axisInverted', invertAxis);
@@ -127,7 +127,6 @@ function Plotter(){
     // update the dataset with the selected points
     // set dataset points colors in bulk
     ds.setRecordsMetaData({'color': color}, selectedIds);  
-    gadget.dashboard.trigger("dataSetListChanged"); 
 
   }
     

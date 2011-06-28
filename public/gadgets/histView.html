@@ -50,7 +50,7 @@ function Histogram() {
                         unselect: DEFAULT_MARKER_COLOR
                        }
 	
-	gadget.dashboard.bind('dataSetListChanged', updateDataSetList);
+	gadget.dashboard.bind('dataSetChanged', updateDataSetList);
 	
 	// GETS for the HTML controls on the page       
    function getSelectedDataset() {
@@ -74,7 +74,6 @@ function Histogram() {
 		}
 		var ds = gadget.dashboard.getDataSet(getSelectedDataset());
 		ds.setIndexesColor(obj.modifiedPointIds,useColor);
-      gadget.dashboard.trigger('dataSetListChanged');
 		return;
 	}
 	

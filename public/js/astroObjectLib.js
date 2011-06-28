@@ -16,7 +16,7 @@ if (!UW) var UW={};
  * @param {string|number} ra The right ascention of the coordinate in decimal decrees (0 <= RA <= 360)
  * @param {string|number} dec The declination of the coordinate in decimal decrees (-90 <= DEC <= +90)
  */
-UW.AstroMetaData = Backbone.Model.extend({
+UW.AstroMetaData = UW.AbstractModel.extend({
  
   initialize: function(){
 
@@ -26,6 +26,7 @@ UW.AstroMetaData = Backbone.Model.extend({
                 name: "",
                 description: "", // description text that is displayed in popup when a placemark is clicked 
                 visible: true });
+    this.bind('change', _(this.publishChange).bind(this));
   },
     
   /**

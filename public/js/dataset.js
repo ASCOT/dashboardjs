@@ -55,7 +55,7 @@ if (!UW.astro) UW.astro={};
       else{
           this.addRecord(records, {silent: true});
       }
-      this.change();   
+      //this.change();   
     },
     
     addRecord: function(record, options){
@@ -87,6 +87,7 @@ if (!UW.astro) UW.astro={};
           this.setRecord(attributes, ids);
         }
       }
+      this.trigger('publish', { event: 'dataSetChanged', id: this.getId()});
     },
     
     setRecordsMetaData: function(attributes, ids){
@@ -103,6 +104,7 @@ if (!UW.astro) UW.astro={};
           this.setRecordMetaData(attributes, ids);
         }
       }
+      this.trigger('publish', { event: 'changedMetaData', id: this.getId()});
     },
     
     setRecordMetaData: function(attributes, id){
@@ -115,7 +117,7 @@ if (!UW.astro) UW.astro={};
         if (!_.isEqual(newValue, oldValue)) {
           var newObj = {};
           newObj[attr] = newValue;
-          metaDataRecord.set(newObj);
+          metaDataRecord.set(newObj, {silent: true});
           if(oldValue){
             this.removeFromIndex(attr, oldValue, id);
           }
@@ -135,7 +137,7 @@ if (!UW.astro) UW.astro={};
         if (!_.isEqual(newValue, oldValue)) {
           var newObj = {};
           newObj[attr] = newValue;
-          record.set(newObj);
+          record.set(newObj, {silent: true});
           if(oldValue){
             this.removeFromIndex(attr, oldValue, id);
           }
@@ -248,19 +250,7 @@ if (!UW.astro) UW.astro={};
     
     setVisible: function(visible){
       this.set({'visible': visible});
-    },
-    
-    select: function(callback){   
-    },
-    
-    findByAttribute: function(attribute, value){    
-    },
-    
-    findAllByAttribute: function(attribute, value){     
-    },
-    
-    each: function(callback){    
-    },
+    }
     
   });
   
