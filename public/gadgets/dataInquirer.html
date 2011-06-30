@@ -156,10 +156,10 @@ function GetData(){
 
             // replace bounds    
             if (viewportBounds !== null) {
-                qString = replaceQueryVars(qString, "{{ra.lower}}", viewportBounds[0].getRa().toFixed(6));
-                qString = replaceQueryVars(qString, "{{ra.upper}}", viewportBounds[1].getRa().toFixed(6));
-                qString = replaceQueryVars(qString, "{{dec.lower}}", viewportBounds[1].getDec().toFixed(6));
-                qString = replaceQueryVars(qString, "{{dec.upper}}", viewportBounds[0].getDec().toFixed(6));
+                qString = replaceQueryVars(qString, "{{ra.lower}}", viewportBounds[0].get('ra').toFixed(6));
+                qString = replaceQueryVars(qString, "{{ra.upper}}", viewportBounds[1].get('ra').toFixed(6));
+                qString = replaceQueryVars(qString, "{{dec.lower}}", viewportBounds[1].get('dec').toFixed(6));
+                qString = replaceQueryVars(qString, "{{dec.upper}}", viewportBounds[0].get('dec').toFixed(6));
             }
             setQueryString(qString);
         }
@@ -295,7 +295,7 @@ function GetData(){
    function setVPBounds(bounds) {
         viewportBounds = bounds;
         if (bounds !== null) {
-            getField('spViewportBounds').innerHTML = "ra between " + viewportBounds[0].getRa().toFixed(4) + " and " + viewportBounds[1].getRa().toFixed(4) + " dec between " + viewportBounds[1].getDec().toFixed(4) + " and " + viewportBounds[0].getDec().toFixed(4);
+            getField('spViewportBounds').innerHTML = "ra between " + viewportBounds[0].get('ra').toFixed(4) + " and " + viewportBounds[1].get('ra').toFixed(4) + " dec between " + viewportBounds[1].get('dec').toFixed(4) + " and " + viewportBounds[0].get('dec').toFixed(4);
         }
     }
     

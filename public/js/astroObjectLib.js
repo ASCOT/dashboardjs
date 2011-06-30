@@ -29,27 +29,7 @@ UW.AstroMetaData = UW.AbstractModel.extend({
     this.bind('change', _(this.publishChange).bind(this));
   },
     
-  /**
-  * Get the right ascension of the point.
-  * @return {number} RA of point in decimal degrees.
-  */
-  getRa: function(){
-    return this.get('ra');
-  },
 
-  /**
-  * Get the declination of the point.
-  * @return {number} DEC of point in decimal degrees.
-  */
-  getDec: function(){
-    return this.get('dec');
-  },
-
-  /**
-  * Set the right ascention of the point.
-  * @param {string|number} newRa The RA of the point in decimal degrees.
-  * @return {number} The RA of the point in decimal degrees (as number).
-  */
  setRa: function(newRa){
    this.set({ 'ra': parseFloat(newRa) });
    return this.get('ra');
@@ -65,13 +45,6 @@ UW.AstroMetaData = UW.AbstractModel.extend({
     return this.get('dec');
   },
 
-/**
- * Get the color of the point as a string (eg "red" or "green").
- * @return {string} The color of the point.
- */
- getColor: function() {
-	 return this.get('color');
- },
  
 /**
  * Parses a string that represents a coordinate to return a CelestialCoordinate
@@ -144,99 +117,9 @@ UW.AstroMetaData = UW.AbstractModel.extend({
   setLatitude: function(newLatitude){
     this.set({'dec': newLatitude});
     return newLatitude;
-  },
-  
-  getName: function(){
-    return this.get('name');
-  },
-  
-  setName: function(name){
-  	this.set({'name': name});
-  	return name;
-  },
-  
-  getDescription: function(){
-    return this.get('description');
-  },
-  
-  setDescription: function(description){
-    this.set({'description': description});
-    return description;
-  },
-  
-  appendDescription: function(description){
-    var newDescription = this.get('description') + description;
-    this.set({'description': newDescription});
-    return newDescription;
-  },
-  
-  setIconUrl: function(url){
-  	this.set({'iconUrl': url});
-  },
-  
-  getIconUrl: function(url){
-  	return this.get('iconUrl');
-  },
-  
-  setVisible: function(visible) {
-  	this.set({'visible': visible});
-  },
-  
-  getVisible: function() {
-  	return this.get('visible');
-  },
-  
-  parseAstroObject: function(obj){
-    if (obj.hasOwnProperty('ra') && obj.hasOwnProperty('dec')) {
-    		this.set({'ra': obj.ra, 'dec': obj.dec});
-    		var desc = [];
-    		for (var property in obj) {
-    		    if (obj[property] !== null && obj[property] !== undefined) {
-    			desc.push(property + ": " + obj[property].toString());
-    		    }
-    		}
-    		this.set({'description': desc.join('\n')});
-    		if (obj.hasOwnProperty('db_visible')) {
-    		    this.set({'visible': obj.db_visible});
-    		}
-    		if (obj.hasOwnProperty('db_color')) {
-    		    this.set({'color': obj.db_color});
-    		}
-    		return true;
-    	} else {
-    	    return false;
-    	}
   }
   
 });
-
-
-// Accepts an object, and attempts to parse it to 
-// return either null or a CelestialCoordinate
-// TODO: add more parsing
-UW.parseAstroObject = function(obj) {
-	if (obj.hasOwnProperty('ra') && obj.hasOwnProperty('dec')) {
-		cc = new UW.AstroMetaData;
-		cc.set({'ra': obj.ra, 'dec': obj.dec});
-		var desc = [];
-		for (var property in obj) {
-		    if (obj[property] !== null && obj[property] !== undefined) {
-			desc.push(property + ": " + obj[property].toString());
-		    }
-		}
-		cc.set({'description': desc.join('\n')});
-		if (obj.hasOwnProperty('db_visible')) {
-		    cc.set({'visible': obj.db_visible});
-		}
-		if (obj.hasOwnProperty('db_color')) {
-		    cc.set({'color': obj.db_color});
-		}
-		return cc;
-	} else {
-	    return null;
-	}
-}
-
 
 /**
  * @private 
@@ -274,8 +157,6 @@ function tupleStrToDecimal(str) {
     // convert the 3 sections to decimal
     return tupleNums[0] + (tupleNums[1] / 60.0) + (tupleNums[2] / 3600.0);
 }
-
-
 
 // Helper
 function trim(str) {

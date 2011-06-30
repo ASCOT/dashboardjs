@@ -1,4 +1,3 @@
-<!-- name_resolve.xml -->
 <!-- Author: Ian Smith (imsmith@uw.edu) -->
 <!DOCTYPE html>
 <html lang="en">
@@ -15,41 +14,41 @@
   <script src="/js/underscore.js"></script>
   <script src="/js/backbone.js"></script>
   <script src="/js/models.js"></script>
-  <script src="/js/astroObjectLib.js"></script>	<script src="http://google.com/jsapi?key=ABQIAAAAVGHgv2pouycqhAw5tCmtChT2yXp_ZAY8_ufC3CFXhHIE1NvwkxSq6qELjXXLwllm-seMw-iKrnLcNQ" type="text/javascript"></script>
+  <script src="/js/astroObjectLib.js"></script>	
+  <script src="http://google.com/jsapi?key=ABQIAAAAVGHgv2pouycqhAw5tCmtChT2yXp_ZAY8_ufC3CFXhHIE1NvwkxSq6qELjXXLwllm-seMw-iKrnLcNQ" type="text/javascript"></script>
 	<script> 
    
-  var googleEarthInstance;		
-	var DEFAULT_ICON_URL = "http://sky.astro.washington.edu/gadgets/images/target_grey.png";
-  
   google.load("earth", "1");
   google.setOnLoadCallback();
+  
+  var viewportBounds;
+  var flySpeed = 1.0;
+  var longitude = 0;
+  var latitude = 0;
+  
+  gadget.saveState = function(){
+    return { 
+      'longitude': longitude,
+      'latitude': latitude,
+      'flySpeed': flySpeed,
+      'viewportBounds': viewportBounds
+    }
+  };
+
+  gadget.loadState = function(state){
+    longitude = state.longitude;
+    latitude = state.latitude;
+    flySpeed = state.flySpeed;
+  };
   
   gadget.init = function(callback){
     // Properties
     var dataSetList;
-    var viewportBounds;
-    var flySpeed = 1.0;
-    var longitude = 0;
-    var latitude = 0;
     var tidsViewchangeend = [];   // array of timer IDs for googleEarthInstance viewchangeend event
-
+    var googleEarthInstance;
+      			
     gadget.dashboard.bind('centerOfCoordinatesChanged', moveMap);
     gadget.dashboard.bind('dataSetChanged', redrawAll);
-      
-    gadget.saveState = function(){
-      return { 
-        'longitude': longitude,
-        'latitude': latitude,
-        'flySpeed': flySpeed,
-        'viewportBounds': viewportBounds
-      }
-    };
-
-    gadget.loadState = function(state){
-      longitude = state.longitude;
-      latitude = state.latitude;
-      flySpeed = state.flySpeed;
-    };
        
     google.earth.createInstance('content', success, failure);
 
@@ -199,31 +198,50 @@
       var iconUrl;     	
       switch(color){
         case "red":
-      	  iconUrl = "http://sky.astro.washington.edu/gadgets/images/target_red.gif";
+      	  iconUrl = "http://127.0.0.1/gadgets/images/target_red.png";
       		break;
       	case "green":
-      		iconUrl = "http://sky.astro.washington.edu/gadgets/images/target_green.gif";
+      		iconUrl = "http://127.0.0.1/gadgets/images/target_green.gif";
       		break;
       	case "yellow":
-      		iconUrl = "http://sky.astro.washington.edu/gadgets/images/target_yellow.gif";
+      		iconUrl = "http://127.0.0.1/gadgets/images/target_yellow.png";
       		break;
       	case "blue":
-      		iconUrl = "http://sky.astro.washington.edu/gadgets/images/target_blue.png";
+      		iconUrl = "http://127.0.0.1/gadgets/images/target_blue.png";
       		break;
       	default:
-      		iconUrl = DEFAULT_ICON_URL;
+      		iconUrl = "http://127.0.0.1/gadgets/images/target_grey.png";
       		break;
       }
       return iconUrl
     };
+    
+    function generateDescription(data, metaData){
+      var description = [];
+      var dataObj = data.toJSON();
+      var metaDataObj = metaData.toJSON();
+      if(data && metaData){
+        for (var property in dataObj) {
+          if (dataObj[property] !== null && dataObj[property] !== undefined) {
+            description.push(property + ": " + dataObj[property].toString());
+          }
+        }
+        for (var property in metaDataObj) {
+          if (metaDataObj[property] !== null && metaDataObj[property] !== undefined) {
+            description.push(property + ": " + metaDataObj[property].toString());
+          }
+        }
+        return description.join('\n');
+      }
+    }
 
     function toKML(record) {
       var lon = record.get('ra') - 180;
       var lat = record.get('dec');
       var iconUrl = getColorIcon(record.metaData.get('color'));
-      var name = record.metaData.getName();
+      var name = record.metaData.get('name');
       // translate multiline desc into html
-      desc = "<p>" + record.metaData.get('description').replace(new RegExp('\n', "g"), '<br \>') + '<\p>';
+      desc = "<p>" + generateDescription(record, record.metaData).replace(new RegExp('\n', "g"), '<br \>') + '<\p>';
 
       var placemarkText = '<?xml version="1.0" encoding="utf-8"?>' +
         '<kml xmlns="http://www.opengis.net/kml/2.2" hint="target=sky">' +

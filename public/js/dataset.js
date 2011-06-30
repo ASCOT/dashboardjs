@@ -60,7 +60,7 @@ if (!UW.astro) UW.astro={};
     
     addRecord: function(record, options){
       this._addColumns(record);
-      record.metaVisible = true;
+      record.visible = true;
       record.id = this.records.length;
       return this.records.add(record, options);
     },
@@ -215,16 +215,6 @@ if (!UW.astro) UW.astro={};
       return extractKeys(this.get('columns'));
     },
     
-    getNonDBColumns: function(){
-      var columns = this.getColumns();
-      for (var i=columns.length -1; i>=0; i--) {
-        if (columns[i].indexOf('meta') === 0) {
-          columns.splice(i,1);
-        }
-      }
-      return columns;
-    },
-    
     _addColumns: function(columns){
       var currentColumns = this.get('columns');
       for (var value in columns) {
@@ -250,6 +240,7 @@ if (!UW.astro) UW.astro={};
     
     setVisible: function(visible){
       this.set({'visible': visible});
+      this.trigger('publish', { event: 'changedMetaData', id: this.getId()});
     }
     
   });
