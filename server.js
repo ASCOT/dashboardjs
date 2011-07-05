@@ -101,6 +101,8 @@ app.configure(function(){
   app.register(".mustache", require('stache'));
   app.set('view options', {layout: false });
   app.use(express.static(__dirname + '/client'));
+  app.use(express.static(__dirname + '/shared'));  
+  app.use(express.static(__dirname + '/static'));  
 });
 
 app.configure('development', function(){
