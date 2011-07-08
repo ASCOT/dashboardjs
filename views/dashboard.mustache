@@ -5,26 +5,25 @@
 <meta name="description" content="Framework to develop online collaborative tools." />
 <meta http-equiv="Pragma" content="no-cache">
 
-<link rel="stylesheet" href="/css/960/reset.css"> 
-<link rel="stylesheet" href="/css/960/960.css"> 
-<link rel="stylesheet" href="/css/960/text.css"> 
-<link rel="stylesheet" href="/css/gadgets.css">
+<link rel="stylesheet" href="/css/reset.css"> 
+<link rel="stylesheet" href="/css/960.css"> 
+<link rel="stylesheet" href="/css/text.css"> 
+<link rel="stylesheet" href="/css/gadget.css">
 <link rel="stylesheet" href="/css/dashboard.css">
 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js" type="text/javascript"></script>
 <script src="/underscore.js" type="text/javascript"></script>
 <script src="/backbone.js" type="text/javascript"></script>
-<script src="/capsule.js" type="text/javascript"></script>
-<script src="/models.js" type="text/javascript"></script>
+<script src="/abstractDataModel.js" type="text/javascript"></script>
 <script src="/chat.js" type="text/javascript"></script>
 <script src="/socket.io/socket.io.js"></script> 
 <script src="/nowjs/now.js"></script> 
 <script src="/logs.js" type="text/javascript"></script>
-<script src="/helpers.js" type="text/javascript"></script>
+<script src="/util.js" type="text/javascript"></script>
 <script src="/gadget.js" type="text/javascript"></script>
 <script src="/layoutManager.js" type="text/javascript"></script>
 <script src="/astroMetaData.js" type="text/javascript"></script> 
-<script src="/dataset.js" type="text/javascript"></script> 
+<script src="/dataSet.js" type="text/javascript"></script> 
 <script src="/renderer.js" type="text/javascript"></script>
 <script src="/dashboard.js" type="text/javascript"></script>
 
@@ -146,7 +145,7 @@ function initGUI() {
       <nav>
         <ul>
           <li>
-            <a href="#" title="saveDashboard" class="barButton" onClick="saveDashboard()">Save</a>
+            <a href="#" title="saveDashboard" onClick="saveDashboard()">Save</a>
           </li>
         </ul>
       </nav>

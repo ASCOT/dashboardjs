@@ -1,5 +1,5 @@
 /**
- * @fileoverview dataset.js defines a Dataset, which abstracts a table of values with rows and columns.
+ * @fileoverview dataSet.js defines a Dataset, which abstracts a table of values with rows and columns.
  * The implementation uses a JavaScript database called TaffyDB.
  * @version 0.1
  *  Date: 7/10
@@ -255,16 +255,5 @@ if (!UW.astro) UW.astro={};
       this.addChildCollection('dataSets', UW.DataSetsCollection);
     }
   });
-
-// SelectedSet
-//HELPER
-function arrayContains(arr, el) {
-	for (var i=0, len=arr.length; i<len; i++) {
-    	if (arr[i] === el) {
-        	return true;
-    	}
-    }
-    return false;
-}
 
 })();

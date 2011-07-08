@@ -1,57 +1,3 @@
-// To make my life easier
-
-/*
-function $() {
-
-	var elements = new Array();
-
-	for (var i = 0; i < arguments.length; i++) {
-	
-		var element = arguments[i];
-
-		if (typeof element == 'string')
-
-			element = document.getElementById(element);
-
-		if (arguments.length == 1)
-
-			return element;
-
-		elements.push(element);
-
-	}
-
-	return elements;
-
-}
-*/
-
-var CustomEvent = function() {
-	//name of the event
-	this.eventName = arguments[0];
-	var mEventName = this.eventName;
-
-	//function to call on event fire
-	var eventAction = null;
-
-	//subscribe a function to the event
-	this.subscribe = function(fn) {
-		eventAction = fn;
-	};
-
-	//fire the event
-	this.fire = function(sender, eventArgs) {
-		this.eventName = eventName2;
-		if(eventAction != null) {
-			eventAction(sender, eventArgs);
-		}
-		else {
-			alert('There was no function subscribed to the ' + mEventName + ' event!');
-		}
-	};
-};
-
-
 function parseURL(data) {
     var e=/^((http|ftp|https|localhost):(\d{4})?\/)?\/?([^:\/\s]+)((\/\w+)*\/)(([\w\-\.]+)\.[^#?\s]+)$/;
 
@@ -74,6 +20,48 @@ function extractKeys(obj){
     keys.push(key);
   }
   return keys;
+}
+
+/**
+ * Input: A string representing 2 ints and a float, or just a single float
+ * Output: Returns A decimal representation of the coordinate string
+ */
+function tupleStrToDecimal(str) {
+  str = trimString(str);
+  var singleFoat = false;
+  // split ra and dec at spaces
+  var tupleStr = str.split(/ /); 
+  if (!(tupleStr.length === 3)) {
+	  tupleStr = str.split(/:/); // split ra and dec at colons
+	  if (!(tupleStr.length === 3)) {
+	    var tryFloat = parseFloat(tupleStr[0]); // maybe it's only a single decimal?
+	    if (tupleStr.length === 1 && !isNaN(tryFloat)) {
+    	  return tryFloat;
+	    } else {
+	    	return null;
+	    }
+	  }
+  }
+  
+  // test for whether the first 2 are ints, and the 3rd is a float
+  var tupleNums = [];
+  // specify radix of 10, beacuse 05  looks like octal 5
+  tupleNums[0] = parseInt(tupleStr[0], 10);
+  tupleNums[1] = parseInt(tupleStr[1], 10);
+  tupleNums[2] = parseFloat(tupleStr[2], 10);
+  // test for NaN in all 3 fields of both ra and dec
+  for (var i=0; i<3; i++) {
+    if (isNaN(tupleNums[i])) {
+	    return null;
+	  }
+  }
+  // convert the 3 sections to decimal
+  return tupleNums[0] + (tupleNums[1] / 60.0) + (tupleNums[2] / 3600.0);
+}
+
+// Helper
+function trimString(str) {
+  return str.replace(/^\s+|\s+$/g,"");
 }
 
 var JSON = JSON || {};  

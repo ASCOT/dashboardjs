@@ -31,16 +31,12 @@ header {
   -webkit-box-shadow: 0px 0px 0px rgba(0, 0, 0, .4), 0px 5px 10px  rgba(0, 0, 0, .3);
 }
 
-.dashboard{
-}
 
 #toolBoxHeader{
   margin: 10px;
   text-align: left;
 }
 
-#tools{
-}
 
 .toolBoxText {  
   font-size: 14px;
@@ -57,17 +53,16 @@ header {
   margin-right: 1px;
 }
 
-a.barButton {
+nav a{
   height: 29px;
   line-height: 27px;
   font-size: 15px;
   color: white;
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8);
   background: #938EAF;
-  padding: 0 12px;
-  margin-right: 10px;
   opacity: .9;
-  text-decoration: none;
+  padding: 5px 10px;
+  margin-right: 15px;
   border: 1px solid rgba(0, 0, 0, 0.3);
   -moz-border-radius: 6px;
   -webkit-border-radius: 6px;
@@ -78,7 +73,7 @@ a.barButton {
   cursor: pointer;
 }
 
-a.barButton:hover{
+nav a:hover{
   background: #764293;
   text-decoration: none;
 }
@@ -149,43 +144,6 @@ input:focus {
     -moz-box-shadow: 0 0 5px rgba(102, 45, 145, 1); 
 }
 
-/*
-#chatTab {
-  position: absolute;
-  width: 30px;
-  height: 100px;
-  right: -30px;
-  color: red;
-  background: rgba(0, 0, 0, 0.8);
-  cursor: pointer;
-  color: #EEE;
-}
-
-#chatTab > .bg {
-position: absolute;
-top: 0;
-right: 0;
-width: 15px;
-height: 100px;
-background: rgba(255, 255, 255, 0.05);
-}
-
-#chatTab > .tabText {
-display: block;
--webkit-transform: rotate(90deg);
--moz-transform: rotate(90deg);
-transform: rotate(90deg);
-filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1);
-color: white;
-padding-left: 28px;
-text-shadow: 0 1px 0 black;
-font-family: "ff-din-web-1","ff-din-web-2",Helvetica;
-font-size: 13px;
-z-index: 50;
-}
-
-*/
-
 .toolBox{
   display: block; 
   position: fixed; 
@@ -232,10 +190,3 @@ header li {
 float: left;
 }
 
-header nav a {
-  font-size: 16px;
-  padding: 4px 10px;
-  margin: 0 0 0 5px;
-  float: left;
-  overflow: visible;
-}

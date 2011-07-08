@@ -7,150 +7,144 @@
 <title>DataSet Selector</title>
 
 <!-- ASCOT Basic Style Sheets -->
-<link href="/css/960/reset.css" rel="stylesheet" type="text/css">
-<link href="/css/960/text.css" rel="stylesheet" type="text/css"> 
+<link href="/css/reset.css" rel="stylesheet" type="text/css">
+<link href="/css/text.css" rel="stylesheet" type="text/css"> 
 
 <!-- Contains UW.astro objects -->
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js" type="text/javascript"></script>
-<script src="/underscore.js" type="text/javascript"></script>
-<script src="/backbone.js" type="text/javascript"></script>
-<script src="/models.js" type="text/javascript"></script>
-<script src="/astroMetaData.js" type="text/javascript"></script>
 <script type="text/javascript">
 
 // Creates gadget object
 gadget.init = function(callback){
-
   gadget.dashboard.bind('dataSetChanged', updateDataSetList); 
-   
-  // Adds any new datasets in the public dataset list to this gadgets list
-  function updateDataSetList() {
-    var dataSetList = gadget.dashboard.getDataSetList();
-    // Resetting list
-    $('#dataSetList').empty();
-    for (var i = 0; i < dataSetList.length; ++i){
-      addDatasetToList(dataSetList[i]);   
-    }
-		gadget.resize();  
-  }
-   
-  // adds the creates a new dataset list element and adds it to the list
-  function addDatasetToList(dataSetName) {        
-    // create the div
-    var dataSetDiv = document.createElement("div");
-    // TODO: Possibly dangerous to allow any chars in the ID
-    dataSetDiv.id = 'dataSet' + dataSetName;
-    dataSetDiv.className = 'dataSetListItem';
-    dataSetDiv.appendChild(createDataSetItem(dataSetName));
-    // append the div element to the list div
-    $('#dataSetList').append(dataSetDiv);
-  }
-    
-  // returns a div filled with dataset functions
-  function createDataSetItem(dataSetName) {
-    
-    var dataSet = gadget.dashboard.getDataSet(dataSetName);     
-    var dataSetDiv = document.createElement("div");
-    var checkBoxVisibility = document.createElement("input");
-    var dataSetNameSpan = document.createElement("span");
-    
-    checkBoxVisibility.type = "checkbox";
-    checkBoxVisibility.id = "ckVis_" + dataSetName;
-    checkBoxVisibility.checked = dataSet.isVisible();
-    checkBoxVisibility.onclick = function() { toggleDataSetVisbility(dataSetName); }
-    
-    dataSetNameSpan.innerHTML = "<b>" + dataSetName + "</b> (" +  dataSet.length() + ")";
-        
-    dataSetDiv.appendChild(checkBoxVisibility);
-    dataSetDiv.appendChild(dataSetNameSpan);
-    dataSetDiv.appendChild(createDataSetColorsList(dataSet));
-    return dataSetDiv;
-  }
-    
-  // returns a div containing the color subsetting functionality to add to
-  // the DS list
-  function createDataSetColorsList(dataSet) {
-    var dataSetId = dataSet.getId();
-    var subDiv = document.createElement("div");
-    var colorList = dataSet.getIndexKeys('color');
-    var indentSpan = document.createElement("span");
-    var colorRecords;
-    indentSpan.innerHTML = "&nbsp; \\-";
-    subDiv.appendChild(indentSpan);
-        
-    // create the color name span
-    // for each color, make a checkbox and name
-    for (var i=0, len=colorList.length; i<len; i++) {
-      var color = colorList[i];
-      var checkBoxVisibility = document.createElement("input");
-      checkBoxVisibility.type = "checkbox";
-      checkBoxVisibility.id = "ckVis_" + dataSetId + "_" + color;
-      colorRecords = dataSet.getIndex('color')[color]; 
-      if(colorRecords.length != 0){
-        checkBoxVisibility.checked = dataSet.getRecordMetaData(colorRecords[0]).get('visible');
-      }
-      else{
-        checkBoxVisibility.checked = true;
-      }
-      checkBoxVisibility.value = color;
-      checkBoxVisibility.onclick = function() {
-        toggleDataSetColorVisibility(dataSetId, this.value, this.checked);
-      }
-      subDiv.appendChild(checkBoxVisibility);     
-      // create the color name span
-      var colorSpan = document.createElement("span");
-      colorSpan.style.marginRight = "8px";
-      colorSpan.innerHTML = color;
-      if (color === "") {
-        colorSpan.innerHTML = "default";
-      }
-      colorSpan.innerHTML += " (" + dataSet.getIndexEntries('color',color).length + ")";
-      subDiv.appendChild(colorSpan);
-    }
-
-    // create subset button
-    var aSubset = document.createElement("input");
-    aSubset.type = "button";
-    aSubset.value = "copy";
-    aSubset.onclick = function(){ subsetByVisible(dataSetId); };
-    aSubset.style.cssFloat = "right";
-    subDiv.appendChild(aSubset);
-    return subDiv;
-  }
-    
-  function subsetByVisible(dataSetId) {
-
-    var dataSet = gadget.dashboard.getDataSet(dataSetId);
-        
-    // copy the records from the dataset
-    var subsetData = dataSet.query({visible:true});
-        
-    // make the new dataset
-    var subsetDS = gadget.dashboard.createDataSet();
-    subsetDS.init(subsetData);
-    // get the new name
-    var newName = prompt("Enter name for new dataset");
-    if (newName === "" || newName === null) {
-      return;
-    }
-    subsetDS.setId(newName);
-    gadget.dashboard.setDataSet(newName, subsetDS); 
-
-    // call to refresh the list
-    updateDataSetList();      
-  }
-    
-  function toggleDataSetVisbility(id) {
-    var dataSet = gadget.dashboard.getDataSet(id);
-    dataSet.setVisible(!dataSet.isVisible());
-  }
-    
-  function toggleDataSetColorVisibility(id, color, visible) {
-    var dataSet = gadget.dashboard.getDataSet(id);
-    dataSet.setRecordsMetaData({'visible': visible}, dataSet.getIndexEntries('color', color));
-  }
-
   callback();
+}
+
+// Adds any new datasets in the public dataset list to this gadgets list
+function updateDataSetList() {
+  var dataSetList = gadget.dashboard.getDataSetList();
+  // Resetting list
+  $('#dataSetList').empty();
+  for (var i = 0; i < dataSetList.length; ++i){
+    addDatasetToList(dataSetList[i]);   
+  }
+	gadget.resize();  
+}
+ 
+// adds the creates a new dataset list element and adds it to the list
+function addDatasetToList(dataSetName) {        
+  // create the div
+  var dataSetDiv = document.createElement("div");
+  // TODO: Possibly dangerous to allow any chars in the ID
+  dataSetDiv.id = 'dataSet' + dataSetName;
+  dataSetDiv.className = 'dataSetListItem';
+  dataSetDiv.appendChild(createDataSetItem(dataSetName));
+  // append the div element to the list div
+  $('#dataSetList').append(dataSetDiv);
+}
+  
+// returns a div filled with dataset functions
+function createDataSetItem(dataSetName) {
+  
+  var dataSet = gadget.dashboard.getDataSet(dataSetName);     
+  var dataSetDiv = document.createElement("div");
+  var checkBoxVisibility = document.createElement("input");
+  var dataSetNameSpan = document.createElement("span");
+  
+  checkBoxVisibility.type = "checkbox";
+  checkBoxVisibility.id = "ckVis_" + dataSetName;
+  checkBoxVisibility.checked = dataSet.isVisible();
+  checkBoxVisibility.onclick = function() { toggleDataSetVisbility(dataSetName); }
+  
+  dataSetNameSpan.innerHTML = "<b>" + dataSetName + "</b> (" +  dataSet.length() + ")";
+      
+  dataSetDiv.appendChild(checkBoxVisibility);
+  dataSetDiv.appendChild(dataSetNameSpan);
+  dataSetDiv.appendChild(createDataSetColorsList(dataSet));
+  return dataSetDiv;
+}
+  
+// returns a div containing the color subsetting functionality to add to
+// the DS list
+function createDataSetColorsList(dataSet) {
+  var dataSetId = dataSet.getId();
+  var subDiv = document.createElement("div");
+  var colorList = dataSet.getIndexKeys('color');
+  var indentSpan = document.createElement("span");
+  var colorRecords;
+  indentSpan.innerHTML = "&nbsp; \\-";
+  subDiv.appendChild(indentSpan);
+      
+  // create the color name span
+  // for each color, make a checkbox and name
+  for (var i=0, len=colorList.length; i<len; i++) {
+    var color = colorList[i];
+    var checkBoxVisibility = document.createElement("input");
+    checkBoxVisibility.type = "checkbox";
+    checkBoxVisibility.id = "ckVis_" + dataSetId + "_" + color;
+    colorRecords = dataSet.getIndex('color')[color]; 
+    if(colorRecords.length != 0){
+      checkBoxVisibility.checked = dataSet.getRecordMetaData(colorRecords[0]).get('visible');
+    }
+    else{
+      checkBoxVisibility.checked = true;
+    }
+    checkBoxVisibility.value = color;
+    checkBoxVisibility.onclick = function() {
+      toggleDataSetColorVisibility(dataSetId, this.value, this.checked);
+    }
+    subDiv.appendChild(checkBoxVisibility);     
+    // create the color name span
+    var colorSpan = document.createElement("span");
+    colorSpan.style.marginRight = "8px";
+    colorSpan.innerHTML = color;
+    if (color === "") {
+      colorSpan.innerHTML = "default";
+    }
+    colorSpan.innerHTML += " (" + dataSet.getIndexEntries('color',color).length + ")";
+    subDiv.appendChild(colorSpan);
+  }
+
+  // create subset button
+  var aSubset = document.createElement("input");
+  aSubset.type = "button";
+  aSubset.value = "copy";
+  aSubset.onclick = function(){ subsetByVisible(dataSetId); };
+  aSubset.style.cssFloat = "right";
+  subDiv.appendChild(aSubset);
+  return subDiv;
+}
+  
+function subsetByVisible(dataSetId) {
+
+  var dataSet = gadget.dashboard.getDataSet(dataSetId);
+      
+  // copy the records from the dataset
+  var subsetData = dataSet.query({visible:true});
+      
+  // make the new dataset
+  var subsetDS = gadget.dashboard.createDataSet();
+  subsetDS.init(subsetData);
+  // get the new name
+  var newName = prompt("Enter name for new dataset");
+  if (newName === "" || newName === null) {
+    return;
+  }
+  subsetDS.setId(newName);
+  gadget.dashboard.setDataSet(newName, subsetDS); 
+
+  // call to refresh the list
+  updateDataSetList();      
+}
+  
+function toggleDataSetVisbility(id) {
+  var dataSet = gadget.dashboard.getDataSet(id);
+  dataSet.setVisible(!dataSet.isVisible());
+}
+  
+function toggleDataSetColorVisibility(id, color, visible) {
+  var dataSet = gadget.dashboard.getDataSet(id);
+  dataSet.setRecordsMetaData({'visible': visible}, dataSet.getIndexEntries('color', color));
 }
       
 </script>

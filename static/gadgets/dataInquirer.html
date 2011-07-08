@@ -1,385 +1,364 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- get_data.xml -->
 <!-- Author: Ian Smith (imsmith@uw.edu) -->
 <!DOCTYPE html>
 <html lang="en">
-<meta http-equiv="Pragma" content="no-cache">
-
 <head>
+<meta charset="utf-8">
+<meta http-equiv="Pragma" content="no-cache">
 <title>Data Inquirer</title>
 
 <!-- ASCOT Basic Style Sheets -->
-<link href="/css/960/reset.css" rel="stylesheet" type="text/css">
-<link href="/css/960/text.css" rel="stylesheet" type="text/css"> 
+<link href="/css/reset.css" rel="stylesheet" type="text/css">
+<link href="/css/text.css" rel="stylesheet" type="text/css"> 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js" type="text/javascript"></script>
 <script src="/underscore.js" type="text/javascript"></script>
 <script src="/backbone.js" type="text/javascript"></script>
-<script src="/models.js" type="text/javascript"></script>
+<script src="/abstractDataModel.js" type="text/javascript"></script>
 <script src="/astroMetaData.js" type="text/javascript"></script>
-<script src="/helpers.js" type="text/javascript"></script> 
+<script src="/util.js" type="text/javascript"></script> 
 
 <script type="text/javascript">
     
-var ga = null;
-
 // Text in {{ }} such as " {{ra.lower}}" are substituted in setQueryText() method
-var QUERY_BUTTONS =  [{ buttonNum: 0,
-                         name: "SDSS Stars",
-                         desc: "Get star magnitudes in U, G, R, I, Z from SDSS",
-                         catalog: "SDSS",
-                         query:  "SELECT TOP 500 objid, ra, dec, modelMag_u, modelMag_g, modelMag_r, modelMag_i, modelMag_z, (modelMag_u - modelMag_g) as u_g, (modelMag_g - modelMag_r) as g_r, (modelMag_r - modelMag_i) as r_i, (modelMag_i - modelMag_z) as i_z from Star where ra between {{ra.lower}} and {{ra.upper}} and dec between {{dec.lower}} and {{dec.upper}} and modelMag_g > -9999 ORDER BY modelMag_g ASC"
-                       },
-                       { buttonNum: 1,
-                         name: "SDSS Galaxies",
-                         desc: "Get galaxy magnitudes in U, G, R, I, Z from SDSS",
-                         catalog: "SDSS",
-                         query: "SELECT TOP 500 g.objid, g.ra, g.dec, s.z, g.modelMag_u, g.modelMag_g, g.modelMag_r, g.modelMag_i, g.modelMag_z, (g.modelMag_u - g.modelMag_g) as u_g, (g.modelMag_g - g.modelMag_r) as g_r, (g.modelMag_r - g.modelMag_i) as r_i, (g.modelMag_i - g.modelMag_z) as i_z from Galaxy as g left outer join SpecObjAll as s on g.specobjID = s.specobjID where g.ra between {{ra.lower}} and {{ra.upper}} and g.dec between {{dec.lower}} and {{dec.upper}} and g.modelMag_g > -9999 ORDER BY g.modelMag_g ASC"
-                       }];
+var QUERY_BUTTONS =  
+  [{ buttonNum: 0,
+     name: "SDSS Stars",
+     desc: "Get star magnitudes in U, G, R, I, Z from SDSS",
+     catalog: "SDSS",
+     query:  "SELECT TOP 500 objid, ra, dec, modelMag_u, modelMag_g, modelMag_r, modelMag_i, modelMag_z, (modelMag_u - modelMag_g) as u_g, (modelMag_g - modelMag_r) as g_r, (modelMag_r - modelMag_i) as r_i, (modelMag_i - modelMag_z) as i_z from Star where ra between {{ra.lower}} and {{ra.upper}} and dec between {{dec.lower}} and {{dec.upper}} and modelMag_g > -9999 ORDER BY modelMag_g ASC"
+   },
+   { buttonNum: 1,
+     name: "SDSS Galaxies",
+     desc: "Get galaxy magnitudes in U, G, R, I, Z from SDSS",
+     catalog: "SDSS",
+     query: "SELECT TOP 500 g.objid, g.ra, g.dec, s.z, g.modelMag_u, g.modelMag_g, g.modelMag_r, g.modelMag_i, g.modelMag_z, (g.modelMag_u - g.modelMag_g) as u_g, (g.modelMag_g - g.modelMag_r) as g_r, (g.modelMag_r - g.modelMag_i) as r_i, (g.modelMag_i - g.modelMag_z) as i_z from Galaxy as g left outer join SpecObjAll as s on g.specobjID = s.specobjID where g.ra between {{ra.lower}} and {{ra.upper}} and g.dec between {{dec.lower}} and {{dec.upper}} and g.modelMag_g > -9999 ORDER BY g.modelMag_g ASC"
+  }];
+  
+// Status Icons
+var ICON_URL_SELECTED = '/images/targetYellow.png';
+var ICON_URL_DEFAULT = '/images/target.png';
+var ICON_URL_SPINNER = '/images/spinnerGrey.gif';
+var ICON_URL_ERROR = '/images/errorIcon.gif';
+var ICON_URL_SUCCESS = '/images/successIcon.gif';
 
-
-var dataSetList;
 var viewportBounds;
 
 // create HR object
 gadget.init = function(callback){
-    ga = new GetData();
-    ga.setFields();
-    callback();
+  setFields();
+  callback();
 }
 
-function GetData(){
-
-    var my = new Object();
-
-    var _myFields = {};
-    // CONSTANTS
-    var PLOT_HEIGHT = 400,
-        PLOT_WIDTH = 300;
-
-    // Status Icons
-    var ICON_URL_SELECTED = '/images/targetYellow.png',
-        ICON_URL_DEFAULT = '/images/target.png',
-        ICON_URL_SPINNER = '/images/spinnerGrey.gif',
-        ICON_URL_ERROR = '/images/errorIcon.gif',
-        ICON_URL_SUCCESS = '/images/successIcon.gif';
-
-    var ICON = { SUCCESS : ICON_URL_SUCCESS,
-              ERROR : ICON_URL_ERROR,
-              SPINNER : ICON_URL_SPINNER,
-              NONE : ""}
- 
-    // PRIVATE
-    var _catalogs =  [ { name: "SDSS", url: "http://cas.sdss.org/public/en/tools/search/x_sql.asp"  }  ]; // contains info for catalogs and thier urls
-        
-   gadget.dashboard.bind('viewBoundsChanged', setVPBounds);
-   gadget.dashboard.bind('dataRequested', queryData);
-   //gadget.dashboard.bind('dataSetChanged', updateDatasetList); 
+var myFields = {}
+var catalogs =  [ { name: "SDSS", url: "http://cas.sdss.org/public/en/tools/search/x_sql.asp"  }  ]; // contains info for catalogs and thier urls
     
-   function getDatasetNameText () {
-        return document.getElementById("txtDatasetName").value;
-    }
-    
-    function clearForm() {
-        document.getElementById("txtDatasetName").value = '';
-        // no reason to clear query string yet
-        // document.getElementById("txtQueryString").value = '';
-    }
-        
-    // PUBLIC METHODS  
-    my.setFields = function() {
-        // set the catalog options
-        var  options = [];
-        for (var i=0, len=_catalogs.length; i<len; i++) {
-            options.push(_catalogs[i].name);
-        }
-        setSelectOptions("selCatalog", options);
+gadget.dashboard.bind('viewBoundsChanged', setViewPortBounds);
+gadget.dashboard.bind('dataRequested', queryData);
+//gadget.dashboard.bind('dataSetChanged', updateDatasetList); 
 
-        // create the buttons
-        for (var i=0, len=QUERY_BUTTONS.length; i<len; i++) {
-            createQueryButton(QUERY_BUTTONS[i]);
-        }
+function getDatasetNameText () {
+    return document.getElementById("txtDatasetName").value;
+}
+
+function clearForm() {
+    document.getElementById("txtDatasetName").value = '';
+}
+    
+var setFields = function() {
+    // set the catalog options
+    var  options = [];
+    for (var i=0, len=catalogs.length; i<len; i++) {
+        options.push(catalogs[i].name);
     }
-    function createQueryButton(buttonObj) {
-        var divButtons = document.getElementById('divQueryButtons');
-        var button = document.createElement('input');
-        button.setAttribute('type', 'button');
-        button.setAttribute('name', buttonObj.name);
-        button.setAttribute('value', buttonObj.name);
-        button.setAttribute('title', buttonObj.desc);
-        button.onclick = function(){ ga.setQueryText(buttonObj.buttonNum); };
-        divButtons.appendChild(button);
+    setSelectOptions("selCatalog", options);
+    // create the buttons
+    for (var i=0, len=QUERY_BUTTONS.length; i<len; i++) {
+        createQueryButton(QUERY_BUTTONS[i]);
+    }
+}
+
+function createQueryButton(buttonObj) {
+    var divButtons = document.getElementById('divQueryButtons');
+    var button = document.createElement('input');
+    button.setAttribute('type', 'button');
+    button.setAttribute('name', buttonObj.name);
+    button.setAttribute('value', buttonObj.name);
+    button.setAttribute('title', buttonObj.desc);
+    button.onclick = function(){ setQueryText(buttonObj.buttonNum); };
+    divButtons.appendChild(button);
+}
+
+var getData = function() {
+    
+    var dsName = getDatasetNameText();
+
+    if (dsName.length < 1) {
+        showError("Enter dataset name");
+        return;
     }
     
-    my.getData = function() {
-        
-        var dsName = getDatasetNameText();
-
-        if (dsName.length < 1) {
-            showError("Enter dataset name");
-            return;
-        }
-        
-        // get query string from the text area
-        var query = getQueryString();
-        var url;
-        
-        if (query === "") {
-            showError('Enter query string');
-            return;
-        }
-        
-        // find catalog in the _catalogs object to get the url
-        var selectedCatalog = getSelectedOption("selCatalog");
-        for (var i=0, len=_catalogs.length; i<len; i++) {
-          if (_catalogs[i].name === selectedCatalog) {
-              url = _catalogs[i].url;
-          }
-        }
-
-        if (url === null) {
-              showError('Select a catalog');
-              return;
-          }
-        
-        var queryObj = {'dataSet': dsName, 'query': query, 'url': url};
-        gadget.dashboard.notify("dataRequested", queryObj);
+    // get query string from the text area
+    var query = getQueryString();
+    var url;
+    
+    if (query === "") {
+        showError('Enter query string');
+        return;
     }
     
-    my.setQueryText = function(buttonNum) {
-        if (QUERY_BUTTONS.length > buttonNum) {
-            // set catalog
-            var buttonObj = QUERY_BUTTONS[buttonNum];
-            
-            setSelectedCatalog(buttonObj.catalog);
-            
-            var qString = buttonObj.query;
-
-            // replace bounds    
-            if (viewportBounds !== null) {
-                qString = replaceQueryVars(qString, "{{ra.lower}}", viewportBounds[0].get('ra').toFixed(6));
-                qString = replaceQueryVars(qString, "{{ra.upper}}", viewportBounds[1].get('ra').toFixed(6));
-                qString = replaceQueryVars(qString, "{{dec.lower}}", viewportBounds[1].get('dec').toFixed(6));
-                qString = replaceQueryVars(qString, "{{dec.upper}}", viewportBounds[0].get('dec').toFixed(6));
-            }
-            setQueryString(qString);
-        }
-            
+    // find catalog in the _catalogs object to get the url
+    var selectedCatalog = getSelectedOption("selCatalog");
+    for (var i=0, len=_catalogs.length; i<len; i++) {
+      if (_catalogs[i].name === selectedCatalog) {
+          url = _catalogs[i].url;
+      }
     }
 
-    function replaceQueryVars(str, replacee, replacer) {
-        return str.replace(replacee, replacer);
-    }
-    function insertWhere(str, whereStr) {
-        // insert in WHERE clause
-        var splitted = str.split(/where/i);
-        if (splitted.length === 2) {
-            return splitted[0] + " WHERE " + whereStr + " AND " + splitted[1];
-        } 
-        // insert in ORDER BY clause
-        splitted = str.split(/order by/i);
-        if (splitted.length === 2) {
-            return splitted[0] + whereStr + " ORDER BY " + splitted[1];
-        }
-        // no WHERE or ORDER BY, so just tack it on the end
-        return str + " WHERE " + whereStr;
-    }
+    if (url === null) {
+          showError('Select a catalog');
+          return;
+      }
     
-    function makeGETRequest(url, query, callback) {
-      var params = {};
-      
-      //console.log(encodeURIComponent(url + '?format=html&cmd=' + query) );
-      console.log(parseURL(url + '?cmd=' + query).url);
-      
-      $.ajax({
-       'url': '/XMLHttpRequest/' + encodeURIComponent(url + '?format=xml&cmd=' + encodeURIComponent(query)),
-        success: callback 
-      });
+    var queryObj = {'dataSet': dsName, 'query': query, 'url': url};
+    gadget.dashboard.notify("dataRequested", queryObj);
+}
+
+var setQueryText = function(buttonNum) {
+    if (QUERY_BUTTONS.length > buttonNum) {
+        // set catalog
+        var buttonObj = QUERY_BUTTONS[buttonNum];
+        
+        setSelectedCatalog(buttonObj.catalog);
+        
+        var qString = buttonObj.query;
+
+        // replace bounds    
+        if (viewportBounds !== null) {
+            qString = replaceQueryVars(qString, "{{ra.lower}}", viewportBounds.topLeft.ra.toFixed(6));
+            qString = replaceQueryVars(qString, "{{ra.upper}}", viewportBounds.bottomRight.ra.toFixed(6));
+            qString = replaceQueryVars(qString, "{{dec.lower}}", viewportBounds.bottomRight.dec.toFixed(6));
+            qString = replaceQueryVars(qString, "{{dec.upper}}", viewportBounds.topLeft.dec.toFixed(6));
+        }
+        setQueryString(qString);
+    }
+        
+}
+
+function replaceQueryVars(str, replacee, replacer) {
+    return str.replace(replacee, replacer);
+}
+function insertWhere(str, whereStr) {
+    // insert in WHERE clause
+    var splitted = str.split(/where/i);
+    if (splitted.length === 2) {
+        return splitted[0] + " WHERE " + whereStr + " AND " + splitted[1];
     } 
-    
-    function queryResponseCB(obj, dataSet) {
-        // parse the XML
-        if (obj === ""){
-            // returned empty string
-            showError('Service returned empty string');
-            return;
-        }
-        
-        xmlDoc = xmlStringToDoc(obj);
-        // walk XML to create points and write to objectData
-        var rows = xmlDoc.getElementsByTagName('Row');
-        if ((rows.length === 0) || ((rows.length === 1) && (rows[0].textContent.indexOf('No rows returned') !== -1))){
-            // the special case answer is that no rows were returned
-            showError('No objects from ' + getSelectedOption("selCatalog") + ' catalog');
-            return;
-        }
-        
-        // indicate status to user
-        showSuccess("Returned " + rows.length + " records.");
-        
-        // We probably have valid data at this point, so parse it and display it
-        // create and write Dataset from the row data
-        var ds = createDataset(dataSet, rows);   
-				gadget.resize();
+    // insert in ORDER BY clause
+    splitted = str.split(/order by/i);
+    if (splitted.length === 2) {
+        return splitted[0] + whereStr + " ORDER BY " + splitted[1];
     }
-    
-  
-    // Accepts "rows" as an ObjectHTML collection
-    // and creates a Dataset from it and returns it
-    function createDataset(id, rows) {
-        var json = [];
-        for (var i=0,len=rows.length; i<len; i++){
-            var row = rows[i];
-            var elem = {};
-            // loop through attributes
-            for (var k=0, kLen=row.attributes.length; k<kLen; k++){
-                // k is the attribute index
-                var attName = row.attributes[k].nodeName;
-                var attValue = row.attributes[k].nodeValue;
-                elem[attName] = attValue;
-            }
-            json.push(elem);
-        }
+    // no WHERE or ORDER BY, so just tack it on the end
+    return str + " WHERE " + whereStr;
+}
 
-        // create dataset
-        ds = gadget.dashboard.createDataSet(id); 
-        ds.createIndex('color');
-        ds.addRecords(json);
-        return ds;
-        
+function makeGETRequest(url, query, callback) {
+  var params = {};
+  console.log(parseURL(url + '?cmd=' + query).url);
+  
+  $.ajax({
+   'url': '/XMLHttpRequest/' + encodeURIComponent(url + '?format=xml&cmd=' + encodeURIComponent(query)),
+    success: callback 
+  });
+} 
+
+function queryResponseCB(obj, dataSet) {
+    // parse the XML
+    if (obj === ""){
+        // returned empty string
+        showError('Service returned empty string');
+        return;
     }
+    
+    xmlDoc = xmlStringToDoc(obj);
+    // walk XML to create points and write to objectData
+    var rows = xmlDoc.getElementsByTagName('Row');
+    if ((rows.length === 0) || ((rows.length === 1) && (rows[0].textContent.indexOf('No rows returned') !== -1))){
+        // the special case answer is that no rows were returned
+        showError('No objects from ' + getSelectedOption("selCatalog") + ' catalog');
+        return;
+    }
+    
+    // indicate status to user
+    showSuccess("Returned " + rows.length + " records.");
+    
+    // We probably have valid data at this point, so parse it and display it
+    // create and write Dataset from the row data
+    var ds = createDataset(dataSet, rows);   
+		gadget.resize();
+}
+
+
+// Accepts "rows" as an ObjectHTML collection
+// and creates a Dataset from it and returns it
+function createDataset(id, rows) {
+    var json = [];
+    for (var i=0,len=rows.length; i<len; i++){
+        var row = rows[i];
+        var elem = {};
+        // loop through attributes
+        for (var k=0, kLen=row.attributes.length; k<kLen; k++){
+            // k is the attribute index
+            var attName = row.attributes[k].nodeName;
+            var attValue = row.attributes[k].nodeValue;
+            elem[attName] = attValue;
+        }
+        json.push(elem);
+    }
+
+    // create dataset
+    ds = gadget.dashboard.createDataSet(id); 
+    ds.createIndex('color');
+    ds.addRecords(json);
+    return ds;
+    
+}
 
 // HELPER
-    function clearStatus() {
-        showStatus(ICON.NONE, "");
-    }
-    function showSpinner(text) {
-        showStatus(ICON.SPINNER, text);
-    }
-    function showSuccess(text) {
-        showStatus(ICON.SUCCESS, text);
-    }
-    function showError(text) {
-        showStatus(ICON.ERROR, text);
-    }
-     
-    function showStatus(iconUrl, text){
-        if (iconUrl !== ICON.NONE) {
-            setStatus( '<img id="imgStatus" style="vertical-align:middle;" src="' + iconUrl + '" /> ' + "<span style='vertical-align:middle;'>" + text + "</span>");
-        } else {
-            setStatus(text);
-        }
-    }
-   
-    function setStatus(text) {
-        // set text status
-        var statusDiv = document.getElementById('divStatusText');
-        statusDiv.innerHTML = text;
-        // make visible
-        statusDiv.style.visibility = 'inline';
-    }
-    function xmlStringToDoc(text){
-        if (window.DOMParser){
-            parser=new DOMParser();
-            xmlDoc=parser.parseFromString(text,"text/xml");
-        }
-        else // Internet Explorer
-        {
-            xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
-            xmlDoc.async="false";
-            xmlDoc.loadXML(text); 
-        } 
-        // TODO: test to verify its created
-        return xmlDoc;
-    }
-    
-   function setVPBounds(bounds) {
-        viewportBounds = bounds;
-        if (bounds !== null) {
-            getField('spViewportBounds').innerHTML = "ra between " + viewportBounds[0].get('ra').toFixed(4) + " and " + viewportBounds[1].get('ra').toFixed(4) + " dec between " + viewportBounds[1].get('dec').toFixed(4) + " and " + viewportBounds[0].get('dec').toFixed(4);
-        }
-    }
-    
-    function queryData(queryObj){
-      showSpinner("Getting objects..."); 
-      $('textarea#txtQueryString').val(queryObj.query);
-      $('input[name=dataSetName]').val(queryObj.dataSet);
-      makeGETRequest(queryObj.url, queryObj.query, function(dataSet) { return function(obj) { queryResponseCB(obj, dataSet); }; }(queryObj.dataSet));
-    }
-    
-    // HTML Field Getters/Setters
-    function getField(field) {
-        if (!(_myFields.hasOwnProperty(field)) || (_myFields[field] === null)) {
-            _myFields[field] = document.getElementById(field);
-        }
-        return _myFields[field];
-    }
-    function getQueryString() {
-        return getField("txtQueryString").value;
-    }
-    function setQueryString(str) {
-        setTextBoxValue("txtQueryString", str);
-    }
-    function setSelectedCatalog(catalog) {
-        selectValue("selCatalog", catalog);
-    }
-    function restrictVPBounds() {
-        return getField('ckVPBounds').checked;
-    }
-
-    function setTextBoxValue(textBoxName, value) {
-        textBox = document.getElementById(textBoxName);
-        if (textBox !== null && textBox !== undefined) {
-            textBox.value = value;
-        }
-    }
-
-    // accepts name of select box
-    // returns the value in the select box, or ""
-    function getSelectedOption(select) {
-        var selName = document.getElementById(select);
-        if (selName.length > 0){
-            return selName.options[selName.selectedIndex].value;
-        } else {
-            return "";
-        }
-    }
-    
-    function selectValue(selectName, value) {
-        var sel = document.getElementById(selectName);
-        if (sel === undefined || sel === null) {
-            return;
-        }
-        for (var i=0, len=sel.options.length; i<len; i++) {
-            if (sel.options[i].value === value) {
-                sel.options[i].selected = true;
-                return;
-            }
-        }
-    }
-    
-    // Accepts the name of a select object, and an array of strings
-    // replaces the options with the array of strings
-    function setSelectOptions(selectName, options) {
-        var select = document.getElementById(selectName);
-        if (select === null) {
-            return;
-        }
-        // save old selected option so maybe it can be reselected
-        var oldOpt = getSelectedOption(selectName);
-        // clear options
-        for (var i=select.length-1; i>=0; i--) {
-            select.remove(i);
-        }
-        // add options
-        for (var i=0, len=options.length; i<len; i++) {
-            // if oldOption is in the list, then select it
-            select.add(new Option(options[i], options[i], false, (oldOpt === options[i])), null);
-        }
-    
-    }
-
-    return my;
+function clearStatus() {
+  showStatus("","");
 }
+
+function showSpinner(text) {
+  showStatus(ICON_URL_SPINNER, text);
+}
+
+function showSuccess(text) {
+  showStatus(ICON_URL_SUCCESS, text);
+}
+
+function showError(text) {
+  showStatus(ICON_URL_ERROR, text);
+}
+ 
+function showStatus(iconUrl, text){
+  if (iconUrl !== "") {
+    setStatus( '<img id="imgStatus" style="vertical-align:middle;" src="' + iconUrl + '" /> ' + "<span style='vertical-align:middle;'>" + text + "</span>");
+  } 
+  else {
+    setStatus(text);
+  }
+}
+
+function setStatus(text) {
+    // set text status
+    var statusDiv = document.getElementById('divStatusText');
+    statusDiv.innerHTML = text;
+    // make visible
+    statusDiv.style.visibility = 'inline';
+}
+
+function xmlStringToDoc(text){
+    if (window.DOMParser){
+        parser=new DOMParser();
+        xmlDoc=parser.parseFromString(text,"text/xml");
+    }
+    else // Internet Explorer
+    {
+        xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
+        xmlDoc.async="false";
+        xmlDoc.loadXML(text); 
+    } 
+    // TODO: test to verify its created
+    return xmlDoc;
+}
+
+function setViewPortBounds(newBounds) {
+    viewportBounds = newBounds;
+    if (newBounds !== null) {
+        getField('spViewportBounds').innerHTML = 
+        "ra between " + newBounds.topLeft.ra.toFixed(4) + " and " + newBounds.bottomRight.ra.toFixed(4) + 
+        " dec between " + newBounds.topLeft.dec.toFixed(4) + " and " + newBounds.bottomRight.dec.toFixed(4);
+    }
+}
+
+function queryData(queryObj){
+  showSpinner("Getting objects..."); 
+  $('textarea#txtQueryString').val(queryObj.query);
+  $('input[name=dataSetName]').val(queryObj.dataSet);
+  makeGETRequest(queryObj.url, queryObj.query, function(dataSet) { return function(obj) { queryResponseCB(obj, dataSet); }; }(queryObj.dataSet));
+}
+
+// HTML Field Getters/Setters
+function getField(field) {
+    if (!(_myFields.hasOwnProperty(field)) || (_myFields[field] === null)) {
+        _myFields[field] = document.getElementById(field);
+    }
+    return _myFields[field];
+}
+function getQueryString() {
+    return getField("txtQueryString").value;
+}
+function setQueryString(str) {
+    setTextBoxValue("txtQueryString", str);
+}
+function setSelectedCatalog(catalog) {
+    selectValue("selCatalog", catalog);
+}
+function restrictVPBounds() {
+    return getField('ckVPBounds').checked;
+}
+
+function setTextBoxValue(textBoxName, value) {
+    textBox = document.getElementById(textBoxName);
+    if (textBox !== null && textBox !== undefined) {
+        textBox.value = value;
+    }
+}
+
+// accepts name of select box
+// returns the value in the select box, or ""
+function getSelectedOption(select) {
+    var selName = document.getElementById(select);
+    if (selName.length > 0){
+        return selName.options[selName.selectedIndex].value;
+    } else {
+        return "";
+    }
+}
+
+function selectValue(selectName, value) {
+    var sel = document.getElementById(selectName);
+    if (sel === undefined || sel === null) {
+        return;
+    }
+    for (var i=0, len=sel.options.length; i<len; i++) {
+        if (sel.options[i].value === value) {
+            sel.options[i].selected = true;
+            return;
+        }
+    }
+}
+
+// Accepts the name of a select object, and an array of strings
+// replaces the options with the array of strings
+function setSelectOptions(selectName, options) {
+    var select = document.getElementById(selectName);
+    if (select === null) {
+        return;
+    }
+    // save old selected option so maybe it can be reselected
+    var oldOpt = getSelectedOption(selectName);
+    // clear options
+    for (var i=select.length-1; i>=0; i--) {
+        select.remove(i);
+    }
+    // add options
+    for (var i=0, len=options.length; i<len; i++) {
+        // if oldOption is in the list, then select it
+        select.add(new Option(options[i], options[i], false, (oldOpt === options[i])), null);
+    }
+}
+
 </script>
 </head>
 <body>
@@ -400,7 +379,7 @@ function GetData(){
 		<br/> 
 		<textarea id="txtQueryString" rows="5" style="width:99%;"></textarea>
 		<br/>
-		<input id="btGetData" onclick="ga.getData();" type="button" value="Submit"/>  
+		<input id="btGetData" onclick="getData();" type="button" value="Submit"/>  
 		<div id="divStatusText" style="display: inline; margin-left: 10px"></div> 
 	</div>
 </div>

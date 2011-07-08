@@ -1,10 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- plot_dataset.xml -->
 <!-- Author: Ian Smith (imsmith@uw.edu) -->
+<!DOCTYPE html>
 <html lang="en">
-<meta http-equiv="Pragma" content="no-cache">
-
 <head>
+<meta charset="utf-8">
+<meta http-equiv="Pragma" content="no-cache">
 <title>Plot View</title>
 
 <!-- chart dependencies -->
@@ -12,23 +11,18 @@
 <script src="/highcharts.src.js" type="text/javascript"></script>
 
 <!-- ASCOT Basic Style Sheets -->
-<link href="/css/960/reset.css" rel="stylesheet" type="text/css">
-<link href="/css/960/text.css" rel="stylesheet" type="text/css"> 
+<link href="/css/reset.css" rel="stylesheet" type="text/css">
+<link href="/css/text.css" rel="stylesheet" type="text/css"> 
 
 <style type="text/css">
-
 td{
   padding: 5px;
 }
-
 </style>
 
 <script type="text/javascript">
 
-var plot;
-var axisInverted = {x: false, y: false};
-var verboseTooltip = false;
-
+// Constants
 var DEFAULT_MARKER_COLOR = 'rgba(100, 100, 100, .7)';
 var MARKER_COLOR = {
   red: 'rgba(255, 0, 0, .7)',
@@ -38,7 +32,10 @@ var MARKER_COLOR = {
   unselect: 'rgba(100, 100, 100, .7)' 
 };  
 
+// Highcharts plot
+var plot;
 
+// Highcharts plot options
 var chartOptions = {
   chart: {
     renderTo: 'divPlot',
@@ -50,25 +47,26 @@ var chartOptions = {
       // also, only select if there is an xAxis property in event (allows reset zoom)
         if ($('#radioSelect').get(0).checked && ("xAxis" in event)) {
           event.preventDefault();
-          var selectionObj = {'seriesId': 'series1', 'xMin': event.xAxis[0].min, 'xMax':  event.xAxis[0].max, 'yMin': event.yAxis[0].min, 'yMax':  event.yAxis[0].max, color: getSelectionMarkerColor()};
+          var selectionObj = {'seriesId': 'series1', 'xMin': event.xAxis[0].min, 'xMax':  event.xAxis[0].max, 'yMin': event.yAxis[0].min, 'yMax':  event.yAxis[0].max, color: selectedColor};
           gadget.dashboard.notify("pointsSelected", selectionObj);                                 
         }
       }
     }
   },
   credits: { enabled: false },
+  legend: { enabled: false},
   title: { text: '' },
   loading: { showDuration: 0, hideDuration: 0 },
   xAxis: {
     title: { enabled: false, text: '' },
-    reversed: axisInverted.x,
+    reversed: false,
     startOnTick: true,
     endOnTick: true,
     showLastLabel: true
   },
   yAxis: {
     title: { text: '' },
-    reversed: axisInverted.y
+    reversed: false
   },
   tooltip: {
     formatter: function() { return generateToolTip(this.x, this.y, this.point.id) }
@@ -88,7 +86,7 @@ var chartOptions = {
         click: function(event) {
           if (!(event.ctrlKey || event.metaKey)) { // check windows ctrl and mac meta
             // color point
-            var selectedMarkerColor = getSelectionMarkerColor();
+            var selectedMarkerColor = selectedColor;
             if (getPointColor(this) !== selectedMarkerColor) {
               setPointColor(this, selectedMarkerColor);
             } 
@@ -106,26 +104,16 @@ var chartOptions = {
   }]
 } 
 
-function generateToolTip(xValue, yValue, pointId) {  
-  var dataSet;
-  var record;
-  var info = [];
-  if (verboseTooltip) {
-      dataSet = gadget.dashboard.getDataSet(getSelectedDataset());
-      record = dataSet.getRecord(pointId).toJSON();
-      if (record){
-        for (var prop in record) {
-          info.push(prop + ": " + record[prop] + "<br/>");
-        }
-      }
-      return info.join("");
-  } 
-  else {
-    return plot.series[0].yAxis.options.title.text + ' : ' + yValue + '<br/>' + plot.series[0].xAxis.options.title.text +' : ' + xValue;
-  }
-}
+// Gadget sate
+var axisInverted = {x: false, y: false};
+var verboseTooltip = false;
+var selectedDataSetName = "";
+var selectedXAxis = "";
+var selectedYAxis = "";
+var selectedColor = "";
+var selectedDataSet;
 
-// create new Plotter object
+// Gadget intialization
 gadget.init = function(callback){
   
   gadget.dashboard.bind('dataSetChanged', redrawAll); 
@@ -138,15 +126,68 @@ gadget.init = function(callback){
   
   // add colors to the select box (pass the select Name and color array)
   $('#selectDatasetName').change( function(){
-    populateXYSelect($('#selectDatasetName option:selected').text());
+    if(this.selectedIndex != -1){
+      selectedDataSetName = this[this.selectedIndex].value;
+      selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetName);
+      populateXYSelect();
+    }
   });
+  
+  $('#selectXAxis').change( function(){
+    if(this.selectedIndex != -1){
+      selectedXAxis = this[this.selectedIndex].value;
+    }
+  });
+  
+  $('#selectYAxis').change( function(){
+    if(this.selectedIndex != -1){
+      selectedYAxis = this[this.selectedIndex].value;
+    }
+  });
+  
+  $('#selSelectionColor').change( function(){
+    if(this.selectedIndex != -1){
+      selectedColor = this[this.selectedIndex].value;
+    }
+  });  
+    
   $('#invertXAxisButton').click(invertX);
   $('#invertYAxisButton').click(invertY);
-  $('#plotButton').click(drawPlot);
-  $('#checkVerboseInfo').click(drawPlot);
+  $('#plotButton').click(drawPlotClicked);
   plot = new Highcharts.Chart(chartOptions);         
   setSelectOptions("selSelectionColor", ["red", "green", "blue", "yellow", "unselect"]);
   callback();
+}
+
+function generateToolTip(xValue, yValue, pointId) {  
+  var dataSet;
+  var record;
+  var info = [];
+  if (verboseTooltip) {
+      record = selectedDataSet.getRecord(pointId).toJSON();
+      if (record){
+        for (var prop in record) {
+          info.push(prop + ": " + record[prop] + "<br/>");
+        }
+      }
+      return info.join("");
+  } 
+  else { 
+    return  $(plot.yAxis[0].axisTitle.element).text() + ' : ' + yValue + '<br/>' + $(plot.xAxis[0].axisTitle.element).text()  +' : ' + xValue;
+  }
+}
+
+
+function drawPlotClicked(){
+  
+  if (selectedDataSetName ===  "" || selectedXAxis === "" || selectedYAxis === "") {
+    alert("Choose a dataset, x axis, and y axis");
+    return;
+  }
+  else{
+    drawPlot();
+  }
+  
 }
                                                                         
 // When the list of public datasets change, rewrite the list of available datasets to plot    
@@ -154,44 +195,32 @@ function redrawAll(){
   setSelectOptions('selectDatasetName', gadget.dashboard.getDataSetList());
   drawPlot();
 }
-
-// GETS for the HTML controls on the page       
-function getSelectedDataset() {
-  return $('#selectDatasetName option:selected').text();
-}
-
-function getSelectedXAxis() {
-  return $('#selXAxis option:selected').text();  
-}
-
-function getSelectedYAxis() {
-  return $('#selYAxis option:selected').text();
-}
   
 function setSelectedByMinMax(obj) {
     
-//debugLog('x: ' + xMin + ', ' + xMax + '\ny: ' + yMin + ', ' + yMax);
-// 'select' all the points in the chart to change the way they look
-var data = plot.get(obj.seriesId).data;
-var ds = gadget.dashboard.getDataSet(getSelectedDataset());
-var selectedIds = [];  
-var selectedMarkerColor = obj.color; 
+  //debugLog('x: ' + xMin + ', ' + xMax + '\ny: ' + yMin + ', ' + yMax);
+  // 'select' all the points in the chart to change the way they look
+  var data = plot.get(obj.seriesId).data;
+  var selectedIds = [];  
+  var selectedMarkerColor = obj.color; 
+  var point;
+  var color;
+  var i;
 
-for (var i=0, len=data.length; i<len; i++){
-  var point = data[i];
-  if (point.x <= obj.xMax && point.x >= obj.xMin && point.y <= obj.yMax && point.y >= obj.yMin) {
-    // point.id looks like: p0 
-    // so we strip the first letter to get the db_id
-    selectedIds.push(point.id);             
-    colorChartPoint(point, selectedMarkerColor);
+  for (i=0, len=data.length; i<len; i++){ 
+    point = data[i];
+    if (point.x <= obj.xMax && point.x >= obj.xMin && point.y <= obj.yMax && point.y >= obj.yMin) {
+      // point.id looks like: p0 
+      // so we strip the first letter to get the db_id
+      selectedIds.push(point.id);             
+      colorChartPoint(point, selectedMarkerColor);
+    }
   }
-}
-plot.redraw();
-var color = (selectedMarkerColor === "unselect") ? "" : selectedMarkerColor;
-
-// update the dataset with the selected points
-// set dataset points colors in bulk
-ds.setRecordsMetaData({'color': color}, selectedIds);  
+  plot.redraw();
+  color = (selectedMarkerColor === "unselect") ? "" : selectedMarkerColor;
+  // update the dataset with the selected points 
+  // set dataset points colors in bulk
+  selectedDataSet.setRecordsMetaData({'color': color}, selectedIds);  
 
 }
 
@@ -200,7 +229,6 @@ function updateSelectedPoints() {
 
   var colorIndexArray;
   var colorIndex;
-  var ds;
   var point;
 
   if(plot == null)
@@ -208,11 +236,10 @@ function updateSelectedPoints() {
     
   plot.showLoading();
   // select or unselect all the points in the chart to change the way they look
-  ds = gadget.dashboard.getDataSet(getSelectedDataset());
-  if (ds === undefined || ds === null) {
+  if (!selectedDataSet) {
     return;
   }
-  colorIndexArray = ds.getIndex('color');
+  colorIndexArray = selectedDataSet.getIndex('color');
   // color selected points
   for (color in colorIndexArray){
     colorIndex = colorIndexArray[color];
@@ -223,7 +250,6 @@ function updateSelectedPoints() {
       }
     }
   }
-  plot.redraw();
   plot.hideLoading();
   
 }
@@ -243,65 +269,64 @@ function setPointColor(point, colorName) {
     colorName = "";
   }
   colorChartPoint(point, colorName);
-  setTimeout( function() {
-              var dataSetName = getSelectedDataset();
-              var dataSet = gadget.dashboard.getDataSet(dataSetName);
-              dataSet.setIndexesColor([point.id], colorName); }, 1 );            
+  selectedDataSet.setRecordsMetaData({'color': colorName}, point.id);  
+
 }
 
 // Zooms the viewport to point by writing CelestialCoordinate to public variable
 function zoomToPoint(point) {
-  var dataSet = gadget.dashboard.getDataSet(getSelectedDataset());
-  var cc = dataSet.getRecord(point.id);
+  var cc = selectedDataSet.getRecord(point.id);
   if (cc !== null && cc !== undefined) {
     gadget.dashboard.notify("centerOfCoordinatesChanged",{'longitude': parseFloat(cc.get('ra')) - 180, 'latitude': parseFloat(cc.get('dec'))});
   }
 }
 
 function getPointColor(point) {
-    var dataSet = gadget.dashboard.getDataSet(getSelectedDataset());
-    return dataSet.getRecord(point.id);
+  return selectedDataSet.getRecord(point.id);
 }
 
 function drawPlot() {
-  
-  var xAxisLabel = getSelectedXAxis();
-  var yAxisLabel = getSelectedYAxis();
-  var selectedDataSet = getSelectedDataset();
-  var oldData;
-  
-  if (selectedDataSet ===  "" || xAxisLabel === "" || yAxisLabel === "") {
-    alert("Choose a dataset, x axis, and y axis");
+
+  if (selectedDataSetName ===  "" || selectedXAxis === "" || selectedYAxis === "") {
     return;
   }
   
-  plot.setTitle({ text: selectedDataSet });
-  plot.series[0].xAxis.options.title.text = xAxisLabel;
-  plot.series[0].yAxis.options.title.text = yAxisLabel;
-  plot.series[0].name = yAxisLabel + " vs " + xAxisLabel; 
-  // Set Data + Redraw
-  plot.series[0].setData(generatePoints(selectedDataSet, xAxisLabel, yAxisLabel), true);
+  plot.setTitle({ text: selectedDataSetName });
+  
+  // Set Data + Axis labels + Redraw
+  if(plot.xAxis[0].axisTitle && plot.xAxis[0].axisTitle){
+     $(plot.xAxis[0].axisTitle.element).text(selectedXAxis);
+     $(plot.yAxis[0].axisTitle.element).text(selectedYAxis);
+  }
+  else{
+    plot.series[0].xAxis.options.title.text = selectedXAxis;
+    plot.series[0].yAxis.options.title.text = selectedYAxis;
+  }
+  // Legend
+  //$(plot.series[0].legendItem.element).text(yAxisLabel + " vs " + xAxisLabel)
+  plot.series[0].setData(generatePoints(), true);
+
   $('#divPlot').css('height', '400px');
-  updateSelectedPoints();   
+  updateSelectedPoints(); 
   showPlot(true);
   
 }
 
-function generatePoints(dataSetName, xAxisName, yAxisName){
+function generatePoints(){
   
   var xVal;
   var yVal;
   var id;
-  var records = gadget.dashboard.getDataSet(dataSetName).getRecords();
+  var records;
   var shift;
   var points = [];
-  if (dataSetName === "")
+  if (!selectedDataSet)
     return points;
-  records = gadget.dashboard.getDataSet(dataSetName).getRecords(); 
+  records = selectedDataSet.getRecords(); 
   
   for (i=0,len=records.length; i<len; i++) {
-    xVal = parseFloat(records[i].get(xAxisName));
-    yVal = parseFloat(records[i].get(yAxisName));
+    xVal = parseFloat(records[i].get(selectedXAxis));
+    yVal = parseFloat(records[i].get(selectedYAxis));
     // each point has unique id so a pointer to point can be had by chart.get(id)
     id = records[i]["id"];
     if (xVal !== NaN && yVal !== NaN){
@@ -316,10 +341,6 @@ function generatePoints(dataSetName, xAxisName, yAxisName){
   return points;
   
 }    
-// returns the color name in the selection color dropdown
-function getSelectionMarkerColor() {
-  return $('#selSelectionColor option:selected').text();
-}
 
 function showPlot(show) {
   if (show) {
@@ -361,10 +382,10 @@ function invertAxis(axis){
     axisInverted.y = !axisInverted.y;
   
   if (plot) {
-    plot.xAxis.reversed = axisInverted.x;
-    plot.yAxis.reversed = axisInverted.y 
-    plot.redraw();
+    plot.xAxis[0].reversed = axisInverted.x;
+    plot.yAxis[0].reversed = axisInverted.y;
   }
+  drawPlot();
   
 }          
 
@@ -394,11 +415,10 @@ function populateXYSelect(datasetName) {
   // TODO get dataset names
   var columnNames = [""];
   if (datasetName !== "") {
-    var dataSet = gadget.dashboard.getDataSet(datasetName);
-    columnNames = dataSet.getColumns();
+    columnNames = selectedDataSet.getColumns();
   }
-  setSelectOptions("selXAxis", columnNames);
-  setSelectOptions("selYAxis", columnNames);
+  setSelectOptions("selectXAxis", columnNames);
+  setSelectOptions("selectYAxis", columnNames);
 }
       
 </script>
@@ -411,10 +431,10 @@ function populateXYSelect(datasetName) {
         <td> Dataset: <select id="selectDatasetName"></select>
         </td>
         <td>    
-          X Axis: <input id="invertXAxisButton" type="button" title="Invert X Axis" value=">"></input> <select id="selXAxis"></select>
+          X Axis: <input id="invertXAxisButton" type="button" title="Invert X Axis" value=">"></input> <select id="selectXAxis"></select>
         </td>
         <td>
-          Y Axis: <input id="invertYAxisButton" type="button" title="Invert Y Axis" value="^"></input> <select id="selYAxis"></select>
+          Y Axis: <input id="invertYAxisButton" type="button" title="Invert Y Axis" value="^"></input> <select id="selectYAxis"></select>
         </td>
       </tr>
       <tr>
@@ -426,13 +446,12 @@ function populateXYSelect(datasetName) {
   </div>
   <div id="divPlotToolbar" style="display: inline">
     <form name="formSelectZoom">
-        <div id="divSelectZoom" style="padding: 5px">
-            Selection Color: <select id="selSelectionColor">
-            </select>
-            <input type="radio" id="radioSelect" name="radSelectZoom" value="select" checked="checked" /><label for="radSelect">Select</label>
-            <input type="radio" id="radioZoom" name="radSelectZoom" value="zoom" /><label for="radZoom">Zoom</label>
-            &nbsp;&nbsp; Info: <input type="checkbox" id="checkVerboseInfo" value="0"/>
-        </div>
+      <div id="divSelectZoom" style="padding: 5px">
+        Selection Color: <select id="selSelectionColor"></select>
+        <input type="radio" id="radioSelect" name="radSelectZoom" value="select" checked="checked" /><label for="radSelect">Select</label>
+        <input type="radio" id="radioZoom" name="radSelectZoom" value="zoom" /><label for="radZoom">Zoom</label>
+        Info: <input type="checkbox" id="checkVerboseInfo" value="0"/>
+      </div>
     </form>
   </div>
   <div id="divPlot" style="display: none"></div>

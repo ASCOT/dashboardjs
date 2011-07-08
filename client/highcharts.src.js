@@ -5652,6 +5652,8 @@ function Chart (options, callback) {
 				tracker.resetTracker();
 			}
 		
+		  reversed = this.reversed;
+		
 			// render the axis
 			render();			
 			
