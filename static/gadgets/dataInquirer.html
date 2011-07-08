@@ -165,26 +165,25 @@ function parseQueryResponse(data) {
 // Accepts "rows" as an ObjectHTML collection
 // and creates a Dataset from it and returns it
 function createDataset(id, rows) {
-    var json = [];
-    var newDataSet;
-    for (var i=0,len=rows.length; i<len; i++){
-        var row = rows[i];
-        var elem = {};
-        // loop through attributes
-        for (var k=0, kLen=row.attributes.length; k<kLen; k++){
-            // k is the attribute index
-            var attName = row.attributes[k].nodeName;
-            var attValue = row.attributes[k].nodeValue;
-            elem[attName] = attValue;
-        }
-        json.push(elem);
+  var json = [];
+  var newDataSet;
+  for (var i=0,len=rows.length; i<len; i++){
+    var row = rows[i];
+    var elem = {};
+    // loop through attributes
+    for (var k=0, kLen=row.attributes.length; k<kLen; k++){
+      // k is the attribute index
+      var attName = row.attributes[k].nodeName;
+      var attValue = row.attributes[k].nodeValue;
+      elem[attName] = attValue;
     }
-
-    // create dataset
-    newDataSet = gadget.dashboard.createDataSet(id); 
-    newDataSet.createIndex('color');
-    newDataSet.addRecords(json);
-    return newDataSet;
+    json.push(elem);
+  }
+  // create dataset
+  newDataSet = gadget.dashboard.createDataSet(id); 
+  newDataSet.createIndex('color');
+  newDataSet.addRecords(json);
+  return newDataSet;
 }
 
 function showStatus(iconUrl, text){
@@ -195,7 +194,6 @@ function showStatus(iconUrl, text){
   } 
   statusDiv.innerHTML = status;
   statusDiv.style.visibility = 'inline';
-
 }
 
 function setViewPortBounds(newBounds) {
@@ -219,13 +217,13 @@ function launchQuery(newQuery){
 
 function populateSelect(selectName, options) { 
   var html = '';
-  var currentSelection = $("#" + selectName + "list option:selected").text();
+  var currentSelection = $("#" + selectName + " option:selected").text();
   var len = options.length;
   for (var i = 0; i< len; i++) {
     html += '<option value="' + options[i] + '">' + options[i] + '</option>';
   }
-  $("#" + selectName).append(html);
-  $("#" + selectName + "option[value=" + currentSelection + "]").text()
+  $("#" + selectName).html(html);
+  $("#" + selectName + "option[value=" + currentSelection + "]").attr("selected", true);  
 }
 
 </script>

@@ -44,18 +44,16 @@ var dataSetList;
 var selectedDataSetName = "";
 
 // Creates gadget object
-gadget.init = function(callback){
+gadget.init = function(callback){ 
   gadget.dashboard.bind('dataSetChanged', updateDataSetList);  
-  
   // add colors to the select box (pass the select Name and color array)
-   $('#selectDatasetName').change( function(){
-     if(this.selectedIndex != -1){
-       selectedDataSetName = this[this.selectedIndex].value;
-       updateTable();
-     }
-   });
-  
-  callback();
+  $('#selectDatasetName').change( function(){
+    if(this.selectedIndex != -1){
+      selectedDataSetName = this[this.selectedIndex].value;
+      updateTable();
+    }
+  });
+ callback();
 }
 
 function updateTable() {
@@ -92,7 +90,12 @@ function updateTable() {
   if(table)
     table.destroy();
   table = new YAHOO.widget.DataTable(tableDiv, columns, data, tableConfig);
-  $("#content").get(0).style.height = document.getElementById('divTable').offsetHeight + 100;
+  table.subscribe("postRenderEvent", function(){
+    //$("#content")[0].style.height = $('#divTable')[0].offsetHeight + 450;
+    $("#content").css('height', $('#divTable')[0].offsetHeight + 40);
+    gadget.resize();
+  }); 
+  //YAHOO.util.Event.addListener(table, "paginatorChange", );
   gadget.resize();
   
 }
@@ -124,20 +127,18 @@ function moveIndexToStart(arr, index) {
   return arr;
 }
 
-function updateDataSetList(){
-  var list = gadget.dashboard.getDataSetList();
-  var select = $("#selectDatasetName")[0];
-  // save old selected option so maybe it can be reselected
-  var oldOpt = selectedDataSetName;
-  // clear options
-  for (var i=select.length-1; i>=0; i--) {
-    select.remove(i);
+function updateDataSetList() { 
+  var html = '';
+  var currentSelection = selectedDataSetName;
+  var options = gadget.dashboard.getDataSetList();
+  var len = options.length;
+  for (var i = 0; i< len; i++) {
+    html += '<option value="' + options[i] + '">' + options[i] + '</option>';
   }
-  for (var i = 0; i < list.length; ++i){
-    select.add(new Option(list[i], list[i], false, (oldOpt === list[i])), null);
-  }
+  $("#selectDatasetName").html(html);
+  $("#selectDatasetName").val(currentSelection).attr('selected',true);      
   $("#selectDatasetName").change();
-  document.getElementById("divSelectDataset").style.display = 'block';
+  $("#divSelectDataset").show();
 }
 
 </script>
