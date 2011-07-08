@@ -116,22 +116,22 @@ function setStatus(text) {
 
 
 var parseResponse = function(response){ 
-    var ra;
-    var dec;    
-    if (!(typeof response === "string")){
-        showError('Unrecognized object.');
-        return;
-    }
-    // a string was returned, but does it have relevant data in it?
-    response = response.match(/^%J.*$/gm);
-    if (response === null) {
-        showError('Unrecognized object.');
-        return;
-    }
-    response=response.toString().split(" ");
-    ra = response[1]-0;
-    dec = response[2]-0;
-    writeCoordinates(ra, dec);
+  var ra;
+  var dec;    
+  if (!(typeof response === "string")){
+    showError('Unrecognized object.');
+    return;
+  }
+  // a string was returned, but does it have relevant data in it?
+  response = response.match(/^%J.*$/gm);
+  if (response === null) {
+    showError('Unrecognized object.');
+    return;
+  }
+  response = response.toString().split(" ");
+  ra = response[1]-0;
+  dec = response[2]-0;
+  writeCoordinates(ra, dec);
     
 };
 

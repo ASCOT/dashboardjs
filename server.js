@@ -116,7 +116,6 @@ app.configure('production', function(){
 app.get('/XmlHttpRequest/:request', function(req, res){
 
   var xhr = new XMLHttpRequest();
-  
   var httpResponse = "";
   
   xhr.onreadystatechange = function() {
@@ -141,7 +140,6 @@ app.get('/XmlHttpRequest/:request', function(req, res){
 });
 
 app.get('/dashboards/:id', function(req, res){
-
   res.render("dashboard", {
     locals: {
       id: req.params.id,

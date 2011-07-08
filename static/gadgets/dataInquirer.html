@@ -10,14 +10,9 @@
 <link href="/css/reset.css" rel="stylesheet" type="text/css">
 <link href="/css/text.css" rel="stylesheet" type="text/css"> 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js" type="text/javascript"></script>
-<script src="/underscore.js" type="text/javascript"></script>
-<script src="/backbone.js" type="text/javascript"></script>
-<script src="/abstractDataModel.js" type="text/javascript"></script>
-<script src="/astroMetaData.js" type="text/javascript"></script>
 <script src="/util.js" type="text/javascript"></script> 
 
 <script type="text/javascript">
-    
 // Text in {{ }} such as " {{ra.lower}}" are substituted in setQueryText() method
 var QUERY_BUTTONS =  
   [{ buttonNum: 0,
@@ -40,168 +35,138 @@ var ICON_URL_SPINNER = '/images/spinnerGrey.gif';
 var ICON_URL_ERROR = '/images/errorIcon.gif';
 var ICON_URL_SUCCESS = '/images/successIcon.gif';
 
+var myFields = {}
+var catalogs =  [ { name: "SDSS", url: "http://cas.sdss.org/public/en/tools/search/x_sql.asp"  } ]; // contains info for catalogs and thier urls
+
+// Gadget State Variables
 var viewportBounds;
+var currentQuery;
 
 // create HR object
 gadget.init = function(callback){
+  gadget.dashboard.bind('viewBoundsChanged', setViewPortBounds);
+  gadget.dashboard.bind('dataRequested', launchQuery);
   setFields();
   callback();
 }
-
-var myFields = {}
-var catalogs =  [ { name: "SDSS", url: "http://cas.sdss.org/public/en/tools/search/x_sql.asp"  }  ]; // contains info for catalogs and thier urls
-    
-gadget.dashboard.bind('viewBoundsChanged', setViewPortBounds);
-gadget.dashboard.bind('dataRequested', queryData);
-//gadget.dashboard.bind('dataSetChanged', updateDatasetList); 
-
-function getDatasetNameText () {
-    return document.getElementById("txtDatasetName").value;
-}
-
-function clearForm() {
-    document.getElementById("txtDatasetName").value = '';
-}
     
 var setFields = function() {
-    // set the catalog options
-    var  options = [];
-    for (var i=0, len=catalogs.length; i<len; i++) {
-        options.push(catalogs[i].name);
-    }
-    setSelectOptions("selCatalog", options);
-    // create the buttons
-    for (var i=0, len=QUERY_BUTTONS.length; i<len; i++) {
-        createQueryButton(QUERY_BUTTONS[i]);
-    }
+  // set the catalog options
+  var  options = [];
+  for (var i=0, len=catalogs.length; i<len; i++) {
+    options.push(catalogs[i].name);
+  }
+  populateSelect("selectCatalog", options);
+  // create the buttons
+  for (var i=0, len=QUERY_BUTTONS.length; i<len; i++) {
+    createQueryButton(QUERY_BUTTONS[i]);
+  }
 }
 
 function createQueryButton(buttonObj) {
-    var divButtons = document.getElementById('divQueryButtons');
-    var button = document.createElement('input');
-    button.setAttribute('type', 'button');
-    button.setAttribute('name', buttonObj.name);
-    button.setAttribute('value', buttonObj.name);
-    button.setAttribute('title', buttonObj.desc);
-    button.onclick = function(){ setQueryText(buttonObj.buttonNum); };
-    divButtons.appendChild(button);
+  var divButtons = $('#divQueryButtons')[0];
+  var button = document.createElement('input');
+  button.setAttribute('type', 'button');
+  button.setAttribute('name', buttonObj.name);
+  button.setAttribute('value', buttonObj.name);
+  button.setAttribute('title', buttonObj.desc);
+  button.onclick = function(){ setQueryText(buttonObj.buttonNum); };
+  divButtons.appendChild(button);
 }
 
 var getData = function() {
+  var dataSetName = $("#txtDatasetName").val()
+  var query = $("#txtQueryString").val(); 
+  var selectedCatalog = $("#selectCatalog option:selected").text();
+  var url;
+  if (dataSetName.length < 1) {
+    showStatus(ICON_URL_ERROR, "Enter dataset name");
+    return;
+  }
+  if (query === "") {
+    showStatus(ICON_URL_ERROR, 'Enter query string');
+    return;
+  }
     
-    var dsName = getDatasetNameText();
+  // find catalog in the catalogs object to get the url
+  for (var i=0, len=catalogs.length; i<len; i++) {
+    if (catalogs[i].name === selectedCatalog) {
+      url = catalogs[i].url;
+    }
+  }
 
-    if (dsName.length < 1) {
-        showError("Enter dataset name");
-        return;
-    }
+  if (url === null) {
+    showStatus(ICON_URL_ERROR, 'Select a catalog');
+    return;
+  }
     
-    // get query string from the text area
-    var query = getQueryString();
-    var url;
-    
-    if (query === "") {
-        showError('Enter query string');
-        return;
-    }
-    
-    // find catalog in the _catalogs object to get the url
-    var selectedCatalog = getSelectedOption("selCatalog");
-    for (var i=0, len=_catalogs.length; i<len; i++) {
-      if (_catalogs[i].name === selectedCatalog) {
-          url = _catalogs[i].url;
-      }
-    }
+  var queryObj = {'dataSet': dataSetName, 'query': query, 'url': url};
+  gadget.dashboard.notify("dataRequested", queryObj);
 
-    if (url === null) {
-          showError('Select a catalog');
-          return;
-      }
-    
-    var queryObj = {'dataSet': dsName, 'query': query, 'url': url};
-    gadget.dashboard.notify("dataRequested", queryObj);
 }
 
-var setQueryText = function(buttonNum) {
-    if (QUERY_BUTTONS.length > buttonNum) {
-        // set catalog
-        var buttonObj = QUERY_BUTTONS[buttonNum];
+var setQueryText = function(buttonNumber) {
+  var buttonObject;
+  var queryString;
+  if (QUERY_BUTTONS.length <= buttonNumber) {
+    return;
+  }
+  buttonObject = QUERY_BUTTONS[buttonNumber];
+  queryString = buttonObject.query;
+  
+  $("#selectCatalog option[value=" + buttonObject.catalog + "]").text();
         
-        setSelectedCatalog(buttonObj.catalog);
-        
-        var qString = buttonObj.query;
-
-        // replace bounds    
-        if (viewportBounds !== null) {
-            qString = replaceQueryVars(qString, "{{ra.lower}}", viewportBounds.topLeft.ra.toFixed(6));
-            qString = replaceQueryVars(qString, "{{ra.upper}}", viewportBounds.bottomRight.ra.toFixed(6));
-            qString = replaceQueryVars(qString, "{{dec.lower}}", viewportBounds.bottomRight.dec.toFixed(6));
-            qString = replaceQueryVars(qString, "{{dec.upper}}", viewportBounds.topLeft.dec.toFixed(6));
-        }
-        setQueryString(qString);
-    }
-        
-}
-
-function replaceQueryVars(str, replacee, replacer) {
-    return str.replace(replacee, replacer);
-}
-function insertWhere(str, whereStr) {
-    // insert in WHERE clause
-    var splitted = str.split(/where/i);
-    if (splitted.length === 2) {
-        return splitted[0] + " WHERE " + whereStr + " AND " + splitted[1];
-    } 
-    // insert in ORDER BY clause
-    splitted = str.split(/order by/i);
-    if (splitted.length === 2) {
-        return splitted[0] + whereStr + " ORDER BY " + splitted[1];
-    }
-    // no WHERE or ORDER BY, so just tack it on the end
-    return str + " WHERE " + whereStr;
+  // replace bounds    
+  if (viewportBounds && viewportBounds.topLeft && viewportBounds.bottomRight) {
+    queryString = queryString.replace("{{ra.lower}}", viewportBounds.topLeft.ra.toFixed(6));
+    queryString = queryString.replace("{{ra.upper}}", viewportBounds.bottomRight.ra.toFixed(6));
+    queryString = queryString.replace("{{dec.lower}}", viewportBounds.bottomRight.dec.toFixed(6));
+    queryString = queryString.replace("{{dec.upper}}", viewportBounds.topLeft.dec.toFixed(6));
+  }
+  $("#txtQueryString").val(queryString);        
 }
 
 function makeGETRequest(url, query, callback) {
   var params = {};
   console.log(parseURL(url + '?cmd=' + query).url);
-  
   $.ajax({
    'url': '/XMLHttpRequest/' + encodeURIComponent(url + '?format=xml&cmd=' + encodeURIComponent(query)),
     success: callback 
   });
 } 
 
-function queryResponseCB(obj, dataSet) {
-    // parse the XML
-    if (obj === ""){
-        // returned empty string
-        showError('Service returned empty string');
-        return;
-    }
+function parseQueryResponse(data) {
+  // parse the XML
+  var rows;
+  var xmlDoc;
+  if (data === ""){
+    showStatus(ICON_URL_ERROR, 'Service returned empty string');
+    return;
+  }
     
-    xmlDoc = xmlStringToDoc(obj);
-    // walk XML to create points and write to objectData
-    var rows = xmlDoc.getElementsByTagName('Row');
-    if ((rows.length === 0) || ((rows.length === 1) && (rows[0].textContent.indexOf('No rows returned') !== -1))){
-        // the special case answer is that no rows were returned
-        showError('No objects from ' + getSelectedOption("selCatalog") + ' catalog');
-        return;
-    }
+  xmlDoc = $.parseXML(data);
+  // walk XML to create points and write to objectData
+  rows = xmlDoc.getElementsByTagName('Row');
+  if ((rows.length === 0) || ((rows.length === 1) && (rows[0].textContent.indexOf('No rows returned') !== -1))){
+    // the special case answer is that no rows were returned
+    showStatus(ICON_URL_ERROR, 'No objects from ' + $("#selectCatalog option:selected").text() + ' catalog');
+    return;
+  }
     
-    // indicate status to user
-    showSuccess("Returned " + rows.length + " records.");
+  // indicate status to user
+  showStatus(ICON_URL_SUCCESS, "Returned " + rows.length + " records.");
     
-    // We probably have valid data at this point, so parse it and display it
-    // create and write Dataset from the row data
-    var ds = createDataset(dataSet, rows);   
-		gadget.resize();
+  // We probably have valid data at this point, so parse it and display it
+  // create and write Dataset from the row data
+  createDataset(currentQuery.dataSet, rows);   
+	gadget.resize();
 }
-
 
 // Accepts "rows" as an ObjectHTML collection
 // and creates a Dataset from it and returns it
 function createDataset(id, rows) {
     var json = [];
+    var newDataSet;
     for (var i=0,len=rows.length; i<len; i++){
         var row = rows[i];
         var elem = {};
@@ -216,154 +181,58 @@ function createDataset(id, rows) {
     }
 
     // create dataset
-    ds = gadget.dashboard.createDataSet(id); 
-    ds.createIndex('color');
-    ds.addRecords(json);
-    return ds;
-    
+    newDataSet = gadget.dashboard.createDataSet(id); 
+    newDataSet.createIndex('color');
+    newDataSet.addRecords(json);
+    return newDataSet;
 }
 
-// HELPER
-function clearStatus() {
-  showStatus("","");
-}
-
-function showSpinner(text) {
-  showStatus(ICON_URL_SPINNER, text);
-}
-
-function showSuccess(text) {
-  showStatus(ICON_URL_SUCCESS, text);
-}
-
-function showError(text) {
-  showStatus(ICON_URL_ERROR, text);
-}
- 
 function showStatus(iconUrl, text){
+  var statusDiv = $('#divStatusText')[0];
+  var status = text; 
   if (iconUrl !== "") {
-    setStatus( '<img id="imgStatus" style="vertical-align:middle;" src="' + iconUrl + '" /> ' + "<span style='vertical-align:middle;'>" + text + "</span>");
+    status = '<img id="imgStatus" style="vertical-align:middle;" src="' + iconUrl + '" /> ' + "<span style='vertical-align:middle;'>" + text + "</span>";
   } 
-  else {
-    setStatus(text);
-  }
-}
+  statusDiv.innerHTML = status;
+  statusDiv.style.visibility = 'inline';
 
-function setStatus(text) {
-    // set text status
-    var statusDiv = document.getElementById('divStatusText');
-    statusDiv.innerHTML = text;
-    // make visible
-    statusDiv.style.visibility = 'inline';
-}
-
-function xmlStringToDoc(text){
-    if (window.DOMParser){
-        parser=new DOMParser();
-        xmlDoc=parser.parseFromString(text,"text/xml");
-    }
-    else // Internet Explorer
-    {
-        xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
-        xmlDoc.async="false";
-        xmlDoc.loadXML(text); 
-    } 
-    // TODO: test to verify its created
-    return xmlDoc;
 }
 
 function setViewPortBounds(newBounds) {
-    viewportBounds = newBounds;
-    if (newBounds !== null) {
-        getField('spViewportBounds').innerHTML = 
-        "ra between " + newBounds.topLeft.ra.toFixed(4) + " and " + newBounds.bottomRight.ra.toFixed(4) + 
-        " dec between " + newBounds.topLeft.dec.toFixed(4) + " and " + newBounds.bottomRight.dec.toFixed(4);
-    }
+  var boundsText;
+  if(!newBounds){
+    return;
+  }
+  viewportBounds = newBounds;
+  boundsText =  "ra between " + newBounds.topLeft.ra.toFixed(4) + " and " + newBounds.bottomRight.ra.toFixed(4) +    
+                "<br/> dec between " + newBounds.topLeft.dec.toFixed(4) + " and " + newBounds.bottomRight.dec.toFixed(4)
+  $("#divViewPortBounds").html(boundsText);
 }
 
-function queryData(queryObj){
-  showSpinner("Getting objects..."); 
-  $('textarea#txtQueryString').val(queryObj.query);
-  $('input[name=dataSetName]').val(queryObj.dataSet);
-  makeGETRequest(queryObj.url, queryObj.query, function(dataSet) { return function(obj) { queryResponseCB(obj, dataSet); }; }(queryObj.dataSet));
+function launchQuery(newQuery){
+  showStatus(ICON_URL_SPINNER, "Getting objects..."); 
+  currentQuery = newQuery;
+  $('textarea#txtQueryString').val(newQuery.query);
+  $('input[name=dataSetName]').val(newQuery.dataSet);
+  makeGETRequest(newQuery.url, newQuery.query, parseQueryResponse);
 }
 
-// HTML Field Getters/Setters
-function getField(field) {
-    if (!(_myFields.hasOwnProperty(field)) || (_myFields[field] === null)) {
-        _myFields[field] = document.getElementById(field);
-    }
-    return _myFields[field];
-}
-function getQueryString() {
-    return getField("txtQueryString").value;
-}
-function setQueryString(str) {
-    setTextBoxValue("txtQueryString", str);
-}
-function setSelectedCatalog(catalog) {
-    selectValue("selCatalog", catalog);
-}
-function restrictVPBounds() {
-    return getField('ckVPBounds').checked;
-}
-
-function setTextBoxValue(textBoxName, value) {
-    textBox = document.getElementById(textBoxName);
-    if (textBox !== null && textBox !== undefined) {
-        textBox.value = value;
-    }
-}
-
-// accepts name of select box
-// returns the value in the select box, or ""
-function getSelectedOption(select) {
-    var selName = document.getElementById(select);
-    if (selName.length > 0){
-        return selName.options[selName.selectedIndex].value;
-    } else {
-        return "";
-    }
-}
-
-function selectValue(selectName, value) {
-    var sel = document.getElementById(selectName);
-    if (sel === undefined || sel === null) {
-        return;
-    }
-    for (var i=0, len=sel.options.length; i<len; i++) {
-        if (sel.options[i].value === value) {
-            sel.options[i].selected = true;
-            return;
-        }
-    }
-}
-
-// Accepts the name of a select object, and an array of strings
-// replaces the options with the array of strings
-function setSelectOptions(selectName, options) {
-    var select = document.getElementById(selectName);
-    if (select === null) {
-        return;
-    }
-    // save old selected option so maybe it can be reselected
-    var oldOpt = getSelectedOption(selectName);
-    // clear options
-    for (var i=select.length-1; i>=0; i--) {
-        select.remove(i);
-    }
-    // add options
-    for (var i=0, len=options.length; i<len; i++) {
-        // if oldOption is in the list, then select it
-        select.add(new Option(options[i], options[i], false, (oldOpt === options[i])), null);
-    }
+function populateSelect(selectName, options) { 
+  var html = '';
+  var currentSelection = $("#" + selectName + "list option:selected").text();
+  var len = options.length;
+  for (var i = 0; i< len; i++) {
+    html += '<option value="' + options[i] + '">' + options[i] + '</option>';
+  }
+  $("#" + selectName).append(html);
+  $("#" + selectName + "option[value=" + currentSelection + "]").text()
 }
 
 </script>
 </head>
 <body>
 <div id="content" class="extraPadding">
-	<div id="divVPBounds" style="float: right">
+	<div id="divViewPortBounds" style="float: right">
 	    <div><b>Viewport Bounds</b></div>
 	    <div id="spViewportBounds" class="info"></div>
 	</div>
@@ -372,7 +241,7 @@ function setSelectOptions(selectName, options) {
 	</div>
 	<div id="divQueryButtons" style="margin-top: 10px; margin-bottom: 10px;"></div>
 	<div id="divCatalog">
-		Catalog:  <select id="selCatalog"></select>
+		Catalog:  <select id="selectCatalog"></select>
 	</div>
 	<div id="divQueryBox" style="width:100%; margin-top: 10px;">
 		Query String: 
