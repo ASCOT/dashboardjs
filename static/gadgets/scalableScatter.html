@@ -8,12 +8,18 @@
 <title>Scalable Scatter Plot</title>
 
 <!-- chart dependencies -->
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js" type="text/javascript"></script>
-<script src="../js/highcharts/highcharts.js" type="text/javascript"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js" type="text/javascript"></script>
+<script src="/highcharts.src.js" type="text/javascript"></script>
 
 <!-- ASCOT Basic Style Sheets -->
 <link href="/css/reset.css" rel="stylesheet" type="text/css">
 <link href="/css/text.css" rel="stylesheet" type="text/css"> 
+
+<style type="text/css">
+td{
+  padding: 5px;
+}
+</style>
 
 <script type="text/javascript">
 
@@ -80,7 +86,7 @@ function Plotter() {
                         unselect: DEFAULT_MARKER_COLOR
                        }
 	
-	gadget.dashboard.bind('dataSetListChanged', updateDataSetList);
+	gadget.dashboard.bind('dataSetChanged', updateDataSetList);
 	
 	// When the list of public datasets change, rewrite the list of available datasets to plot    
 	function updateDataSetList(){
@@ -90,12 +96,13 @@ function Plotter() {
 	
 	// Given a list of point ids, change those points in the public dataset to a given color
 	function setSelectedColor(obj) {
-		var ds = gadget.dashboard.getDataSet(getSelectedDataset());
 		var useColor = obj.color;
 		if (obj.color == 'unselect') {
 			useColor = '';
 		}
-		ds.setIndexesColor(obj.modifiedPointIds,useColor);
+		var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+		ds.setRecordsMetaData({'color': useColor}, obj.modifiedPointIds); 
+      gadget.dashboard.trigger('dataSetListChanged');
 		return;
 	}
 	
@@ -110,21 +117,19 @@ function Plotter() {
     	if (ds === undefined || ds === null) {
    	 	return;
    	 }
-    	var colorIndexArray = ds.getColoredIndexArray();
-        
-    	// color selected points
-   	for (var i=0, len=colorIndexArray.length; i<len; i++){
-   		var point;
-    		for (var j=0; j < dataToPlot.length; j++) {
-    			if (("p" + colorIndexArray[i][0]) == dataToPlot[i].id)
-    				point = dataToPlot[i];
+    	var colorIndexArray = ds.getIndex('color');
+    	var colorIndex;
+    	var point;
+    	
+    	for (color in colorIndexArray) {
+    		colorIndex = colorIndexArray[color];
+    		for (var i = 0; i < colorIndex.length; i++) {
+    			point = dataToPlot[colorIndex[i]];
+    			colorChartPoint(point,color);
     		}
-     		if (point !== null) {
-      		colorChartPoint(point, colorIndexArray[i][1] );  // color is [1]
-      	}
     	}
+    	
     	chart1.redraw();
-    	//gadget.dashboard.setDataSet(getSelectedDataset(), ds);
 	}
 	
 	 // Colors a selected point on chart by the color name
@@ -152,17 +157,17 @@ function Plotter() {
    	var yCol = args.yAxis;
         
    	var ds = gadget.dashboard.getDataSet(args.dataSetName);
-   	var colorIndexArray = ds.getColoredIndexArray();
+   	var colorIndexArray = ds.getIndex('color');
                 
   	 	var graphData = [];
-  		var dsData = ds.getPoints();
+  		var dsData = ds.getRecords();
    	for (i=0,len=dsData.length; i<len; i++) {
-   		var xVal = parseFloat(dsData[i][xCol]);
-   		var yVal = parseFloat(dsData[i][yCol]);
+   		var xVal = parseFloat(dsData[i].get(getSelectedXAxis()));
+   		var yVal = parseFloat(dsData[i].get(getSelectedYAxis()));
    		// each point has unique id so a pointer to point can be had by chart.get(id)
-      	var id = "p" + dsData[i]["db_id"];
+      	var id = dsData[i]["id"];
       	if (xVal !== NaN && yVal !== NaN){
-      		graphData.push({id: id, x: xVal, y: yVal, color: colorIndexArray[i][1] });
+      		graphData.push({id: id, x: xVal, y: yVal, color: DEFAULT_MARKER_COLOR });
      		}
      	}
      	return graphData;
@@ -360,7 +365,6 @@ function Plotter() {
 				events: {
 					load: function() { handleLoadEvent(this); },
 					redraw: function() { handleRedrawEvent(this); },
-					click: function(event) { handleClickEvent(this,event); },
 					selection: function(event) { handleSelectEvent(this,event); }
 				}
 			},
@@ -462,9 +466,6 @@ function Plotter() {
       primitiveObjects.push(chart.renderer.rect(0,chart.plotHeight+chart.plotTop,					// Bottom
 							       chart.chartWidth, chart.chartHeight-chart.plotHeight, 0)
        							 .attr({fill: 'white',zIndex: 0}).add());
-      primitiveObjects.push(chart.renderer.rect(0,0,											            // Top
-							       chart.chartWidth, chart.plotTop, -1)
-							       .attr({fill: 'white',zIndex: 0}).add());
       primitiveObjects.push(chart.renderer.rect(0,0,															// Left
 							       chart.plotLeft, chart.chartHeight, 0)
        							 .attr({fill: 'white',zIndex: 0}).add());
@@ -491,65 +492,6 @@ function Plotter() {
       primitiveObjects = drawData(sparsePoints);
 	}
 	
-	function handleClickEvent(chart,event) {
-		// If the radio button is set to zoom, click does nothing
-		if (isRadioZoom())
-			return;
-	
-		// Figure out which bin was clicked on
-		var xBinClicked = Math.floor((event.xAxis[0].value-chart.xAxis[0].getExtremes().min)/
-								(chart.xAxis[0].getExtremes().max-chart.xAxis[0].getExtremes().min)*numBinsX);
-		var yBinClicked = Math.floor((event.yAxis[0].value-chart.yAxis[0].getExtremes().min)/
-								(chart.yAxis[0].getExtremes().max-chart.yAxis[0].getExtremes().min)*numBinsY);
-
-		// If the bin we clicked on has more than maxDensity points in it
-		if (bins[xBinClicked][yBinClicked].length > maxDensity) {
-			// Determine the bounding box of this bin
-			var binBox = { x: { min: chart.xAxis[0].getExtremes().min+((chart.xAxis[0].getExtremes().max-chart.xAxis[0].getExtremes().min)/numBinsX)*xBinClicked,
-									  max: chart.xAxis[0].getExtremes().min+((chart.xAxis[0].getExtremes().max-chart.xAxis[0].getExtremes().min)/numBinsX)*(xBinClicked+1)},
-								y: { min: chart.yAxis[0].getExtremes().min+((chart.yAxis[0].getExtremes().max-chart.yAxis[0].getExtremes().min)/numBinsY)*yBinClicked,
-									  max: chart.yAxis[0].getExtremes().min+((chart.yAxis[0].getExtremes().max-chart.yAxis[0].getExtremes().min)/numBinsY)*(yBinClicked+1)}
-							 };
-			
-			// Select all of the points in the bin
-			var modifiedPointIds = []
-			for (var i = 0; i < dataToPlot.length; i++) {
-				if (dataToPlot[i].x < binBox.x.max && dataToPlot[i].x > binBox.x.min) {
-					if (dataToPlot[i].y < binBox.y.max && dataToPlot[i].y > binBox.y.min) {
-						// Need to strip the first letter from dataToPlot.id to use to query database
-						var databaseId = dataToPlot[i].id;
-						modifiedPointIds.push(databaseId.substr(1));
-					}
-				}
-			}
-			var selectionObj = {modifiedPointIds: modifiedPointIds, color: getSelectionMarkerColor()};
-			setSelectedColor(selectionObj);
-		}
-		// Otherwise, we must be clicking on an individual point
-		else {
-			// If the mouse click falls within the bounds of one of the individual points
-			// Get that data point from the sparsePoints array
-			
-			// Need to translate mouse click and data point coordinates into pixel coordinates
-			var mousePixelX = chart.xAxis[0].translate(event.xAxis[0].value);
-			var mousePixelY = chart.yAxis[0].translate(event.yAxis[0].value);
-												
-			for (var i = 0; i < sparsePoints.length; i++) {
-				// Find the distance in pixels between the mouse click and the drawn point					
-				var coordPixelX = chart.xAxis[0].translate(sparsePoints[i].x);
-				var coordPixelY = chart.yAxis[0].translate(sparsePoints[i].y);
-																
-				var clickDist = Math.sqrt((mousePixelX-coordPixelX)*(mousePixelX-coordPixelX) + 
-													(mousePixelY-coordPixelY)*(mousePixelY-coordPixelY))
-																
-				if (clickDist < 5) {
-					setSelectedColor({modifiedPointIds: [sparsePoints[i].id.substr(1)], color: getSelectionMarkerColor()});
-				}
-			} 
-		}
-		chart.redraw();
-	}
-	
 	function handleSelectEvent(chart,event) {
 		if (!isRadioZoom() && ("xAxis" in event)) {
 			event.preventDefault();
@@ -558,9 +500,8 @@ function Plotter() {
 			for (var i = 0; i < dataToPlot.length; i++) {
 				if (dataToPlot[i].x < event.xAxis[0].max && dataToPlot[i].x > event.xAxis[0].min) {
 					if (dataToPlot[i].y < event.yAxis[0].max && dataToPlot[i].y > event.yAxis[0].min) {
-						// Need to strip the first letter from dataToPlot.id to use to query database
-						var databaseId = dataToPlot[i].id;
-						modifiedPointIds.push(databaseId.substr(1));
+						// Need to strip the first letter from dataToPlot.id to query database
+						modifiedPointIds.push(dataToPlot[i].id);
 					}
 				}
 			}
@@ -674,7 +615,7 @@ function Plotter() {
 		var columnNames = [""];
       if (datasetName !== "") {
       	var ds = gadget.dashboard.getDataSet(datasetName);
-         columnNames = ds.getNonDBColumns();
+         columnNames = ds.getColumns();
   		}
    	setSelectOptions("selXAxis", columnNames);
    	setSelectOptions("selYAxis", columnNames);
@@ -691,18 +632,17 @@ function Plotter() {
       
       // Create a new dataset of points with the selected color
       var ds = gadget.dashboard.getDataSet(getSelectedDataset());
-   	var colorIndexArray = ds.getColoredIndexArray();
-   	var dsData = ds.toJSON();
-   	
-      var newDb = [];
-      for (var i = 0; i < colorIndexArray.length; i++) {
-      	if (getSelectionMarkerColor() == colorIndexArray[i][1]) {
-      		newDb.push(dsData[i]);
-      	}
-      }
+   	var dsData = ds.getRecords();
+   	var colorIndexArray = ds.getIndex('color');
+    	
+    	var newDb = [];
+    	var colorIndex = colorIndexArray[getSelectionMarkerColor()];
+    	for (var i = 0; i < colorIndex.length; i++) {
+    		newDb.push(dsData[colorIndex[i]]);
+    	}
       
       var newDs = gadget.dashboard.createDataSet(dsName);
-      newDs.init(newDb);
+      newDs.addRecords(newDb);
        
    }
 	
@@ -738,6 +678,8 @@ function Plotter() {
 		dataExtremes = getDataExtremes(dataToPlot);
 		
 		displayPlot(dataInput);
+		
+		updateSelectedPoints();
 	}
 	
 	my.setSelectOptions = function(sel, array) {
@@ -775,8 +717,8 @@ function Plotter() {
    	</div>
 	</form>
 	
-	<input id="btExportSelected" onclick="pl.exportSelected();" type="button" value="Export Selection"/>
-	Name: <input type="text" id="exportSelectedInput" value="selected" />
+	<!--<input id="btExportSelected" onclick="pl.exportSelected();" type="button" value="Export Selection"/>
+	Name: <input type="text" id="exportSelectedInput" value="selected" />-->
 </div>
 
 </body>

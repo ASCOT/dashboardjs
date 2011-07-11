@@ -8,12 +8,12 @@
 <title>Histogram View</title>
 
 <!-- chart dependencies -->
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js" type="text/javascript"></script>
-<script src="../highcharts/highcharts.js" type="text/javascript"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js" type="text/javascript"></script>
+<script src="/highcharts.src.js" type="text/javascript"></script>
 
 <!-- ASCOT Basic Style Sheets -->
 <link href="/css/reset.css" rel="stylesheet" type="text/css">
-<link href="/css/text.css" rel="stylesheet" type="text/css"> 
+<link href="/css/text.css" rel="stylesheet" type="text/css">  
 
 <script type="text/javascript">
 
@@ -73,7 +73,8 @@ function Histogram() {
 			useColor = '';
 		}
 		var ds = gadget.dashboard.getDataSet(getSelectedDataset());
-		ds.setIndexesColor(obj.modifiedPointIds,useColor);
+		ds.setRecordsMetaData({'color': useColor}, obj.modifiedPointIds);
+      gadget.dashboard.trigger('dataSetListChanged');
 		return;
 	}
 	
@@ -87,20 +88,18 @@ function Histogram() {
     	if (ds === undefined || ds === null) {
    	 	return;
    	 }
-    	var colorIndexArray = ds.getColoredIndexArray();
-    	// color selected points
-   	for (var i=0, len=colorIndexArray.length; i<len; i++){
-   		var point;
-    		for (var j=0; j < dataToChart.length; j++) {
-    			if (("p" + colorIndexArray[i][0]) == dataToChart[i].id)
-    				point = dataToChart[i];
+    	var colorIndexArray = ds.getIndex('color');
+    	var colorIndex;
+    	var point;
+    	
+    	for (color in colorIndexArray) {
+    		colorIndex = colorIndexArray[color];
+    		for (var i = 0; i < colorIndex.length; i++) {
+    			point = dataToChart[colorIndex[i]];
+    			colorChartPoint(point,color);
     		}
-     		if (point !== null) {
-      		colorChartPoint(point, colorIndexArray[i][1] );  // color is [1]
-      	}
     	}
     	my.doChart();
-    	//gadget.dashboard.setDataSet(getSelectedDataset(), ds);
 	}
 	
 	// Colors a selected point on chart by the color name
@@ -117,16 +116,16 @@ function Histogram() {
    	var xCol = args.xAxis;
         
    	var ds = gadget.dashboard.getDataSet(args.dataSetName);
-   	var colorIndexArray = ds.getColoredIndexArray();
+   	var colorIndexArray = ds.getIndex('color');
                 
   	 	var graphData = [];
-  		var dsData = ds.getPoints();
+  		var dsData = ds.getRecords();
    	for (i=0,len=dsData.length; i<len; i++) {
-   		var xVal = parseFloat(dsData[i][xCol]);
+   		var xVal = parseFloat(dsData[i].get(getSelectedXAxis()));
    		// each point has unique id so a pointer to point can be had by chart.get(id)
-      	var id = "p" + dsData[i]["db_id"];
+      	var id = dsData[i]["id"];
       	if (xVal !== NaN){
-      		graphData.push({id: id, x: xVal, color: MARKER_COLOR[colorIndexArray[i][1]]});
+      		graphData.push({id: id, x: xVal, color: DEFAULT_MARKER_COLOR });
      		}
      	}
      	
@@ -243,8 +242,7 @@ function Histogram() {
 		for (var i = minBin; i <= maxBin; i++) {
 			// Get the ids of every point contained in the selected bars
 			for (var j = 0; j < bins[i].length; j++) {
-				var databaseId = bins[i][j].id;
-				modifiedPointIds.push(databaseId.substr(1));
+				modifiedPointIds.push(bins[i][j].id);
 			}
       }
       
@@ -324,7 +322,7 @@ function Histogram() {
 		var columnNames = [""];
       if (datasetName !== "") {
       	var ds = gadget.dashboard.getDataSet(datasetName);
-         columnNames = ds.getNonDBColumns();
+         columnNames = ds.getColumns();
   		}
    	setSelectOptions("selXAxis", columnNames);
    }
@@ -341,7 +339,7 @@ function Histogram() {
       // Create a new dataset of points with the selected color
       var ds = gadget.dashboard.getDataSet(getSelectedDataset());
    	var colorIndexArray = ds.getColoredIndexArray();
-   	var dsData = ds.toJSON();
+   	var dsData = ds.getPoints();
    	
       var newDb = [];
       for (var i = 0; i < colorIndexArray.length; i++) {
@@ -419,8 +417,8 @@ function Histogram() {
    	</div>
 	</form>
 	
-	<input id="btExportSelected" onclick="hi.exportSelected();" type="button" value="Export Selection"/>
-	Name: <input type="text" id="exportSelectedInput" value="selected" />
+	<!--<input id="btExportSelected" onclick="hi.exportSelected();" type="button" value="Export Selection"/>
+	Name: <input type="text" id="exportSelectedInput" value="selected" />-->
 </div>
 </body>
 </html>
