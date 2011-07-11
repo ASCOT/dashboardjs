@@ -5,8 +5,8 @@ var util = require('util');
 var io = require('socket.io');
 
 var express = require('express');
-var dashboards = require('./server/dashboards');
-var XMLHttpRequest = require("./server/XMLHttpRequest").XMLHttpRequest;
+var dashboards = require('./lib/server/dashboards');
+var XMLHttpRequest = require("./lib/server/XMLHttpRequest").XMLHttpRequest;
   
 var app = express.createServer();
 var nowjs = require('now')
@@ -100,8 +100,8 @@ app.configure(function(){
   app.set('view engine', 'mustache');
   app.register(".mustache", require('stache'));
   app.set('view options', {layout: false });
-  app.use(express.static(__dirname + '/client'));
-  app.use(express.static(__dirname + '/shared'));  
+  app.use(express.static(__dirname + '/lib/client'));
+  app.use(express.static(__dirname + '/lib/shared'));  
   app.use(express.static(__dirname + '/static'));  
 });
 

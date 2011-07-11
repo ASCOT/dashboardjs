@@ -1,3 +1,4 @@
+/* Author: Diego Marcos (dmarcos@uw.edu) */
 html {
   font-family: sans-serif;
   font-size: 14px/1.4;
@@ -31,26 +32,27 @@ header {
   -webkit-box-shadow: 0px 0px 0px rgba(0, 0, 0, .4), 0px 5px 10px  rgba(0, 0, 0, .3);
 }
 
-
 #toolBoxHeader{
   margin: 10px;
   text-align: left;
+  
 }
 
+#toolBoxHeader span.titleHover{
+  font-size: 14px;
+  font-weight: bold;
+  color: white;
+  margin-right: 1px;
+  text-shadow: none;
+  opacity: 1;
+}
 
-.toolBoxText {  
+#toolBoxHeader span {  
   font-size: 14px;
   font-weight: bold;
   color: #000000;
   text-shadow: 0 1px 0 rgba(255, 255, 255, .7);
   opacity: .6;
-}
-
-.titleHover{
-  font-size: 14px;
-  font-weight: bold;
-  color: white;
-  margin-right: 1px;
 }
 
 nav a{
@@ -88,22 +90,22 @@ nav a:hover{
   padding-bottom: 10px;  
 }
 
-.toolTitle{
+.tool .toolTitle{
   padding-left: 10px;
 }
 
-.chatMessage{
+#chat .chatMessage{
   padding-left: 20px;
   padding-right: 10px;
   margin-bottom: 5px;
   word-wrap: break-word;
 }
 
-#messageSendButton{
+#chat #messageSendButton{
   display: none;
 }
 
-#messageField {
+#chat #messageField {
   width: 85%;
   overflow-x: hide;
   background: white;
@@ -117,16 +119,16 @@ nav a:hover{
    border-radius: 6px;
 }
 
-#chatInput{
+#chat #chatInput{
   width: 100%;
   text-align: center;
 }
 
-#chatList{
+#chat #chatList{
   width: 100%;
 }
 
-input{
+#chat input{
   padding: 5px;  
   font-size: 14px;
   text-shadow: 0px 1px 0px #fff;  
@@ -140,12 +142,11 @@ input{
 }
 
 input:focus {
-    -webkit-box-shadow: 0 0 5px rgba(102, 45, 145, 1); 
-    -moz-box-shadow: 0 0 5px rgba(102, 45, 145, 1); 
+  -webkit-box-shadow: 0 0 5px rgba(102, 45, 145, 1); 
+  -moz-box-shadow: 0 0 5px rgba(102, 45, 145, 1); 
 }
 
 .toolBox{
-  display: block; 
   position: fixed; 
   text-align: center;
   background-color: #b7abc3;

@@ -40,15 +40,29 @@ var catalogs =  [ { name: "SDSS", url: "http://cas.sdss.org/public/en/tools/sear
 
 // Gadget State Variables
 var viewportBounds;
-var currentQuery;
+var currentQuery = {};
 
 // create HR object
 gadget.init = function(callback){
   gadget.dashboard.bind('viewBoundsChanged', setViewPortBounds);
   gadget.dashboard.bind('dataRequested', launchQuery);
   setFields();
+  gadget.inflateState();
   callback();
 }
+
+gadget.saveState = function(){
+  return { 
+    'currentQueryText': currentQuery.query,
+    'selectedCatalog': $("#selectCatalog option:selected").text()
+  }
+};
+
+gadget.loadState = function(state){
+  currentQuery.query = state.currentQueryText;
+  $('textarea#txtQueryString').val(state.currentQueryText);
+  $('#selectCatalog').val(state.selectedCatalog).attr('selected',true);  
+};
     
 var setFields = function() {
   // set the catalog options
@@ -114,7 +128,7 @@ var setQueryText = function(buttonNumber) {
   buttonObject = QUERY_BUTTONS[buttonNumber];
   queryString = buttonObject.query;
   
-  $("#selectCatalog option[value=" + buttonObject.catalog + "]").text();
+  $('#selectCatalog').val(buttonObject.catalog).attr('selected',true);  
         
   // replace bounds    
   if (viewportBounds && viewportBounds.topLeft && viewportBounds.bottomRight) {

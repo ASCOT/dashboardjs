@@ -26,6 +26,13 @@ var latitude = 0;
 google.load("earth", "1");
 google.setOnLoadCallback();
 
+gadget.init = function(callback){	
+  gadget.dashboard.bind('centerOfCoordinatesChanged', moveMap);
+  gadget.dashboard.bind('dataSetChanged', redrawAll);
+  google.earth.createInstance('content', success, failure);
+  callback();
+}
+
 gadget.saveState = function(){
   return { 
     'longitude': longitude,
@@ -40,13 +47,6 @@ gadget.loadState = function(state){
   latitude = state.latitude;
   flySpeed = state.flySpeed;
 };
-
-gadget.init = function(callback){	
-  gadget.dashboard.bind('centerOfCoordinatesChanged', moveMap);
-  gadget.dashboard.bind('dataSetChanged', redrawAll);
-  google.earth.createInstance('content', success, failure);
-  callback();
-}
 
 // callback on successful creation of ge plugin instance
 function success(instance) {

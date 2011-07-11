@@ -1,6 +1,8 @@
+<!-- Author: Diego Marcos (dmarcos@uw.edu) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="utf-8">
 <title>Ascot</title>
 <meta name="description" content="Framework to develop online collaborative tools." />
 <meta http-equiv="Pragma" content="no-cache">
@@ -93,39 +95,26 @@ function initGUI() {
       $('#toolBoxClickableArea').css({'height':  $(window).height() - 100, 'width': newWidth});
     }
 
-    /* $('#toolBox').animate({
-        'width': newWidth
-    }, animationDuration, function() {
-        $('#toolBoxTitle').css({'display': display});
-        $("#toolBoxButton").html(icon);
-    });*/ 
-    
     $('#toolBox').css({'width': newWidth });
     $('#toolBoxColumn').css({'width': newWidth + 25});
     $('#toolBoxTitle').css({'display': display});
     $("#toolBoxButton").html(icon);
     $('#tools').css({'display': display});
-
-   /* $('#toolBoxColumn').animate({
-        'width': newWidth + 30
-    }, animationDuration, function() {
-     // Animation complete.
-    }); 
-     */      
+        
     return false;
     
   });
   
   var inHandler = function(){
     $("#toolBox").css({'background-color': '#764293'});
-    $("#toolBoxButton").toggleClass("toolBoxText titleHover");
-    $("#toolBoxTitle").toggleClass("toolBoxText titleHover");
+    $("#toolBoxButton").toggleClass("titleHover");
+    $("#toolBoxTitle").toggleClass("titleHover");
   }
   
   var outHandler = function(){
     $("#toolBox").css({'background-color': '#b7abc3'});
-    $("#toolBoxButton").toggleClass("toolBoxText titleHover");
-    $("#toolBoxTitle").toggleClass("toolBoxText titleHover");
+    $("#toolBoxButton").toggleClass("titleHover");
+    $("#toolBoxTitle").toggleClass("titleHover");
   }
   
   $("#toolBoxClickableArea").hover(inHandler, outHandler);
@@ -133,7 +122,6 @@ function initGUI() {
 }
 
 </script>
-
 </head>
 <body>
   <header>
@@ -156,10 +144,10 @@ function initGUI() {
   <table id="dashboardArea" width="100%" style="margin-top: 60px">
     <tr>  
         <td id="toolBoxColumn" style="width: 40px">
-          <div id="toolBox" style="width: 20px; top: 60px; left: 10px;" class="toolBox">
+          <div id="toolBox" class="toolBox" style="width: 20px; top: 60px; left: 10px;">
             <div id="toolBoxHeader" style="width: 100%">
-              <span id="toolBoxTitle" class="toolBoxText" style="display: none; font-weight: medium;">ToolBox</span>
-              <span id="toolBoxButton" class="toolBoxText" style="float: right; margin-right: 16px">+</span>
+              <span id="toolBoxTitle" style="display: none; font-weight: medium;">ToolBox</span>
+              <span id="toolBoxButton" style="float: right; margin-right: 16px">+</span>
             </div>
             <div id="tools" style="display: none">
               <div id="chat" class="tool">
