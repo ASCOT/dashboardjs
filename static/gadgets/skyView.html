@@ -135,24 +135,6 @@ function clearKML() {
   }
 }
 
-function showKML() {
-  var kmlList = di.readVariable(UW.astro.DEFAULT_NAMESPACE, "KML_List");
-  if (kmlList !== null) {
-    if (kmlList.length === 0){
-      //clearKML();
-    }
-    for (var i=0, len=kmlList.length; i<len; i++) {
-      parsed = googleEarthInstance.parseKml(kmlList[i]);
-      if (parsed !== null){
-        // TODO: better test for ge
-        if (googleEarthInstance !== null){
-          googleEarthInstance.getFeatures().appendChild(parsed);
-        }
-      }
-    }
-  }
-}
-
 // creates a point on ge for each CelestialCoordinate in the dataset    
 function plotDataset(dataSetName) {
   var dataSet = gadget.dashboard.getDataSet(dataSetName);

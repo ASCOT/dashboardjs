@@ -28,71 +28,6 @@ everyone.now.notifyToDashboard = function(dashboardId, notification){
    dashboardChannel.now.receiveNotification(notification);
 } 
 
-// Closure that keeps information of the clients connected to each dashboard
-// socket.on('connection', function(){
-// 
-//     // Dashboards with opened sessions
-//     var dashboardConnections = {};
-//         
-//     // Clients with opened sessions
-//     var sessions = {};
-//     
-//     function sendToDashboard(id, message, client){
-// 
-//       var dashboardClients = dashboardConnections[id];
-//                               
-//       for(var currentClient in dashboardClients) {
-//         if (dashboardClients.hasOwnProperty(currentClient) && dashboardClients[currentClient] != client){
-//           dashboardClients[currentClient].send(message);
-//         } 
-//       }
-// 
-//     }
-// 
-//     return function(client){
-//           
-//       // new client is here! 
-//       client.on('message', function(message){ 
-//                 
-//         switch (message.event) {
-//                 
-//           case 'notification':
-//         
-//             sendToDashboard(message.dashboardId, message, client);
-//             //socket.broadcast(message);
-//             break;
-//             
-//           case 'session':
-//             
-//             if(!dashboardConnections[message.dashboardId])
-//               dashboardConnections[message.dashboardId] = {};
-//               
-//             sessions[client.sessionId] = {'dashboardId': message.dashboardId }; 
-//             dashboardConnections[message.dashboardId][client.sessionId] = client;              
-//             break; 
-//             
-//           case 'chatMessage':
-//             //socket.broadcast(message);
-//             sendToDashboard(message.dashboardId, message, client);
-//             break;    
-//         }
-//       
-//       }); 
-//       
-//       client.on('disconnect', function(){ 
-//         
-//         if(sessions[client.sessionId]){  
-//           delete dashboardConnections[sessions[client.sessionId].dashboardId][client.sessionId]
-//           delete sessions[client.sessionId];
-//         }
-//         console.log("DISCONNECT");
-//         
-//       }); 
-// 
-//   }
-// 
-// }()); 
-
 // Configuration
 app.configure(function(){
   app.set('views', __dirname + '/views');
@@ -170,13 +105,4 @@ if (!module.parent) {
   app.listen(80);
   console.log("ASCOT server listening on port %d", app.address().port);
 }
-
-// Routes
-/*
-app.get('/', function(req, res){
-  res.render('index', {
-    title: 'Express'
-  });
-});
-*/
 

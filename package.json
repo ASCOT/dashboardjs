@@ -7,9 +7,9 @@
   "contributors"  : [],
   "dependencies"  : {
     "underscore"  : ">=1.1.2",
-    "backbone"	  : ">=0.3.3"
+    "backbone"	  : ">=0.5.1"
   },
   "lib"           : ".",
   "main"          : "server.js",
-  "version"       : "0.0.1"
+  "version"       : "0.0.2"
 }
