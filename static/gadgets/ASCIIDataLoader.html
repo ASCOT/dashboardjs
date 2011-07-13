@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- get_data.xml -->
 <!-- Author: Spencer Wallace (spencerw@email.arizona.edu) -->
 <!DOCTYPE html>
 <html lang="en">
@@ -24,7 +23,8 @@ var ga = null;
 
 // Create the Histogram object
 function init() {
-	document.getElementById("exportContent").style.display="none";
+	//document.getElementById("exportContent").style.display="none";
+	document.getElementById("importButtonDiv").style.display="none";
 	document.getElementById("importContent").style.visibility="block";
 	ga = new ASCIIDataLoader();
 	gadget.resize();
@@ -213,7 +213,8 @@ function ASCIIDataLoader() {
 	my.loadFile = function(files) {
     	var reader = new FileReader();
     	reader.onload = function(e) {
-      	textFile = e.target.result;
+      		textFile = e.target.result;
+      		document.getElementById("importButtonDiv").style.display="block";
     	}
     	reader.readAsText(files[0]);
   	}
@@ -247,19 +248,19 @@ function ASCIIDataLoader() {
 </head>
 <body onload="init();">
 
-<input type="radio" id="radImportExport" name="radImportExport" value="import" checked="checked" onclick="ga.switchRadioVis();" /><labe>Import</label>
-<input type="radio" id="radImportExport" name="radImportExport" value="export" onclick="ga.switchRadioVis();" /><label>Export</label>
+<!--<input type="radio" id="radImportExport" name="radImportExport" value="import" checked="checked" onclick="ga.switchRadioVis();" /><labe>Import</label>
+<input type="radio" id="radImportExport" name="radImportExport" value="export" onclick="ga.switchRadioVis();" /><label>Export</label>-->
 
 <div id="importContent">
 	Dataset Name: <input id="datasetNameInput"> <br>
 	# of Points to Extract: <input id="numDatapointsInput" value="5000">
 	<input type="file" onchange="ga.loadFile(this.files)"> <br>
-	<input type="button" value="Import" onclick="ga.initColumns();">
+	<div id="importButtonDiv"><input type="button" value="Import" onclick="ga.initColumns();"></div>
 	<div id="divStatusText" style="display: inline; margin-left: 10px"></div> 
 </div>
 
-<div id="exportContent">
+<!--<div id="exportContent">
 	Dataset: <select id="selDatasetNameExport"></select> <br>
-	<input type="button" value="Export" onclick="ga.displayDataWindow();"> <br>
+	<input type="button" value="Export" onclick="ga.displayDataWindow();"> <br>-->
 </body>
 </html>

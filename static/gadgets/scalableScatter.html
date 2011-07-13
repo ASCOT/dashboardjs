@@ -44,6 +44,7 @@ var imgHeight = 0.5;
 // Create the Plotter object
 function init() {
 	pl = new Plotter();
+	document.getElementById("debugSettings").style.display="none";
 	pl.setSelectOptions("selSelectionColor", ["red", "green", "blue", "yellow", "unselect"]);
 	gadget.resize();
 }
@@ -335,7 +336,7 @@ function Plotter() {
 			var xPos = chart1.xAxis[0].translate(sparsePts[i].x)+chart1.plotLeft;
 			var yPos = chart1.plotHeight-chart1.yAxis[0].translate(sparsePts[i].y)+chart1.plotTop;
 			
-			primitiveObjects.push(chart1.renderer.circle(xPos,yPos,4).attr({fill: sparsePts[i].color,stroke: 'black','stroke-width': 1,zIndex: 100}).add());	
+			primitiveObjects.push(chart1.renderer.circle(xPos,yPos,3).attr({fill: sparsePts[i].color,stroke: 'black','stroke-width': 1,zIndex: 100}).add());	
 		}
 
 		return primitiveObjects;
@@ -378,7 +379,7 @@ function Plotter() {
      	   	x: -60
          },
 			title: {
-				text: 'Generic Density Plot'
+				text: getSelectedDataset()
 			},
 			credits: {
                     enabled: false
@@ -700,15 +701,15 @@ function Plotter() {
 	Dataset: <select id="selDatasetName" onchange="pl.populateXYSelect(this.options[this.selectedIndex].value);"></select>
 	X-Axis: <!--<input id="butXInvert" type="button" title="Invert X Axis" value=">" onclick="pl.invertX();"></input>--><select id="selXAxis"></select>
 	Y-Axis: <!--<input id="butYInvert" type="button" title="Invert Y Axis" value="^" onclick="pl.invertY();"></input>--><select id="selYAxis"></select><br>
-	<input id="btDoPlot" onclick="pl.doPlot();" type="button" value="Plot"/><br>
 	
+	<div id="debugSettings">
 	maxDensity: <input type="text" id="maxDensityInput" value="2" /><br>
 	numBinsX: <input type="text" id="numBinsXInput" value="35" /><br>
 	imgURL: <input type="text" id="imgURLInput" value="http://www.stlukeseye.com/images/img-amsler-grid.gif" /><br>
 	imgPosX: <input type="text" id="imgPosXInput" value="11.8" /><br>
 	imgPosY: <input type="text" id="imgPosYInput" value="11.8" /><br>
 	imgWidth: <input type="text" id="imgWidthInput" value="0.1" /><br>
-	imgHeight: <input type="text" id="imgHeightInput" value="0.1" /><br>
+	imgHeight: <input type="text" id="imgHeightInput" value="0.1" /><br></div>
    <form name="formSelectZoom">
    	<div id="divSelectZoom" style="padding: 5px">
       	Selection Color: <select id="selSelectionColor"></select>
@@ -716,6 +717,7 @@ function Plotter() {
          <input type="radio" id="radSelectZoom" name="radSelectZoom" value="zoom" /><label for="radZoom">Zoom</label>
    	</div>
 	</form>
+	<input id="btDoPlot" onclick="pl.doPlot();" type="button" value="Plot"/><br>
 	
 	<!--<input id="btExportSelected" onclick="pl.exportSelected();" type="button" value="Export Selection"/>
 	Name: <input type="text" id="exportSelectedInput" value="selected" />-->

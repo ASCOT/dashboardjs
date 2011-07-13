@@ -3,6 +3,9 @@ var http = require('http');
 var url = require('url');
 var util = require('util');
 var io = require('socket.io');
+var sys = require('sys');
+var FFI = require("node-ffi");
+var exec = require('child_process').exec;
 
 var express = require('express');
 var dashboards = require('./lib/server/dashboards');
@@ -46,6 +49,34 @@ app.configure('development', function(){
 
 app.configure('production', function(){
   app.use(express.errorHandler()); 
+});
+
+// Convert a FITS file into a thumbnail and raw data
+app.get('/convertFITS/:file', function(req, res){
+	
+	console.log('executing shell script');
+	var libc = new FFI.Library(null, {
+ 	 		"system": ["int32", ["string"]]
+			});
+
+	var run = libc.system;
+	// Remove all previous file created by the converter
+	run("cd ./static/images/FITSConverter; rm header.js; rm tile*.js; rm thumb.jpg;");
+	// Convert the next fits image
+	run("cd ./static/images/FITSConverter; ./extractFitsFrame ../"+req.params.file+" 0 512;");
+	console.log('shell script done');
+	res.send('done');
+	/*console.log('executing shell script');
+	var commandExecuted = function(error, stdout, stderr) {
+		sys.print('stdout: ' + stdout);
+  		sys.print('stderr: ' + stderr);
+  		console.log('shell script done');
+  		res.send('done');
+	}
+	var command = "cd ./static/images/FITSConverter; ./extractFitsFrame ../"+req.params.file+" 0 512;";
+	// run the shell script
+	var child = exec(command, commandExecuted);*/
+	
 });
 
 app.get('/XmlHttpRequest/:request', function(req, res){
