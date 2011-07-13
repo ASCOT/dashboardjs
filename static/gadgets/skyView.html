@@ -144,7 +144,7 @@ function plotDataset(dataSetName) {
     
   if (dataSet.isVisible()) {
     for (var i=0, len=dataSetRecords.length; i<len; i++) {
-      if (dataSetRecords[i].metaData.get('visible')) { // check the visible property of the record
+      if (dataSetRecords[i].metaData.visible) { // check the visible property of the record
         kmlDataSetRecords.push(toKML(dataSetRecords[i]));
       }
     }
@@ -186,17 +186,15 @@ function getColorIcon(color){
 
 function generateDescription(data, metaData){
   var description = [];
-  var dataObj = data.toJSON();
-  var metaDataObj = metaData.toJSON();
   if(data && metaData){
-    for (var property in dataObj) {
-      if (dataObj[property] !== null && dataObj[property] !== undefined) {
-        description.push(property + ": " + dataObj[property].toString());
+    for (var property in data) {
+      if (data[property] !== null && data[property] !== undefined) {
+        description.push(property + ": " + data[property].toString());
       }
     }
-    for (var property in metaDataObj) {
-      if (metaDataObj[property] !== null && metaDataObj[property] !== undefined) {
-        description.push(property + ": " + metaDataObj[property].toString());
+    for (var property in metaData) {
+      if (metaData[property] !== null && metaData[property] !== undefined) {
+        description.push(property + ": " + metaData[property].toString());
       }
     }
     return description.join('\n');
@@ -204,10 +202,10 @@ function generateDescription(data, metaData){
 }
 
 function toKML(record) {
-  var lon = record.get('ra') - 180;
-  var lat = record.get('dec');
-  var iconUrl = getColorIcon(record.metaData.get('color'));
-  var name = record.metaData.get('name');
+  var lon = record.ra - 180;
+  var lat = record.dec;
+  var iconUrl = getColorIcon(record.metaData.color);
+  var name = record.metaData.name;
   // translate multiline desc into html
   desc = "<p>" + generateDescription(record, record.metaData).replace(new RegExp('\n', "g"), '<br \>') + '<\p>';
 

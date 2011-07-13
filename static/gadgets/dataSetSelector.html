@@ -83,7 +83,7 @@ function createDataSetColorsList(dataSet) {
     checkBoxVisibility.id = "ckVis_" + dataSetId + "_" + color;
     colorRecords = dataSet.getIndex('color')[color]; 
     if(colorRecords.length != 0){
-      checkBoxVisibility.checked = dataSet.getRecordMetaData(colorRecords[0]).get('visible');
+      checkBoxVisibility.checked = dataSet.getRecordMetaData(colorRecords[0]).visible;
     }
     else{
       checkBoxVisibility.checked = true;

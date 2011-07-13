@@ -322,8 +322,8 @@ function generatePoints(){
   records = selectedDataSet.getRecords(); 
   
   for (i=0,len=records.length; i<len; i++) {
-    xVal = parseFloat(records[i].get(selectedXAxis));
-    yVal = parseFloat(records[i].get(selectedYAxis));
+    xVal = parseFloat(records[i][selectedXAxis]);
+    yVal = parseFloat(records[i][selectedYAxis]);
     // each point has unique id so a pointer to point can be had by chart.get(id)
     id = records[i]["id"];
     if (xVal !== NaN && yVal !== NaN){
