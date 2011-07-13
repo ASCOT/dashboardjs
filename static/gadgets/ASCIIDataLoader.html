@@ -89,10 +89,8 @@ function ASCIIDataLoader() {
    	textFile = textFile.split('\n');
    	var columns = textFile[0].split(' ');
    	records = [];
-   	var newRecord;
    	var fileEntry;
    	var dataSet = gadget.dashboard.createDataSet(document.getElementById('datasetNameInput').value); 
-   	console.log("RECORDS IN FILE : " + textFile.length + " Requested Data Points " + numDatapoints);
    	var numRecords = textFile.length;
    	textFile.splice(parseInt(numDatapoints) + 1, numRecords);
     //Row 0 holds the attribute names
@@ -104,14 +102,8 @@ function ASCIIDataLoader() {
    	    newRecord[columns[j]] = parseFloat(fileEntry[j]);
       }
       dataSet.addRecord(newRecord);
-      //records.push(newRecord);
-      if(i == 1){
-        console.log("OBJ SIZE: " + roughSizeOfObject(newRecord));
-      }
    	}
-   	console.log("RECORDS IN FILE: " + textFile.length);
-   	numRecords = textFile.length; 
-   	textFile.splice(0, numRecords);
+   	textFile.splice(0, textFile.length);
     
    	if (dataSet.length() == 0){
       // the special case answer is that no rows were returned
@@ -122,7 +114,7 @@ function ASCIIDataLoader() {
    	// indicate status to user
     showSuccess("Returned " + dataSet.length() + " records.");
   	// create dataset
-    dataSet.change();
+    dataSet.change()
    }
 	
 	// HELPER
