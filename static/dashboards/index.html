@@ -11,10 +11,10 @@
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/jquery-ui.min.js"></script>
 
+<script src="/gfx/gfx.js" type="text/javascript" charset="utf-8"></script>
+<script src="/gfx/gfx.cube.js" type="text/javascript" charset="utf-8"></script>
+
 <script type="text/javascript">
-//$(function(){
-//  $('#linkButton').button();
-//});
 
 function requestNewDashboard() {
   $.ajax({
@@ -24,9 +24,29 @@ function requestNewDashboard() {
   });
 }
 
+jQuery(function($) {
+   $("#cube").gfxCube({
+     width: 538,
+     height: 409
+   });
+
+   $(".toRight").click(function() {
+     return $("#cube").trigger("cube", "right");
+   });
+
+   $(".toFront").click(function() {
+     return $("#cube").trigger("cube", "front");
+   });
+})
+
+
 </script>
 
 <style type="text/css">
+
+.download{
+  float:right;
+}
 
 .centered{
   margin: 0 auto;
@@ -34,13 +54,16 @@ function requestNewDashboard() {
 }
 
 #container{
-  background-image: url(/images/loginBox.png);
-  width: 538px;
+  width: 500px;
   height: 409px;
+  position: relative;
   margin: auto;
+}
+
+.box{
+  background-image: url(/images/loginBox.png);
   padding-top: 40px;
   margin-top: 100px;
-  position: relative
 }
 
 .button.primary {
@@ -111,11 +134,23 @@ body{
 </style>
 </head>
 <body class="green">
-    <div id="container">
-    <a href="http://ascot.astro.washington.edu/dashboards/" id="logo"></a>      
-    <a id="createDashboardButton" href="#" onClick="requestNewDashboard()" class="button primary" style="width: 150px; margin-top: 90px; padding: 15px" role="button">
-        <span style="margin-left: 2px">Create Dashboard</span> 
-    </a>
-    <a href="http://www.astro.washington.edu/" id="departmentLogo"></a>      
+  <div id="container">
+    <div id="cube"> 
+      <div class="box front">         
+        <a href="http://ascot.astro.washington.edu/dashboards/" id="logo"></a>      
+        <a id="createDashboardButton" href="#" class="button primary toRight" style="width: 150px; margin-top: 90px; padding: 15px" role="button">
+          <span style="margin-left: 2px">Create Dashboard</span> 
+        </a>
+        <a href="http://www.astro.washington.edu/" id="departmentLogo"></a>
+      </div> 
+      <div class="box right">         
+        <a href="http://ascot.astro.washington.edu/dashboards/" id="logo"></a><!-- onClick="requestNewDashboard()" -->      
+        <a id="createDashboardButton" href="#"class="button primary toFront" style="width: 150px; margin-top: 90px; padding: 15px" role="button">
+          <span style="margin-left: 2px">Select Gadgets</span> 
+        </a>
+        <a href="http://www.astro.washington.edu/" id="departmentLogo"></a>
+      </div>
+    </div> 
+  </div>
 </body>
 </html>

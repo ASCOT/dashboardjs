@@ -121,11 +121,11 @@ function Histogram() {
   	 	var graphData = [];
   		var dsData = ds.getRecords();
    	for (i=0,len=dsData.length; i<len; i++) {
-   		var xVal = parseFloat(dsData[i].get(getSelectedXAxis()));
+   		var xVal = parseFloat(dsData[i][getSelectedXAxis()]);
    		// each point has unique id so a pointer to point can be had by chart.get(id)
       	var id = dsData[i]["id"];
       	if (xVal !== NaN){
-      		graphData.push({id: id, x: xVal, color: DEFAULT_MARKER_COLOR });
+      		graphData.push({id: id, x: xVal, color: dsData[i].metaData.color });
      		}
      	}
      	
