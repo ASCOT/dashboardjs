@@ -278,7 +278,7 @@ function setPointColor(point, colorName) {
 function zoomToPoint(point) {
   var cc = selectedDataSet.getRecord(point.id);
   if (cc !== null && cc !== undefined) {
-    gadget.dashboard.notify("centerOfCoordinatesChanged",{'longitude': parseFloat(cc.get('ra')) - 180, 'latitude': parseFloat(cc.get('dec'))});
+    gadget.dashboard.notify("centerOfCoordinatesChanged",{'longitude': parseFloat(cc.ra) - 180, 'latitude': parseFloat(cc.dec)});
   }
 }
 
