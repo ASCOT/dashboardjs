@@ -67,6 +67,13 @@ gadget.loadState = function(state){
   	// format variable = state.value
 };
 
+$(resizeCanvas);
+
+function resizeCanvas(){
+  var canvas = $("#FITSimage");
+  canvas.get(0).width = canvas.width();
+}
+
 // Look at the header file to set up some important variables pertaining to the coordinates
 function precalcCoordInfo() {
 	console.log( 'Precalculating coordinates information');
@@ -224,7 +231,6 @@ function handleMouseUp(e) {
 // Send a request to the server to convert the FITS image to a thumbnail
 // Draw the thumbnail when the request is finished
 function makeFITSrequest(fileName) {
-  
   $.ajax({
    'url': '/convertFITS/' + fileName,
     success: drawThumbnail
@@ -365,7 +371,7 @@ function startViewer() {
 
 <input type="range" min="0" max="200" value="100" onchange="updateScaleValue(this.value);"/>
 <input type="button" onclick="drawThumbnail();" value="Zoom">
-<input type="radio" id="radDecSex" name="radDecSex" value="Decimal" checked="checked" onclick="switchDecSex();" /><labe>Decimal</label>
+<input type="radio" id="radDecSex" name="radDecSex" value="Decimal" checked="checked" onclick="switchDecSex();" /><label>Decimal</label>
 <input type="radio" id="radDecSex" name="radDecSex" value="Sexagecimal" onclick="switchDecSex();" /><label>Sexagecimal</label>
 <div id="scaleValue">100</div>
 <div align="right" id="coordType">
@@ -381,7 +387,7 @@ function startViewer() {
 <input type="button" onclick="showHeader();" value="View Header">
 <div id="divStatusText" style="display: inline; margin-left: 10px"></div><br>
 
-<canvas id="FITSimage" width="800px" height="500px" style="background-color: #DDDDDD;"></canvas>
+<canvas id="FITSimage" height="500" style="width: 100%; background-color: #DDDDDD;"></canvas>
 
 <div id="mousePixel"> X: - Y: - </div>
 <div id="celCoord"> <br><br><br><br> </div>
