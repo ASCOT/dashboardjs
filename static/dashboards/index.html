@@ -7,6 +7,7 @@
 
 <link rel="stylesheet" href="/css/reset.css"> 
 <link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/aristo.css" type="text/css">
 
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/jquery-ui.min.js"></script>
@@ -26,8 +27,8 @@ function requestNewDashboard() {
 
 jQuery(function($) {
    $("#cube").gfxCube({
-     width: 538,
-     height: 409
+     width: 700,
+     height: 500
    });
 
    $(".toRight").click(function() {
@@ -44,26 +45,76 @@ jQuery(function($) {
 
 <style type="text/css">
 
-.download{
-  float:right;
-}
-
-.centered{
-  margin: 0 auto;
-  width: 284px;
-}
-
 #container{
-  width: 500px;
-  height: 409px;
+  width: 700px;
+  height: 500px;
   position: relative;
   margin: auto;
 }
 
 .box{
-  background-image: url(/images/loginBox.png);
-  padding-top: 40px;
+  background: #b3adc6;
   margin-top: 100px;
+  border: 1px solid #bab9ba;
+  text-shadow: #FFF 0px 1px 1px;
+  font-size: 13px;
+  -webkit-box-shadow: rgba(0, 0, 0, .6) 0px 0px 2px;
+  -moz-box-shadow: rgba(0, 0, 0, .6) 0px 0px 2px;
+  box-shadow: rgba(0, 0, 0, .6) 0px 0px 2px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+}
+
+.box header{
+  background: rgba(133,96,166,.8);
+  margin-top: 50px;
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 70px;
+  padding: 0px;
+  overflow: visible;
+  -webkit-box-shadow: rgba(0, 0, 0, 1) 0px 0px 0px;
+  -moz-box-shadow: rgba(0, 0, 0, 1) 0px 0px 0px;
+  box-shadow: rgba(0, 0, 0, 1) 0px 0px 0px;
+}
+
+.box footer{
+  background: #663091;
+  height: 50px;
+  left: 0;
+  right: 0;
+  display: block;
+  position: absolute;
+  bottom: 0px;
+  -webkit-border-radius: 0px 0px 5px 5px;
+  -moz-border-radius: 0px 0px 5px 5px;
+  border-radius: 0px 0px 5px 5px;
+  -webkit-box-shadow: rgba(0, 0, 0, 1) 0px 0px 0px;
+  -moz-box-shadow: rgba(0, 0, 0, 1) 0px 0px 0px;
+  box-shadow: rgba(0, 0, 0, 1) 0px 0px 0px;
+}
+
+#logo {
+  display: block;
+  position: absolute;
+  top: -10px;
+  left: 240px;
+  width: 236px;
+  height: 96px;
+  background-image: url(/images/logoLogin.png);
+}
+
+.box h2, p {
+  color: #ffffff;
+  padding: 15px;
+  font-size: 15px;
+  text-shadow: 0px 1px 0px #d2d2d2;
+  line-height: normal;
+  color: #663091;
+  font-weight: medium;
 }
 
 .button.primary {
@@ -102,20 +153,12 @@ a:link, a:visited {
 text-decoration: none;
 }
 
-#logo {
-  display: block;
-  width: 236px;
-  height: 96px;
-  background-image: url(/images/logoLogin.png);
-  margin: auto;
-  margin-bottom: 31px;
-}
 
 #departmentLogo {
   display: block;
   position: absolute;
   bottom: 12px;
-  left: 185px;
+  left: 270px;
   width: 171px;
   height: 26px;
   background-image: url(/images/departmentLogo.png);
@@ -127,28 +170,27 @@ text-decoration: none;
   -webkit-box-shadow: 0 0 8px rgba(0, 0, 0, 0.15), 0 1px 0 rgba(255,255,255,0.8) inset;
 }
 
-body{
-  margin: 50px;
-}
-
 </style>
 </head>
 <body class="green">
   <div id="container">
     <div id="cube"> 
       <div class="box front">         
-        <a href="http://ascot.astro.washington.edu/dashboards/" id="logo"></a>      
-        <a id="createDashboardButton" href="#" class="button primary toRight" style="width: 150px; margin-top: 90px; padding: 15px" role="button">
-          <span style="margin-left: 2px">Create Dashboard</span> 
+        <header>
+          <a href="http://ascot.astro.washington.edu/dashboards/" id="logo"></a>
+        </header>
+        <a id="createDashboardButton" href="#" class="button primary toRight" style="width: 150px; margin: auto; margin-top: 170px; padding: 15px" role="button">
+          <span>START</span> 
         </a>
-        <a href="http://www.astro.washington.edu/" id="departmentLogo"></a>
+        <button class="default">Test Default Button</button>     
+        <footer><a href="http://www.astro.washington.edu/" id="departmentLogo"></a></footer>
       </div> 
-      <div class="box right">         
-        <a href="http://ascot.astro.washington.edu/dashboards/" id="logo"></a><!-- onClick="requestNewDashboard()" -->      
-        <a id="createDashboardButton" href="#"class="button primary toFront" style="width: 150px; margin-top: 90px; padding: 15px" role="button">
-          <span style="margin-left: 2px">Select Gadgets</span> 
+      <div class="box right">
+        <p>Choose your gadgets:</p>         
+        <a id="createDashboardButton" href="#"class="button primary toFront" style="width: 150px; margin-top: 250px; padding: 15px;" role="button">
+          <span>Start</span> 
         </a>
-        <a href="http://www.astro.washington.edu/" id="departmentLogo"></a>
+        <footer><a href="http://www.astro.washington.edu/" id="departmentLogo"></a></footer>
       </div>
     </div> 
   </div>
