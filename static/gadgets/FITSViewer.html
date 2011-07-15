@@ -13,6 +13,8 @@
 <script src="/kinetic-v1.0.2.js" type="text/javascript"></script>
 <script src="/unitsLib.js" type="text/javascript"></script>
 <script src="/util.js" type="text/javascript"></script>
+<script src="/pixastic.core.js" type="text/javascript"></script>
+<script src="/brightness.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 
@@ -26,24 +28,24 @@ var ICON_URL_SUCCESS = '/images/successIcon.gif';
 // Canvas variables
 var canvas = null;
 var context = null;
-var myStage = null;
 var scale = 100;
 var position = 0;
 var FITSthumb = null;
-var imgX = 0;
-var draggingImgOffsetX = 0;
-var imgY = 0;
-var draggingImgOffsetY = 0;
-var draggingImg = false;
+var imgX;
+var imgY;
+var mouseDrag = false;
+
+var dragStartX;
+var dragStartY;
 
 // FITS info variables
 var globals;
 var nativeCoordSystem;
 var coordOptions = { decSex: false,
-					 eqB: false,
-					 eqJ: false,
-					 gal: false,
-					 ecl: false };
+					 eqB: true,
+					 eqJ: true,
+					 gal: true,
+					 ecl: true };
 
 // HTML fields on the page
 myFields = {};
@@ -113,6 +115,7 @@ function pixelToCC(args) {
 	}
 
 	var allCoordinates = [];
+	allCoordinates.push(cursorPosition);
 	if( globals.haveCelestialCoordinates) {
 		// calculate the native coordinates first
 		var crval1 = globals.coords[ globals.lonInd].crval,
@@ -155,47 +158,67 @@ function pixelToCC(args) {
 // Called after the FITS thumbnail is loaded
 // Set up the kinetic stage and draw on the canvas
 function handleThumbnail() {
+	var context = canvas.getContext('2d');
+	context.clearRect(0,0,this.canvas.width,this.canvas.height);
+	// Draw the actual FITS image
+	context.drawImage(FITSthumb, imgX, imgY, FITSthumb.width*(scale/100), FITSthumb.height*(scale/100));
+	
+	// Draw the smaller map of the image
+	var mapWidth = 150;
+	var mapHeight = (mapWidth/FITSthumb.width)*FITSthumb.height;
+	// The border around the map
+	context.fillStyle = '#AAAAAA';
+	context.fillRect((800-mapWidth-15),5,mapWidth+10,mapHeight+10);
+	// The map
+	context.drawImage(FITSthumb, (800-mapWidth-10), 10, mapWidth, mapHeight);
+	// The viewport box
+	context.globalAlpha = 0.5;
+	context.fillStyle = '#E3C059';
+	context.fillRect((800-mapWidth-10),10,mapWidth,mapHeight);
+	context.globalAlpha = 1;
+	context.strokeStyle = '#E3C059';
+	context.lineWidth = 4;
+	context.strokeRect((800-mapWidth-10),10,mapWidth,mapHeight);
+}
 
-	myStage.setDrawStage(function(){
-		var mousePos = myStage.getMousePos();
+// Mouse move event handler
+function handleMouseMove(e){
+	// Display mouse coordinates
+	// Need to invert y mouse position so origin is in bottom left
+	var transformedMouseY = (FITSthumb.height*(scale/100))-e.pageY+100;
+	var coordinates = pixelToCC({ x: e.pageX, y: transformedMouseY });
+	document.getElementById('mousePixel').innerHTML = "X: " + Math.floor(coordinates[0][0]) + " Y: " + Math.floor(coordinates[0][1]);
 
-		if (draggingImg) {
-		    imgX = mousePos.x - draggingImgOffsetX;
-		    imgY = mousePos.y - draggingImgOffsetY;
-		}
-		
-		myStage.beginRegion();
+	var celCoordHTML = "";
 
-		context.drawImage(FITSthumb, imgX, imgY, FITSthumb.height*(scale/100), FITSthumb.height*(scale/100));
-		context.beginPath();
-		context.rect(imgX, imgY, FITSthumb.height*(scale/100), FITSthumb.height*(scale/100));
-		context.closePath();
+	for (var i = 1; i < coordinates.length; i++) {
+		celCoordHTML += (coordinates[i] + "<br>");
+	}
 
-		myStage.addRegionEventListener("onmousedown", function(){
-		    draggingImg = true;
-		    var mousePos = myStage.getMousePos();
+	document.getElementById('celCoord').innerHTML = celCoordHTML;
+	
+	// If the mouse is being dragged, draw a box
+	if (mouseDrag) {
+		console.log('draw box');
+		handleThumbnail();
+		context.fillStyle = '#AAAAAA';
+		context.fillRect(dragStartX, dragStartY, e.pageX-dragStartX, e.pageY-dragStartY);
+	}
+};
 
-		    draggingImgOffsetX = mousePos.x - imgX;
-		    draggingImgOffsetY = mousePos.y - imgY;
-		});
-		myStage.addRegionEventListener("onmouseup", function(){
-		    draggingImg = false;
-		});
-		myStage.addRegionEventListener("onmouseover", function(){
-		    document.body.style.cursor = "pointer";
-		});
-		myStage.addRegionEventListener("onmouseout", function(){
-		    document.body.style.cursor = "default";
-		});
-		myStage.addRegionEventListener("onmousemove", function(){
-			// Need to invert y mouse position so origin is in bottom left
-			var transformedMouseY = (FITSthumb.height*(scale/100))-mousePos.y;
-			var coordinates = pixelToCC({ x: mousePos.x, y: transformedMouseY });
-			document.getElementById('mousePixel').innerHTML = "X: " + mousePos.x + " Y: " + (transformedMouseY*100/scale);
-			document.getElementById('celCoord').innerHTML = coordinates;
-		});
-		myStage.closeRegion();
-	});
+// Mouse down event handler
+function handleMouseDown(e) {
+	console.log('mouse down');
+	mouseDrag = true;
+	dragStartX = e.pageX;
+	dragStartY = e.pageY;
+}
+
+// Mouse up event handler
+function handleMouseUp(e) {
+	console.log('mouse up');
+	mouseDrag = false;
+	handleThumbnail();
 }
 
 // Send a request to the server to convert the FITS image to a thumbnail
@@ -212,15 +235,19 @@ function makeFITSrequest(fileName) {
 function drawThumbnail() {
 	canvas = document.getElementById('FITSimage');
 	context = canvas.getContext('2d');
-	myStage = new Kinetic.Stage(canvas);
+	canvas.addEventListener('mousemove', handleMouseMove, false);
+	canvas.addEventListener('mousedown', handleMouseDown, false);
+	canvas.addEventListener('mouseup', handleMouseUp, false);
 	
 	FITSthumb = new Image();
+	FITSthumb.src = "../images/FITSConverter/thumb.jpg";
 	FITSthumb.onload = function() {
+		imgX = canvas.width/2-(FITSthumb.width/2);
+		imgY = 0;
+		//Pixastic.process(FITSthumb, "brightness", {brightness:150,contrast:0.5});
 		handleThumbnail();
 		showStatus(ICON_URL_SUCCESS, "Image loaded");
 	}
-	
-	FITSthumb.src = "../images/FITSConverter/thumb.jpg";
 }
 
 // Display a status icon in divStatusText
@@ -354,10 +381,10 @@ function startViewer() {
 <input type="button" onclick="showHeader();" value="View Header">
 <div id="divStatusText" style="display: inline; margin-left: 10px"></div><br>
 
-<canvas id="FITSimage" width="500px" height="500px"></canvas>
+<canvas id="FITSimage" width="800px" height="500px" style="background-color: #DDDDDD;"></canvas>
 
 <div id="mousePixel"> X: - Y: - </div>
-<div id="celCoord"> : : </div>
+<div id="celCoord"> <br><br><br><br> </div>
 
 </body>
 </html>

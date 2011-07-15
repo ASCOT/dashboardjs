@@ -301,7 +301,7 @@ function Plotter() {
 				if (bins[i][j].length > maxDensity) {
 		
 					// Scale the opacity of the fill color based on the density
-					var fillColor = 'rgba(255,0,0,'+ ((bins[i][j].length - maxDensity)/densityRange) +')';
+					var fillColor = 'rgba(50,50,50,'+ ((bins[i][j].length - maxDensity)/densityRange) +')';
 					
 					var xPos = i*binPixelWidth+chart1.plotLeft;
 					var yPos = chart1.plotHeight+chart1.plotTop-binPixelHeight-j*binPixelHeight;
@@ -315,10 +315,10 @@ function Plotter() {
 					
 					var strokeWidth = 0;
 					var strokeColor = '#0000FF';
-					// Bins with selected points have a blue border
+					// Bins with selected points have a border
 					for (var k = 0; k < bins[i][j].length; k++) {
 						if (bins[i][j][k].color != DEFAULT_MARKER_COLOR) {
-							strokeWidth = 1;
+							strokeWidth = 2;
 							strokeColor = bins[i][j][k].color;
 							break;
 						}

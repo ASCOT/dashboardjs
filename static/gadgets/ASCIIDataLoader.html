@@ -24,8 +24,8 @@ var ga = null;
 // Create the Histogram object
 function init() {
 	//document.getElementById("exportContent").style.display="none";
-	document.getElementById("importButtonDiv").style.display="none";
-	document.getElementById("importContent").style.visibility="block";
+	document.getElementById("importButtonDiv").style.visibility="hidden";
+	document.getElementById("importContent").style.visibility="visible";
 	ga = new ASCIIDataLoader();
 	gadget.resize();
 }
@@ -214,7 +214,7 @@ function ASCIIDataLoader() {
     	var reader = new FileReader();
     	reader.onload = function(e) {
       		textFile = e.target.result;
-      		document.getElementById("importButtonDiv").style.display="block";
+      		document.getElementById("importButtonDiv").style.visibility="visible";
     	}
     	reader.readAsText(files[0]);
   	}
@@ -231,7 +231,7 @@ function ASCIIDataLoader() {
   	}
   	
   	my.initColumns = function() {
-  		showSpinner("Getting objects..."); 
+  		showSpinner('Getting objects...');
   		var dsName = document.getElementById('datasetNameInput').value;
   		if (dsName.length < 1) {
             showError("Enter dataset name");
@@ -255,8 +255,7 @@ function ASCIIDataLoader() {
 	Dataset Name: <input id="datasetNameInput"> <br>
 	# of Points to Extract: <input id="numDatapointsInput" value="5000">
 	<input type="file" onchange="ga.loadFile(this.files)"> <br>
-	<div id="importButtonDiv"><input type="button" value="Import" onclick="ga.initColumns();"></div>
-	<div id="divStatusText" style="display: inline; margin-left: 10px"></div> 
+	<div id="importButtonDiv" style="display: inline;"><input type="button" value="Import" onclick="ga.initColumns();"><div id="divStatusText" style="display: inline; margin-left: 10px"></div> </div>
 </div>
 
 <!--<div id="exportContent">
