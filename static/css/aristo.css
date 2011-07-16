@@ -1,24 +1,3 @@
-/*
-CSS 3 Docs
-http://qooxdoo.org/documentation/general/webkit_css_styles
-http://trac.webkit.org/browser/trunk/LayoutTests//fast/css
-*/
-
-html, body {
-  height: 100%;
-  overflow: hidden;
-  padding: 0;
-  margin: 0;
-  -webkit-user-select: none;
-}
-
-body {
-  font-family: Apex,"Helvetica Neue","HelveticaNeue","Lucida Grande", Helvetica, Arial, sans-serif;
-  font-size: 14px;
-  font-weight: bold;
-  -webkit-font-smoothing: antialiased;
-}
-
 a {
   color: #71829E;
   cursor: pointer;
@@ -30,30 +9,30 @@ label {
 
 input[type="checkbox"] {
   -khtml-appearance: none;
-  background: url(../images/check-box-bezel.png) no-repeat;
+  background: url(/images/check-box-bezel.png) no-repeat;
   width: 15px;
   height: 16px;
 }
 
 input[type="checkbox"]:checked {
-  background: url(../images/check-box-bezel-selected.png) no-repeat;
+  background: url(/images/check-box-bezel-selected.png) no-repeat;
 }
 
 input[type="radio"] {
   -khtml-appearance: none;
-  background: url(../images/radio-bezel.png) no-repeat;
+  background: url(/images/radio-bezel.png) no-repeat;
   width: 17px;
   height: 17px;
 }
 
 input[type="radio"]:checked {
   border: none;
-  background: url(../images/radio-bezel-selected.png) no-repeat;
+  background: url(/images/radio-bezel-selected.png) no-repeat;
 }
 
 input[type="range"] {
   -khtml-appearance: none; 
-  -webkit-border-image: url(../images/slider-horizontal-track.png) 2 4 2 4 / 2px 4px 2px 4px repeat repeat;
+  -webkit-border-image: url(/images/slider-horizontal-track.png) 2 4 2 4 / 2px 4px 2px 4px repeat repeat;
   height: 5px;
   padding: 0;
 }
@@ -97,47 +76,55 @@ select:active {
   color: #8F8F8F;
 }
 
+
 button {
+  background: #a29ac4;
+
   margin: 5px;
+  padding: 9px 9px;
+  
   -khtml-appearance: none;
   -moz-appearance: none;
-  background: none;
-  padding: 9px 9px;
-  font-weight: bold;
+
+  font-weight: medium;
   font-size: 12px;
   color: #ffffff;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
-
+  text-shadow: 0 -1px 0 #8560a6;
+  
   border-width: 1px;
   border-style: solid;
-  border-color: #AFAFAF #9A9A9A #828282 #9A9A9A;
-  
-  background: #E9E9E9;
-  background: -webkit-gradient(linear, left top, left bottom, from(#9c81b7), to(#8D6FAC));
-  background: -moz-linear-gradient(top, #9c81b7, #8D6FAC);
-  -webkit-box-shadow: inset 0 1px 1px #F5F5F5;
-  -moz-box-shadow: inset 0 1px 1px #F5F5F5;
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
-  
+  border-color: #8560a6; 
   transition: all .2s ease-in-out;
+  
+  -webkit-border-radius: 2px;
+  -moz-border-radius: 2px;
+  border-radius: 2px;
+  
+  cursor: pointer;
   -webkit-transition: all .2s ease-in-out;
   -moz-transition: all .2s ease-in-out;
   -o-transition: all .2s ease-in-out;
-  cursor: pointer;
 }
+
+button.big {
+  font-weight: bold;
+  font-size: 14px;
+  text-transform:capitalize;
+  padding: 12px 12px;
+}
+
 button:hover,
 button:focus {
   box-shadow: 0 0 7px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.5);
   -webkit-box-shadow: 0 0 7px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.5);
   -moz-box-shadow: 0 0 7px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.5);
+  background: #bebbd0;
 }
 
 button:active:not(:disabled) {
-  border-color: #B6B6B6 #989898 #AEAEAE #989898;
   background: #B6B6B6;
-  background: -webkit-gradient(linear, left top, left bottom, from(#B6B6B6), to(#E6E6E6));
-  background: -moz-linear-gradient(top, #B6B6B6, #E6E6E6);
+  background: -webkit-gradient(linear, left top, left bottom, from(#b3adc6), to(#cdcad7));
+  background: -moz-linear-gradient(top, #b3adc6, #cdcad7);
   -webkit-box-shadow: inset 0 -1px 1px #F4F4F4;
   -moz-box-shadow: inset 0 -1px 1px #F4F4F4;
 }
