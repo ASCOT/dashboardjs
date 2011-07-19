@@ -1,7 +1,7 @@
 /* Author: Diego Marcos (dmarcos@uw.edu) */
 html{
   text-shadow: 0px 1px 0px #d2d2d2;
-  font: 15px "Helvetica Neue", Arial, sans-serif;
+  font: 15px 'Lucida Grande', 'Helvetica Neue', Arial, sans-serif;
   color: #663091;
   font-weight: normal;
 }
@@ -25,10 +25,32 @@ li{
 
 h2 {
   font-weight: 500;
+  margin-bottom: 20px;
+}
+
+dl {
+  margin-right: 20px;
+}
+
+dl,dt,dd { 
+  display: inline;  
+}
+
+dt{
+ margin-right: 5px; 
+}
+
+dd{
+ color: #4e4d74; 
 }
 
 h1 {
   font-weight: 700;
+}
+
+p {
+  color: #4e4d74;
+  margin-bottom: 20px;
 }
 
 header {

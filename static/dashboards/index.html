@@ -43,6 +43,10 @@ jQuery(function($) {
       requestNewDashboard();
     });
     
+  $("#gadgets li").click( function(){
+    $("#name").html($(this).find("input").get(0).value);
+  }); 
+    
 })
 
 </script>
@@ -119,7 +123,7 @@ jQuery(function($) {
 
 #gadgets{
   margin-top: 25px; 
-  margin-bottom: 25px; 
+  margin-bottom: 10px; 
   height: 370px; 
   overflow: auto;
   width: 100%;
@@ -127,6 +131,7 @@ jQuery(function($) {
 
 #gadgets li{
   padding-bottom: 10px;
+  padding-left: 5px;
   margin-bottom: 10px;
   margin-right: 10px;
 }
@@ -138,8 +143,11 @@ jQuery(function($) {
   border-radius: 5px;
 }
 
-#gadgets label{
+#gadgets input{
   padding-left: 5px;
+}
+
+#gadgets label{
   font-size: 15px;
   -webkit-user-select: none;
   -khtml-user-select: none;
@@ -155,33 +163,48 @@ jQuery(function($) {
     <div id="cube"> 
       <div class="box front face">         
         <header><a href="/dashboards/" id="logo"></a></header>
-        <div style="width: 310px; margin: auto; padding-top: 275px">
+        <div style="width: 320px; margin: auto; padding-top: 275px">
           <button class="big toRight">Create Dashboard</button>     
           <button class="big quickDashboard">Quick Dashboard</button> 
         </div>    
         <footer><a href="http://www.astro.washington.edu/" id="departmentLogo"></a></footer>
       </div> 
       <div id="gadgetsPanel" class="box right face">
-        <div id="gadgetSelection" style="width:30%; padding: 15px;">
+        <div id="gadgetSelection" style="width:25%; padding: 15px; float: left">
           <h2>Choose your gadgets:</h2>
           <form action="#" method="get">   
             <ul id="gadgets">
-              <li><label><input type="checkbox">Data Inquirer</label></li>
-              <li><label><input type="checkbox">Sky View</label></li>
-              <li><label><input type="checkbox">Table View</label></li>
-               <li><label><input type="checkbox">Data Inquirer</label></li>
-                <li><label><input type="checkbox">Sky View</label></li>
-                <li><label><input type="checkbox">Table View</label></li>
-                 <li><label><input type="checkbox">Data Inquirer</label></li>
-                  <li><label><input type="checkbox">Sky View</label></li>
-                  <li><label><input type="checkbox">Table View</label></li>
-                   <li><label><input type="checkbox">Data Inquirer</label></li>
-                    <li><label><input type="checkbox">Sky View</label></li>
-                    <li><label><input type="checkbox">Table View</label></li>
+              <li><input type="checkbox" value="Data Inquirer" name="gadget" value="dataInquirer" id="dataInquirer"><label>Data Inquirer</label></li>
+              <li><input type="checkbox" value="Sky View" name="gadget" id="skyView"><label>Sky View</label></li>
+              <li><input type="checkbox" value="Table View"><label>Table View</label></li>
+               <li><input type="checkbox" value="Data Inquirer"><label>Data Inquirer</label></li>
+                <li><input type="checkbox" value="Sky View"><label>Sky View</label></li>
+                <li><input type="checkbox" value="Table View"><label>Table View</label></li>
+                 <li><input type="checkbox" value="Data Inquirer"><label>Data Inquirer</label></li>
+                  <li><input type="checkbox" value="Sky View"><label>Sky View</label></li>
+                  <li><input type="checkbox" value="Table View"><label>Table View</label></li>
+                   <li><input type="checkbox" value="Data Inquirer"><label>Data Inquirer</label></li>
+                    <li><input type="checkbox" value="Sky View"><label>Sky View</label></li>
+                    <li><input type="checkbox" value="Table View"><label>Table View</label></li>
             </ul>
           </form>
-          <button class="big toFront">Create Dashboard</button>
-        </div>     
+          <button class="big toFront">Start Dashboard</button>
+        </div> 
+        <div id="gadgetDetails" style="width:63%; padding: 70px 30px 0px 0px; float: right;">
+          <h2 id="name">Gadget Name</h2>
+          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+            Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
+            Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
+            Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>
+          <dl>
+            <dt>Author:</dt>
+            <dd id="author">XXX</dd>
+          </dl>
+          <dl>
+            <dt>Version:</dt>
+            <dd id="version">XXX</dd>
+          </dl>  
+        </div>    
         <footer><a href="http://www.astro.washington.edu/" id="departmentLogo"></a></footer>
       </div>
     </div> 
