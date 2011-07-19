@@ -142,7 +142,7 @@ var setQueryText = function(buttonNumber) {
 
 function makeGETRequest(url, query, callback) {
   var params = {};
-  console.log(parseURL(url + '?cmd=' + query).url);
+  console.log(encodeURIComponent(url + '?format=xml&cmd=' + encodeURIComponent(query)));
   $.ajax({
    'url': '/XMLHttpRequest/' + encodeURIComponent(url + '?format=xml&cmd=' + encodeURIComponent(query)),
     success: callback 

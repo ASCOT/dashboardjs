@@ -9,25 +9,28 @@ label {
 
 input[type="checkbox"] {
   -khtml-appearance: none;
-  background: url(/images/check-box-bezel.png) no-repeat;
-  width: 15px;
-  height: 16px;
+  background: url(/images/checkBox.png) no-repeat;
+  width: 17px;
+  height: 18px;
+  top: 6px;
+  position: relative;
+  margin-right: 10px;      
 }
 
 input[type="checkbox"]:checked {
-  background: url(/images/check-box-bezel-selected.png) no-repeat;
+  background: url(/images/checkBoxSelected.png) no-repeat;
 }
 
 input[type="radio"] {
   -khtml-appearance: none;
-  background: url(/images/radio-bezel.png) no-repeat;
+  background: url(/images/radio.png) no-repeat;
   width: 17px;
-  height: 17px;
+  height: 18px;
 }
 
 input[type="radio"]:checked {
   border: none;
-  background: url(/images/radio-bezel-selected.png) no-repeat;
+  background: url(/images/radioSelected.png) no-repeat;
 }
 
 input[type="range"] {
@@ -76,34 +79,38 @@ select:active {
   color: #8F8F8F;
 }
 
-
 button {
   background: #a29ac4;
-
-  margin: 5px;
   padding: 9px 9px;
   
   -khtml-appearance: none;
   -moz-appearance: none;
 
-  font-weight: medium;
-  font-size: 12px;
+  font-weight: normal;
+  font: 15px "Helvetica Neue", Arial, sans-serif;
   color: #ffffff;
-  text-shadow: 0 -1px 0 #8560a6;
+  text-shadow: 0 -1px 0 #767577;
   
   border-width: 1px;
   border-style: solid;
   border-color: #8560a6; 
-  transition: all .2s ease-in-out;
   
-  -webkit-border-radius: 2px;
-  -moz-border-radius: 2px;
-  border-radius: 2px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
   
   cursor: pointer;
+  
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  
+  /* transition: all .2s ease-in-out;
   -webkit-transition: all .2s ease-in-out;
   -moz-transition: all .2s ease-in-out;
-  -o-transition: all .2s ease-in-out;
+  -o-transition: all .2s ease-in-out; */
 }
 
 button.big {
@@ -115,10 +122,10 @@ button.big {
 
 button:hover,
 button:focus {
-  box-shadow: 0 0 7px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.5);
-  -webkit-box-shadow: 0 0 7px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.5);
-  -moz-box-shadow: 0 0 7px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.5);
-  background: #bebbd0;
+  box-shadow: 0 0 5px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+  -webkit-box-shadow: 0 0 5px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+  -moz-box-shadow: 0 0 5px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+  background: #b4aed0;
 }
 
 button:active:not(:disabled) {
@@ -140,62 +147,49 @@ button:disabled, button:hover:disabled {
 }
 
 ::-webkit-scrollbar {
-  width: 17px;
-  height: 17px;
+  width: 8px;
+  height: 8px;
 }
 
-::-webkit-scrollbar-button:vertical:end {
-  background: url(../images/scroller-down-arrow.png) no-repeat;
-  width: 17px;
-  height: 20px;
-}
-
-::-webkit-scrollbar-button:vertical:start {
-  background: url(../images/scroller-up-arrow.png) no-repeat;
-  width: 17px;
-  height: 22px;
-}
-
-::-webkit-scrollbar-button:horizontal:start {
-  background: url(../images/scroller-left-arrow.png) no-repeat;
-  width: 22px;
-  height: 17px;
-}
-
-::-webkit-scrollbar-button:horizontal:end {
-  background: url(../images/scroller-right-arrow.png) no-repeat;
-  width: 22px;
-  height: 17px;
-}
 
 ::-webkit-scrollbar-thumb:vertical {
-  -webkit-border-image: url(../images/scroller-vertical-knob.png) 8 0 8 0 / 8px 0 8px 0 stretch repeat;
+  background: #e3e0f4;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:horizontal {
-  -webkit-border-image: url(../images/scroller-horizontal-knob.png) 7 9 7 9 / 7px 9px 7px 9px stretch repeat;
+  background: #e3e0f4;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-track-piece:vertical:start {
-  background-image: url(../images/scroller-up-arrow-track.png), url(../images/scroller-vertical-track.png);
-  background-repeat: no-repeat, repeat-y;
+  background: #8382a2;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-track-piece:vertical:end {
-  background-image: url(../images/scroller-down-arrow-track.png), url(../images/scroller-vertical-track.png);
-  background-repeat: no-repeat, repeat-y;
-  background-position: bottom left, 0 0;
+  background: #8382a2;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-track-piece:horizontal:end {
-  background-image: url(../images/scroller-right-arrow-track.png), url(../images/scroller-horizontal-track.png);
-  background-repeat: no-repeat, repeat-x;
-  background-position: bottom right, 0 0;
+  background: #8382a2;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  
 }
 
 ::-webkit-scrollbar-track-piece:horizontal:start {
-  background-image: url(../images/scroller-left-arrow-track.png), url(../images/scroller-horizontal-track.png);
-  background-repeat: no-repeat, repeat-x;
+  background: #8382a2;
 }
 
 

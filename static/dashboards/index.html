@@ -7,10 +7,9 @@
 
 <link rel="stylesheet" href="/css/reset.css"> 
 <link rel="stylesheet" href="/css/dashboard.css">
-<link rel="stylesheet" href="/css/aristo.css" type="text/css">
+<link rel="stylesheet" href="/css/widgets.css" type="text/css">
 
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/jquery-ui.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
 
 <script src="/gfx/gfx.js" type="text/javascript" charset="utf-8"></script>
 <script src="/gfx/gfx.cube.js" type="text/javascript" charset="utf-8"></script>
@@ -26,38 +25,39 @@ function requestNewDashboard() {
 }
 
 jQuery(function($) {
+  
    $("#cube").gfxCube({
-     width: 700,
-     height: 500
+     width: 900,
+     height: 562
    });
 
    $(".toRight").click(function() {
-     return $("#cube").trigger("cube", "right");
+     $("#cube").trigger("cube", "right")
    });
 
    $(".toFront").click(function() {
-     return $("#cube").trigger("cube", "front");
+     $("#cube").trigger("cube", "front");
    });
+   
+   $(".quickDashboard").click(function() {
+      requestNewDashboard();
+    });
+    
 })
-
 
 </script>
 
 <style type="text/css">
 
 #container{
-  width: 700px;
-  height: 500px;
-  position: relative;
+  width: 900px;
   margin: auto;
+  padding-top: 100px;
 }
 
 .box{
   background: #b3adc6;
-  margin-top: 100px;
   border: 1px solid #bab9ba;
-  text-shadow: #FFF 0px 1px 1px;
-  font-size: 13px;
   -webkit-box-shadow: rgba(0, 0, 0, .6) 0px 0px 2px;
   -moz-box-shadow: rgba(0, 0, 0, .6) 0px 0px 2px;
   box-shadow: rgba(0, 0, 0, .6) 0px 0px 2px;
@@ -101,91 +101,87 @@ jQuery(function($) {
   display: block;
   position: absolute;
   top: -10px;
-  left: 240px;
+  left: 325px;
   width: 236px;
   height: 96px;
   background-image: url(/images/logoLogin.png);
 }
 
-.box h2, p {
-  color: #ffffff;
-  padding: 15px;
-  font-size: 15px;
-  text-shadow: 0px 1px 0px #d2d2d2;
-  line-height: normal;
-  color: #663091;
-  font-weight: medium;
-}
-
-.button.primary {
-  padding: 9px 15px;
-  font-size: 14px;
-  -webkit-box-shadow: 0 0 6px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  -moz-box-shadow: 0 0 6px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  -webkit-transition: all 1s ease-in-out;
-  -moz-transition: all 1s ease-in-out;
-  -o-transition: all 1s ease-in-out;
-  -ms-transition: all 1s ease-in-out;
-  transition: all 1s ease-in-out;
-  border-color: #8560a6; 
-  color: #ffffff;
-  background: #a29ac4;
-}
-
-.button.primary:hover {
-  background: #917cb6;
-}
-
-.button {
-  display: block;
-  margin: auto;
-  border-width: 1px;
-  border-style: solid;
-  text-transform: uppercase;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
-  -webkit-border-radius: 4px;
-  -moz-border-radius: 4px;
-  border-radius: 4px;
-}
-
-a:link, a:visited {
-text-decoration: none;
-}
-
-
 #departmentLogo {
   display: block;
   position: absolute;
   bottom: 12px;
-  left: 270px;
+  left: 360px;
   width: 171px;
   height: 26px;
   background-image: url(/images/departmentLogo.png);
 }
 
+#gadgets{
+  margin-top: 25px; 
+  margin-bottom: 25px; 
+  height: 370px; 
+  overflow: auto;
+  width: 100%;
+}
 
-.loginButton{
-  -moz-box-shadow: 0 0 8px rgba(0, 0, 0, 0.15), 0 1px 0 rgba(255,255,255,0.8) inset; 
-  -webkit-box-shadow: 0 0 8px rgba(0, 0, 0, 0.15), 0 1px 0 rgba(255,255,255,0.8) inset;
+#gadgets li{
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  margin-right: 10px;
+}
+
+#gadgets li:hover{
+  background: #c4bedd;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+}
+
+#gadgets label{
+  padding-left: 5px;
+  font-size: 15px;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -o-user-select: none;
+  user-select: none;
 }
 
 </style>
 </head>
-<body class="green">
+<body>
   <div id="container">
     <div id="cube"> 
-      <div class="box front">         
-        <header>
-          <a href="http://ascot.astro.washington.edu/dashboards/" id="logo"></a>
-        </header>
-        <button class="big toRight" style="width: 150px; margin-top: 250px;">Create Dashboard</button>     
-        <button>Test Default Button</button>     
+      <div class="box front face">         
+        <header><a href="/dashboards/" id="logo"></a></header>
+        <div style="width: 310px; margin: auto; padding-top: 275px">
+          <button class="big toRight">Create Dashboard</button>     
+          <button class="big quickDashboard">Quick Dashboard</button> 
+        </div>    
         <footer><a href="http://www.astro.washington.edu/" id="departmentLogo"></a></footer>
       </div> 
-      <div class="box right">
-        <p>Choose your gadgets:</p>         
-        <button class="big toFront" style="width: 150px; margin-top: 250px;">Create Dashboard</button>     
+      <div id="gadgetsPanel" class="box right face">
+        <div id="gadgetSelection" style="width:30%; padding: 15px;">
+          <h2>Choose your gadgets:</h2>
+          <form action="#" method="get">   
+            <ul id="gadgets">
+              <li><label><input type="checkbox">Data Inquirer</label></li>
+              <li><label><input type="checkbox">Sky View</label></li>
+              <li><label><input type="checkbox">Table View</label></li>
+               <li><label><input type="checkbox">Data Inquirer</label></li>
+                <li><label><input type="checkbox">Sky View</label></li>
+                <li><label><input type="checkbox">Table View</label></li>
+                 <li><label><input type="checkbox">Data Inquirer</label></li>
+                  <li><label><input type="checkbox">Sky View</label></li>
+                  <li><label><input type="checkbox">Table View</label></li>
+                   <li><label><input type="checkbox">Data Inquirer</label></li>
+                    <li><label><input type="checkbox">Sky View</label></li>
+                    <li><label><input type="checkbox">Table View</label></li>
+            </ul>
+          </form>
+          <button class="big toFront">Create Dashboard</button>
+        </div>     
         <footer><a href="http://www.astro.washington.edu/" id="departmentLogo"></a></footer>
       </div>
     </div> 
