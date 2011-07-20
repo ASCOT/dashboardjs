@@ -38,7 +38,7 @@ var dashboardId = {{id}};
 var remoteService = {{serviceUrl}};
 
 var initDashboard = function(){
-  loadState({{state}});  
+  loadState();  
   initGUI();
 }
 
@@ -46,7 +46,7 @@ $(function(){
     initDashboard();
 });
 
-function loadState(state) {
+function loadState() {
   ASCOT.dashboard = new UW.Dashboard($("#" + 'dashboard').get(0));
   ASCOT.dashboard.loadState(remoteService + dashboardId);
   return ASCOT.dashboard;

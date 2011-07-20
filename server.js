@@ -9,6 +9,7 @@ var exec = require('child_process').exec;
 
 var express = require('express');
 var dashboards = require('./lib/server/dashboards');
+var gadgets = require('./static/gadgets/gadgets');
 var XMLHttpRequest = require("./lib/server/XMLHttpRequest").XMLHttpRequest;
   
 var app = express.createServer();
@@ -105,6 +106,10 @@ app.get('/XmlHttpRequest/:request', function(req, res){
     
 });
 
+app.get('/dashboards/gadgets/', function(req, res){
+  res.send(JSON.stringify(dashboards.find(req.params.id)));
+});
+
 app.get('/dashboards/:id', function(req, res){
   res.render("dashboard", {
     locals: {
@@ -125,6 +130,10 @@ app.put('/saveDashboard/:id', function(req, res){
 app.post('/saveDashboard/:id', function(req, res){
   console.log("STATE: " + req.body);
   dashboards.set(req.params.id, req.body);
+});
+
+app.get('/gadgets/', function(req, res){
+  res.send(gadgets.all);
 });
 
 app.post('/newDashboard/', function(req, res){
