@@ -8,8 +8,8 @@ var FFI = require("node-ffi");
 var exec = require('child_process').exec;
 
 var express = require('express');
-var dashboards = require('./lib/server/dashboards');
-var gadgets = require('./static/gadgets/gadgets');
+var dashboards = require('./lib/server/dashboardsInfo');
+var gadgets = require('./static/gadgets/gadgetsInfo');
 var XMLHttpRequest = require("./lib/server/XMLHttpRequest").XMLHttpRequest;
   
 var app = express.createServer();
