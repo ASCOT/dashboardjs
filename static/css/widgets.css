@@ -108,11 +108,6 @@ button {
   -moz-box-shadow: 1px 2px 2px rgba(0,0,0,0.1);
   -webkit-box-shadow: 1px 2px 2px rgba(0,0,0,0.1);
   box-shadow: 1px 2px 2px rgba(0,0,0,0.1);
-  
-  /* transition: all .2s ease-in-out;
-  -webkit-transition: all .2s ease-in-out;
-  -moz-transition: all .2s ease-in-out;
-  -o-transition: all .2s ease-in-out; */
 }
 
 button.big {
@@ -123,17 +118,39 @@ button.big {
 }
 
 button.circle{
-  width:100px;
-  height:100px;
+  background: #8382a2;
   
-  border-radius:50px;
-  -moz-border-radius:50px;
-  -webkit-border-radius:50px;
+  width:18px;
+  height:18px;
+  padding: 0px;
   
-  line-height:100px;
-  text-align:center
+  -moz-box-shadow: 1px 2px 2px rgba(0,0,0,0);
+   -webkit-box-shadow: 1px 2px 2px rgba(0,0,0,0);
+   box-shadow: 1px 2px 2px rgba(0,0,0,0);
+  
+  border-width: 0px;
+  border-radius:9px;
+  -moz-border-radius:9px;
+  -webkit-border-radius:9px;
+  
+  line-height:16px;
+  text-shadow: 0px 0px 0px #d2d2d2;
+  text-align: center;
+  font-weight: bold;
 }
 
+button.circle:active:not(:disabled) {
+  -moz-box-shadow: inset 0px 0px 1px rgba(0,0,0,0.3);
+  -webkit-box-shadow: inset 0px 0px 1px rgba(0,0,0,0.3);
+  -box-shadow: inset 0px 0px 1px rgba(0,0,0,0.3);
+}
+
+button.circle:hover,
+button.circle:hover{
+  background: #8382a2;
+  border-width: 1px;
+  border-color: #e3e0f4;
+}  
 
 button:hover,
 button:focus {
@@ -161,7 +178,6 @@ button:disabled, button:hover:disabled {
   width: 8px;
   height: 8px;
 }
-
 
 ::-webkit-scrollbar-thumb:vertical {
   background: #e3e0f4;

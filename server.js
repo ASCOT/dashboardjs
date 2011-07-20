@@ -15,7 +15,6 @@ var XMLHttpRequest = require("./lib/server/XMLHttpRequest").XMLHttpRequest;
 var app = express.createServer();
 var nowjs = require('now')
 var everyone = nowjs.initialize(app);
-//var socket = io.listen(app); 
 
 everyone.now.sendMessageToDashboard = function(message, dashboardId){
   var dashboardChannel = nowjs.getGroup(dashboardId);
@@ -136,8 +135,8 @@ app.get('/gadgets/', function(req, res){
   res.send(gadgets.all);
 });
 
-app.post('/newDashboard/', function(req, res){
-  var newDashboardId = dashboards.new();
+app.post('/newDashboard/:gadgets', function(req, res){
+  var newDashboardId = dashboards.new(JSON.parse(req.params.gadgets));
   res.send(newDashboardId.toString());
 });               
 

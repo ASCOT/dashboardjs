@@ -17,10 +17,11 @@
 <script type="text/javascript">
 
 var gadgets;
+var selectedGadgets = {};
 
-function requestNewDashboard() {
+function requestNewDashboard(gadgetsList){
   $.ajax({
-    url: '/newDashboard/',
+    url: '/newDashboard/' + JSON.stringify(gadgetsList),
     type: 'POST',
     success: function(newId) { document.location.href = "/dashboards/" + newId; }
   });
@@ -39,6 +40,10 @@ jQuery(function($) {
      'url': '/gadgets/',
      success: populateGadgetsList });
    });
+   
+   $(".startDashboard").click(function() {
+     requestNewDashboard(selectedGadgets);
+   });
 
    $(".toFront").click(function() {
      $("#cube").trigger("cube", "front");
@@ -46,7 +51,7 @@ jQuery(function($) {
    
    $(".quickDashboard").click(function() {
       requestNewDashboard();
-    });
+    }); 
     
 })
 
@@ -56,19 +61,50 @@ function populateGadgetsList(gadgetsList){
  $("#gadgetsList").empty();
  for (id in gadgetsList){
    if(gadgetsList.hasOwnProperty(id)){
-     entryHtml = '<li><input type="checkbox" value="' + gadgetsList[id].name + 'name="gadget" value="' + id + '" id="' + id + '"><label>' + gadgetsList[id].name + '</label></li>';
+     entryHtml = '<li><input type="checkbox" value="' + gadgetsList[id].name + 'name="gadget" value="' + id + '" id="' + id + '"/><label>' + gadgetsList[id].name + 
+                 '</label><div class="counter" style="display:none; float: right; margin: 8px"><button type="button" class="circle counter minus">-</button><p style="margin: 10px; display: inline;">0</p><button type="button" class="circle counter plus">+</button></div></li>';
      $("#gadgetsList").append(entryHtml);
    } 
  }
  
- $("#gadgetsList li").click( function(){
-    var selectedId = $(this).find("input").get(0).id;
-    $("#gadgetName").html(gadgets[selectedId].name);
-    $("#gadgetDescription").html(gadgets[selectedId].description);
-    $("#gadgetAuthor").html(gadgets[selectedId].author);
-    $("#gadgetVersion").html(gadgets[selectedId].version);
-    $("#gadgetDetails").css("display","block");
-  });
+$("#gadgetsList li").click(function(){
+  var selectedId = $(this).find("input").get(0).id;
+  var selectedGadget = gadgets[selectedId];
+  $("#gadgetName").html(selectedGadget.name);
+  $("#gadgetDescription").html(selectedGadget.description);
+  $("#gadgetAuthor").html(selectedGadget.author);
+  $("#gadgetVersion").html(selectedGadget.version);
+  $("#gadgetDetails").css("display","block");
+});
+  
+$(":checkbox").click(function() {
+  var displayValue = this.checked? 'block' : 'none';
+  if (this.checked){
+    selectedGadgets[this.id] = 1;
+    $(this).closest('li').find("div.counter").find("p").text("1");
+  }
+  else{
+    delete selectedGadgets[this.id];
+  }
+  $(this).closest('li').find("div.counter").css('display', displayValue);
+});
+  
+$(".circle.counter").click(function() {
+  var gadgetId = $(this).closest('li').find('input').attr('id');
+  selectedGadgets[gadgetId] = selectedGadgets[gadgetId] || 1;
+  if($(this).hasClass('minus')) {
+    selectedGadgets[gadgetId]--;
+    if(selectedGadgets[gadgetId] == 0){
+      $(this).closest('div.counter').css('display', 'none');
+      $(this).closest('li').find(':checkbox').get(0).checked = false;
+      delete selectedGadgets[gadgetId];
+    }
+  }
+  else{
+    selectedGadgets[gadgetId]++;
+  }
+  $(this).parent().find("p").text(selectedGadgets[gadgetId]);
+});
  
 }
 
@@ -157,6 +193,13 @@ function populateGadgetsList(gadgetsList){
   padding-left: 5px;
   margin-bottom: 10px;
   margin-right: 10px;
+  
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  
 }
 
 #gadgetsList li:hover{
@@ -188,19 +231,19 @@ function populateGadgetsList(gadgetsList){
         <header><a href="/dashboards/" id="logo"></a></header>
         <div style="width: 320px; margin: auto; padding-top: 275px">
           <button class="big toRight">Create Dashboard</button>     
-          <button class="big quickDashboard">Quick Dashboard</button> 
+          <button class="big quickDashboard">Quick Dashboard</button>           
         </div>    
         <footer><a href="http://www.astro.washington.edu/" id="departmentLogo"></a></footer>
       </div> 
       <div id="gadgetsPanel" class="box right face">
-        <div id="gadgetSelection" style="width:25%; padding: 15px; float: left">
+        <div id="gadgetSelection" style="width:35%; padding: 15px; float: left">
           <h2>Choose your gadgets:</h2>
           <form action="#" method="get">   
             <ul id="gadgetsList"></ul>
           </form>
-          <button class="big toFront">Start Dashboard</button>
+          <button class="big startDashboard">Start Dashboard</button>
         </div> 
-        <div id="gadgetDetails" style="width:63%; padding: 70px 30px 0px 0px; float: right; display: none">
+        <div id="gadgetDetails" style="width:53%; padding: 70px 30px 0px 0px; float: right; display: none">
           <h2 id="gadgetName"></h2>
           <p id="gadgetDescription"></p>
           <dl>
