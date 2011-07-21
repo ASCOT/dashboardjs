@@ -136,7 +136,8 @@ app.get('/gadgets/', function(req, res){
 });
 
 app.post('/newDashboard/:gadgets', function(req, res){
-  var newDashboardId = dashboards.new(JSON.parse(req.params.gadgets));
+  var gadgetsList = req.params.gadgets !== "undefined"? JSON.parse(req.params.gadgets) : undefined;
+  var newDashboardId = dashboards.new(gadgetsList);
   res.send(newDashboardId.toString());
 });               
 
