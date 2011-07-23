@@ -2,7 +2,6 @@
 var http = require('http');
 var url = require('url');
 var util = require('util');
-var io = require('socket.io');
 var sys = require('sys');
 var FFI = require("node-ffi");
 var exec = require('child_process').exec;
@@ -24,11 +23,12 @@ everyone.now.sendMessageToDashboard = function(message, dashboardId){
 everyone.now.addUserToDashboardChannel = function(dashboardId){
    var dashboardChannel = nowjs.getGroup(dashboardId);
    dashboardChannel.addUser(this.user.clientId);
+   dashboardChannel.now.userAddedToDashboardChannel(this.user.clientId);
 }
 
 everyone.now.notifyToDashboard = function(dashboardId, notification){
    var dashboardChannel = nowjs.getGroup(dashboardId);
-   dashboardChannel.now.receiveNotification(notification);
+   dashboardChannel.now.receiveNotification(this.user.clientId, notification);
 } 
 
 // Configuration
@@ -90,6 +90,7 @@ app.get('/XmlHttpRequest/:request', function(req, res){
 	 // Receiving response
 	 if (this.readyState == 3) {
 		  httpResponse += this.responseText;
+      console.log(util.inspect(process.memoryUsage()));
 	 }
 
    // End of response

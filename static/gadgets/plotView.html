@@ -42,18 +42,20 @@ var selectedDataSetName = "";
 var selectedXAxis = "";
 var selectedYAxis = "";
 var selectedColor = "";
-var selectedDataSet;
+var selectedDataSet = "";
+var selectionObject;
 
 // Gadget intialization
 gadget.init = function(callback){
   
-  gadget.dashboard.bind('dataSetChanged', redrawAll); 
+  gadget.dashboard.bind('dataSetChanged', redrawAll);  
+  gadget.dashboard.bind('plotRendered', syncPlot);
   gadget.dashboard.bind('pointsSelected', setSelectedByMinMax);
   gadget.dashboard.bind('axisInverted', invertAxis);
   
   $("#checkVerboseInfo").change( function(){
     verboseTooltip = $("#checkVerboseInfo").get(0).checked;
-  })
+  });
   
   // add colors to the select box (pass the select Name and color array)
   $('#selectDatasetName').change( function(){
@@ -80,7 +82,7 @@ gadget.init = function(callback){
     }
   });
   
-  $('#selSelectionColor').change( function(){
+  $('#selectColor').change( function(){
     if(this.selectedIndex != -1){
       selectedColor = this[this.selectedIndex].value;
     }
@@ -88,9 +90,9 @@ gadget.init = function(callback){
     
   $('#invertXAxisButton').click(invertX);
   $('#invertYAxisButton').click(invertY);
-  $('#plotButton').click(drawPlotClicked);
+  $('#plotButton').click(plotData);
   plot = new Highcharts.Chart(chartOptions);         
-  populateSelect("selSelectionColor", ["red", "green", "blue", "yellow", "unselect"]);
+  populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"]);
   callback();
 }
 
@@ -106,8 +108,9 @@ var chartOptions = {
       // also, only select if there is an xAxis property in event (allows reset zoom)
         if ($('#radioSelect').get(0).checked && ("xAxis" in event)) {
           event.preventDefault();
-          var selectionObj = {'seriesId': 'series1', 'xMin': event.xAxis[0].min, 'xMax':  event.xAxis[0].max, 'yMin': event.yAxis[0].min, 'yMax':  event.yAxis[0].max, color: selectedColor};
-          gadget.dashboard.notify("pointsSelected", selectionObj);                                 
+          selectionObject = {'seriesId': 'series1', 'xMin': event.xAxis[0].min, 'xMax':  event.xAxis[0].max, 'yMin': event.yAxis[0].min, 'yMax':  event.yAxis[0].max, color: selectedColor};
+          // We make this call ashyncronous and the plot gives the impression of being more responsive
+          setTimeout("gadget.dashboard.notify('pointsSelected', selectionObject, true)",1);                                 
         }
       }
     }
@@ -168,13 +171,13 @@ function generateToolTip(xValue, yValue, pointId) {
   var record;
   var info = [];
   if (verboseTooltip) {
-      record = selectedDataSet.getRecord(pointId).toJSON();
-      if (record){
-        for (var prop in record) {
-          info.push(prop + ": " + record[prop] + "<br/>");
-        }
+    record = selectedDataSet.getRecord(pointId).toJSON();
+    if (record){
+      for (var prop in record) {
+        info.push(prop + ": " + record[prop] + "<br/>");
       }
-      return info.join("");
+    }
+    return info.join("");
   } 
   else { 
     return  $(plot.yAxis[0].axisTitle.element).text() + ' : ' + yValue + '<br/>' + $(plot.xAxis[0].axisTitle.element).text()  +' : ' + xValue;
@@ -182,13 +185,14 @@ function generateToolTip(xValue, yValue, pointId) {
 }
 
 
-function drawPlotClicked(){
+function plotData(){
   if (selectedDataSetName ===  "" || selectedXAxis === "" || selectedYAxis === "") {
     alert("Choose a dataset, x axis, and y axis");
     return;
   }
   else{
     drawPlot();
+    gadget.dashboard.notify("plotRendered", { 'dataSetName': selectedDataSetName, 'color': selectedColor, 'xAxis': selectedXAxis, 'yAxis': selectedYAxis });
   }
 }
                                                                         
@@ -366,6 +370,22 @@ function populateSelect(selectName, options) {
   $('#' + selectName).change();
 }
     
+function syncPlot(plotOptions){
+  
+  $('#selectDatasetName option[value=' + plotOptions.dataSetName + ']').attr('selected', 'selected');
+  $('#selectXAxis option[value=' + plotOptions.xAxis + ']').attr('selected', 'selected');
+  $('#selectYAxis option[value=' + plotOptions.yAxis + ']').attr('selected', 'selected');
+  $('#selectColor option[value=' + plotOptions.color + ']').attr('selected', 'selected');
+  
+  $('#selectDatasetName').change();
+  $('#selectXAxis').change();
+  $('#selectYAxis').change();
+  $('#selectColor').change();
+  
+  drawPlot();
+  
+}    
+    
 function invertAxis(axis){
   if(axis === "x")
     axisInverted.x = !axisInverted.x;
@@ -425,7 +445,7 @@ function invertY(){
   <div id="divPlotToolbar" style="display: inline">
     <form name="formSelectZoom">
       <div id="divSelectZoom" style="padding: 5px">
-        Selection Color: <select id="selSelectionColor"></select>
+        Selection Color: <select id="selectColor"></select>
         <input type="radio" id="radioSelect" name="radSelectZoom" value="select" checked="checked" /><label for="radSelect">Select</label>
         <input type="radio" id="radioZoom" name="radSelectZoom" value="zoom" /><label for="radZoom">Zoom</label>
         Info: <input type="checkbox" id="checkVerboseInfo" value="0"/>
