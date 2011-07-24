@@ -8,7 +8,7 @@ var exec = require('child_process').exec;
 
 var express = require('express');
 var dashboards = require('./lib/server/dashboardsInfo');
-var gadgets = require('./static/gadgets/gadgetsInfo');
+var gadgets = require('./resources/gadgets/gadgetsInfo');
 var XMLHttpRequest = require("./lib/server/XMLHttpRequest").XMLHttpRequest;
   
 var app = express.createServer();
@@ -40,7 +40,7 @@ app.configure(function(){
   app.set('view options', {layout: false });
   app.use(express.static(__dirname + '/lib/client'));
   app.use(express.static(__dirname + '/lib/shared'));  
-  app.use(express.static(__dirname + '/static'));  
+  app.use(express.static(__dirname + '/resources')); 
 });
 
 app.configure('development', function(){
@@ -61,9 +61,9 @@ app.get('/convertFITS/:file', function(req, res){
 
 	var run = libc.system;
 	// Remove all previous file created by the converter
-	run("cd ./static/images/FITSConverter; rm header.js; rm tile*.js; rm thumb.jpg;");
+	run("cd ./resources/images/FITSConverter; rm header.js; rm tile*.js; rm thumb.jpg;");
 	// Convert the next fits image
-	run("cd ./static/images/FITSConverter; ./extractFitsFrame ../"+req.params.file+" 0 512;");
+	run("cd ./resources/images/FITSConverter; ./extractFitsFrame ../"+req.params.file+" 0 512;");
 	console.log('shell script done');
 	res.send('done');
 	/*console.log('executing shell script');
@@ -73,7 +73,7 @@ app.get('/convertFITS/:file', function(req, res){
   		console.log('shell script done');
   		res.send('done');
 	}
-	var command = "cd ./static/images/FITSConverter; ./extractFitsFrame ../"+req.params.file+" 0 512;";
+	var command = "cd ./resources/images/FITSConverter; ./extractFitsFrame ../"+req.params.file+" 0 512;";
 	// run the shell script
 	var child = exec(command, commandExecuted);*/
 	
