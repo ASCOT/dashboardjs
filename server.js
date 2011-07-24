@@ -33,7 +33,7 @@ everyone.now.notifyToDashboard = function(dashboardId, notification){
 
 // Configuration
 app.configure(function(){
-  app.set('views', __dirname + '/views');
+  app.set('views', __dirname + '/templates');
   app.use(express.bodyParser());
   app.set('view engine', 'mustache');
   app.register(".mustache", require('stache'));

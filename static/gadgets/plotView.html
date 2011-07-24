@@ -103,12 +103,13 @@ var chartOptions = {
     defaultSeriesType: 'scatter',
     zoomType: 'xy',
     events : {
-      selection: function(event) {
+      selection: function(selectionEvent) {
       // check if the zoom or select radio is checked
       // also, only select if there is an xAxis property in event (allows reset zoom)
-        if ($('#radioSelect').get(0).checked && ("xAxis" in event)) {
-          event.preventDefault();
-          selectionObject = {'seriesId': 'series1', 'xMin': event.xAxis[0].min, 'xMax':  event.xAxis[0].max, 'yMin': event.yAxis[0].min, 'yMax':  event.yAxis[0].max, color: selectedColor};
+        if ($('#radioSelect').get(0).checked && ("xAxis" in selectionEvent)) {
+          selectionEvent.preventDefault();
+          selectionObject = {'seriesId': 'series1', 'xMin': selectionEvent.xAxis[0].min, 'xMax':  selectionEvent.xAxis[0].max, 
+                              'yMin': selectionEvent.yAxis[0].min, 'yMax':  selectionEvent.yAxis[0].max, color: selectedColor};
           // We make this call ashyncronous and the plot gives the impression of being more responsive
           setTimeout("gadget.dashboard.notify('pointsSelected', selectionObject, true)",1);                                 
         }
@@ -208,8 +209,6 @@ function redrawAll(){
 }
   
 function setSelectedByMinMax(obj) {
-  //debugLog('x: ' + xMin + ', ' + xMax + '\ny: ' + yMin + ', ' + yMax);
-  // 'select' all the points in the chart to change the way they look
   var data = plot.get(obj.seriesId).data;
   var selectedIds = [];  
   var selectedMarkerColor = obj.color; 
