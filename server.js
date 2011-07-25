@@ -3,7 +3,7 @@ var http = require('http');
 var url = require('url');
 var util = require('util');
 var sys = require('sys');
-var FFI = require("node-ffi");
+var FFI = require('node-ffi');
 var exec = require('child_process').exec;
 
 var express = require('express');
