@@ -1,0 +1,451 @@
+<!-- Author: Spencer Wallace (spencerw@email.arizona.edu) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Pragma" content="no-cache">
+<title>FITSViewer</title>
+<!-- ASCOT Basic Style Sheets -->
+<link href="/css/reset.css" rel="stylesheet" type="text/css">
+<link href="/css/text.css" rel="stylesheet" type="text/css"> 
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js" type="text/javascript"></script>
+<script src="/kinetic-v1.0.2.js" type="text/javascript"></script>
+<script src="/unitsLib.js" type="text/javascript"></script>
+<script src="/util.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+
+// Status icons
+var ICON_URL_SELECTED = '/images/targetYellow.png';
+var ICON_URL_DEFAULT = '/images/target.png';
+var ICON_URL_SPINNER = '/images/spinnerGrey.gif';
+var ICON_URL_ERROR = '/images/errorIcon.gif';
+var ICON_URL_SUCCESS = '/images/successIcon.gif';
+
+// Canvas variables
+var canvas = null;
+var context = null;
+var FITSstage = null;
+var scale = 100;
+var FITSthumb = null;
+var imgX = 0;
+var draggingImgOffsetX = 0;
+var imgY = 0;
+var draggingImgOffsetY = 0;
+var mouseDownZoom = false;
+var mouseDownPan = false;
+var dragStartX;
+var dragStartY;
+
+// FITS info variables
+var globals;
+var nativeCoordSystem;
+var coordOptions = { decSex: false,
+					 eqB: true,
+					 eqJ: true,
+					 gal: true,
+					 ecl: true };
+
+// HTML fields on the page
+myFields = {};
+
+gadget.init = function(callback){	
+	// Set all relevant triggers
+	callback();
+}
+
+gadget.saveState = function(){
+  return { 
+    // Save all relevant variables
+    // format 'variable': value;
+  }
+};
+
+gadget.loadState = function(state){
+	// Load all relevant variables
+  	// format variable = state.value
+};
+
+$(resizeCanvas);
+
+function resizeCanvas(){
+	var canvas = $("#FITSimage");
+	canvas.get(0).width = canvas.width();
+  var canvas = $("#FITSimage");
+  canvas.get(0).width = canvas.width();
+}
+
+// Look at the header file to set up some important variables pertaining to the coordinates
+function precalcCoordInfo() {
+	console.log( 'Precalculating coordinates information');
+	// figure out if the fits file has celestial coordinates
+	globals.lonInd = -1;
+	globals.latInd = -1;
+	for( var i = 0; i < globals.naxis ; i ++ ) {
+		var info = UnitsLib.getCoordInfo( globals.coords[i].ctype, globals.equinox);
+		if( info.isCelestialLongitude()) globals.lonInd = i;
+		if( info.isCelestialLatitude()) globals.latInd = i;
+		globals.coords[i].cinfo = info; 
+	}
+	console.log( 'longitude at index ', globals.lonInd);
+	console.log( 'latitude at index ', globals.latInd);
+	// do we have both celestial coordinates?
+	globals.haveCelestialCoordinates = false;
+	if( globals.latInd > -1 || globals.lonInd > -1) globals.haveCelestialCoordinates = true;
+	if( globals.haveCelestialCoordinates)
+		console.log( 'this FITS has celestial coordinates');
+	else
+		console.log( 'this FITS does not have celestial coordinates');
+		
+	// what is the native coordinate system? gal, ecl, fk4, fk5
+	if( globals.haveCelestialCoordinates) {
+		nativeCoordSystem = UnitsLib.getCoordSystem({
+			cinfo1:  globals.coords[globals.lonInd].cinfo,
+			cinfo2:  globals.coords[globals.latInd].cinfo,
+			equinox: globals.equinox
+		});
+		console.log( 'native celestial coordinate system = ', nativeCoordSystem);
+	}
+}
+
+// Convert a pixel value into celestial coordinates
+// Parameters: args.x, args.y
+function pixelToCC(args) {
+
+	// First need to convert mouse coordinates into native pixel value
+	var scaleFactor = (globals.naxis1/(FITSthumb.height*(scale/100)));
+	
+	var cursorPosition = [];
+		cursorPosition[0] = (args.x-imgX)*scaleFactor;
+		cursorPosition[1] = (args.y+imgY)*scaleFactor;
+	for( var i = 2 ; i <= globals.naxis ; i ++ ) {
+		cursorPosition[i] = 1;
+	}
+
+	var allCoordinates = [];
+	if( globals.haveCelestialCoordinates) {
+		// calculate the native coordinates first
+		var crval1 = globals.coords[ globals.lonInd].crval,
+			crpix1 = globals.coords[ globals.lonInd].crpix,
+			cdelt1 = globals.coords[ globals.lonInd].cdelt,
+			crval2 = globals.coords[ globals.latInd].crval,
+			crpix2 = globals.coords[ globals.latInd].crpix,
+			cdelt2 = globals.coords[ globals.latInd].cdelt,
+			alg    = globals.coords[ globals.latInd].cinfo.pctype.alg;
+		var coord = UnitsLib.worldpos(
+				cursorPosition[globals.lonInd], cursorPosition[globals.latInd],
+				crval1, crval2, crpix1, crpix2, cdelt1, cdelt2, 0, alg);
+		allCoordinates.push( nativeCoordSystem.label + ' ' +
+				UnitsLib.formatCoordinates( coord, nativeCoordSystem, coordOptions.decSex));
+		// add all alternate coordinates
+		if( coordOptions.eqB && nativeCoordSystem != UnitsLib.FK4) {
+			var c = UnitsLib.convertCoordinates( coord, nativeCoordSystem, UnitsLib.FK4);
+			allCoordinates.push( UnitsLib.FK4.label + ' '
+					+ UnitsLib.formatCoordinates( c, UnitsLib.FK4, coordOptions.decSex));
+		}
+		if( coordOptions.eqJ && nativeCoordSystem != UnitsLib.FK5) {
+			var c = UnitsLib.convertCoordinates( coord, nativeCoordSystem, UnitsLib.FK5);
+			allCoordinates.push( UnitsLib.FK5.label + ' '
+					+ UnitsLib.formatCoordinates( c, UnitsLib.FK5, coordOptions.decSex));
+		}
+		if( coordOptions.gal && nativeCoordSystem != UnitsLib.GAL) {
+			var c = UnitsLib.convertCoordinates( coord, nativeCoordSystem, UnitsLib.GAL);
+			allCoordinates.push( UnitsLib.GAL.label + ' '
+					+ UnitsLib.formatCoordinates( c, UnitsLib.GAL, coordOptions.decSex));
+		}
+		if( coordOptions.ecl && nativeCoordSystem != UnitsLib.ECL) {
+			var c = UnitsLib.convertCoordinates( coord, nativeCoordSystem, UnitsLib.ECL);
+			allCoordinates.push( UnitsLib.ECL.label + ' '
+					+ UnitsLib.formatCoordinates( c, UnitsLib.ECL, coordOptions.decSex));
+		}
+	}
+	return allCoordinates;
+}
+
+// Called after the FITS thumbnail is loaded
+// Set up the kinetic stage and draw on the canvas
+function handleThumbnail() {
+
+	FITSstage.clearCanvas();
+	FITSstage.setDrawStage(function(){
+		var mousePos = FITSstage.getMousePos();
+		
+		FITSstage.beginRegion();
+		context.clearRect(0,0,this.canvas.width,this.canvas.height);
+		context.drawImage(FITSthumb, imgX, imgY, FITSthumb.height*(scale/100), FITSthumb.height*(scale/100));
+		context.beginPath();
+		context.rect(imgX, imgY, FITSthumb.height*(scale/100), FITSthumb.height*(scale/100));
+		context.rect((canvas.width-mapWidth-10), 10, mapWidth, mapHeight);
+		context.closePath();
+		
+		// Draw the smaller map of the image
+		var mapWidth = 150;
+		var mapHeight = (mapWidth/FITSthumb.width)*FITSthumb.height;
+		var mapContext = canvas.getContext('2d');
+		// The border around the map
+		mapContext.fillStyle = '#AAAAAA';
+		mapContext.fillRect((canvas.width-mapWidth-15),5,mapWidth+10,mapHeight+10);
+		// The map
+		mapContext.drawImage(FITSthumb, (canvas.width-mapWidth-10), 10, mapWidth, mapHeight);
+		
+		// The viewport box
+		// How many pixels should be clipped off of each side of the viewport box?
+		var topClip = 0;
+		var bottomClip = 0;
+		var leftClip = 0;
+		var rightClip = 0;
+		
+		// Figure out how much of the larger image is being cut off
+		if (imgY < 0)
+			topClip = Math.abs(imgY);
+		if ((imgY-(FITSthumb.height-FITSthumb.height*scale/100)) > 0)
+			bottomClip = imgY-(FITSthumb.height-FITSthumb.height*scale/100);
+		if (imgX < 0)
+			leftClip = Math.abs(imgX);
+		if (imgX > (canvas.width - FITSthumb.width*(scale/100)) )
+			rightClip = (imgX + (FITSthumb.width*(scale/100))) - canvas.width;
+			
+		// Scale these amounts down to the size of the map image
+		topClip = topClip/FITSthumb.height/(scale/100)*mapHeight;
+		bottomClip = bottomClip/FITSthumb.height/(scale/100)*mapHeight;
+		leftClip = leftClip/FITSthumb.width/(scale/100)*mapWidth;
+		rightClip = rightClip/FITSthumb.width/(scale/100)*mapWidth;
+			
+		mapContext.globalAlpha = 0.5;
+		mapContext.fillStyle = '#E3C059';
+		mapContext.fillRect((canvas.width-mapWidth-10)+leftClip,10+topClip,mapWidth-rightClip-leftClip, mapHeight-bottomClip-topClip);
+		mapContext.globalAlpha = 1;
+		mapContext.strokeStyle = '#E3C059';
+		mapContext.lineWidth = 4;
+		mapContext.strokeRect((canvas.width-mapWidth-10)+leftClip,10+topClip, mapWidth-rightClip-leftClip, mapHeight-bottomClip-topClip);
+
+		FITSstage.addRegionEventListener("onmousedown", function(){
+			// Check to see if the mouse is inside of the view box
+			if (mousePos.x >= (canvas.width-mapWidth-14)+leftClip && mousePos.x <= (canvas.width-6)-rightClip
+				&& mousePos.y >= 6+topClip && mousePos.y <= 14+mapHeight-bottomClip) {
+				mouseDownPan = true;
+			}
+			else {
+				mouseDownZoom = true;
+			}
+			
+			dragStartX = mousePos.x;
+			dragStartY = mousePos.y;
+		});
+		FITSstage.addRegionEventListener("onmouseup", function(){
+			if (mouseDownZoom) {
+		   	// scale is changed according to the height of the box
+		   	scale = (FITSthumb.height*(scale/100))/(Math.abs(mousePos.y - dragStartY))*100;
+		   	imgX -= (dragStartX-imgX);
+				imgY -= (dragStartY-imgY);
+		   }
+		   mouseDownZoom = false;
+		   mouseDownPan = false;
+		});
+		FITSstage.addRegionEventListener("onmouseout", function(){
+		    document.body.style.cursor = "default";
+		});
+		FITSstage.addRegionEventListener("onmousemove", function(){
+			// Need to invert y mouse position so origin is in bottom left
+			var transformedMouse = { x: (mousePos.x-imgX)*100/scale,
+									 y: ((FITSthumb.height*scale/100)-mousePos.y+imgY)*100/scale };
+			var coordinates = pixelToCC({ x: transformedMouse.x, y: transformedMouse.y });
+			document.getElementById('mousePixel').innerHTML = "X: " + Math.floor(transformedMouse.x) + " Y: " + Math.floor(transformedMouse.y);
+			
+			var celCoordHTML = "";
+			
+			for (var i = 0; i < coordinates.length; i++) {
+				celCoordHTML += (coordinates[i] + "<br>");
+			}
+			
+			document.getElementById('celCoord').innerHTML = celCoordHTML;
+			
+			if (mousePos.x >= (canvas.width-mapWidth-14)+leftClip && mousePos.x <= (canvas.width-6)-rightClip
+				&& mousePos.y >= 6+topClip && mousePos.y <= 14+mapHeight-bottomClip)
+				document.body.style.cursor = "pointer";
+			else {
+				document.body.style.cursor = "default";
+				mouseDownPan = false;
+			}
+		});
+		FITSstage.closeRegion();
+		
+		if (mouseDownZoom) {
+			context.globalAlpha = 0.5;
+			context.fillStyle = '#E3C059';
+			context.fillRect(dragStartX, dragStartY, mousePos.x-dragStartX, mousePos.y-dragStartY);
+			context.globalAlpha = 1;
+		}
+		
+		if (mouseDownPan) {
+			imgX -= (mousePos.x-dragStartX)*(FITSthumb.width/mapWidth)*(scale/100);
+			imgY -= (mousePos.y-dragStartY)*(FITSthumb.height/mapHeight)*(scale/100);
+			dragStartX = mousePos.x;
+			dragStartY = mousePos.y;
+		}
+	});
+}
+
+// Send a request to the server to convert the FITS image to a thumbnail
+// Draw the thumbnail when the request is finished
+function makeFITSrequest(fileName) {
+  $.ajax({
+   'url': '/convertFITS/' + fileName,
+    success: drawThumbnail
+  });
+}
+
+// Callback function for makeFITSrequest
+function drawThumbnail() {
+	canvas = document.getElementById('FITSimage');
+	context = canvas.getContext('2d');
+	FITSstage = new Kinetic.Stage(canvas);
+	
+	FITSthumb = new Image();
+	FITSthumb.src = "../images/FITSConverter/thumb.jpg";
+	FITSthumb.onload = function() {
+		imgX = canvas.width/2-(FITSthumb.width/2);
+		imgY = 0;
+		handleThumbnail();
+		showStatus(ICON_URL_SUCCESS, "Image loaded");
+	}
+}
+
+// Display a status icon in divStatusText
+function showStatus(iconUrl, text){
+	var statusDiv = $('#divStatusText')[0];
+	var status = text; 
+	if (iconUrl !== "") {
+		status = '<img id="imgStatus" style="vertical-align:middle;" src="' + iconUrl + '" /> ' + "<span style='vertical-align:middle;'>" + text + "</span>";
+	} 
+	statusDiv.innerHTML = status;
+	statusDiv.style.visibility = 'inline';
+}
+
+// Get the contents of an HTML field
+function getField(field) {
+	if (!(field in myFields) || (myFields[field] === null)) {
+		myFields[field] = document.getElementById(field);
+	}
+	return myFields[field];
+}
+	
+// accepts name of select box
+// returns the value in the select box, or ""
+function getSelectedOption(select) {
+	var selName = getField(select);
+ 	if (selName.length > 0){
+    	return selName.options[selName.selectedIndex].value;
+  	} else {
+    	return "";
+  	}
+}
+
+
+// Dynamically load a js file containing a JSON object
+// Makes an HTTP request then calls JSON.parse on the response
+function loadJsFile(filename) {
+	var HTTPrequest = new XMLHttpRequest();
+	HTTPrequest.open("GET",filename,true);
+	HTTPrequest.onreadystatechange = function() {
+		if (HTTPrequest.readyState === 4) { 
+			if (HTTPrequest.status === 200) {
+				var response = HTTPrequest.responseText;
+				var responseNoNewline = response.replace(/\n/g,"");	// Remove all newline characters
+			 	globals = JSON.parse(responseNoNewline);
+				precalcCoordInfo();
+			}
+		}
+	}
+	HTTPrequest.send(null);
+}
+
+// Adds items to the dropdown menu of FITS images
+function populateFITSdropdown() {
+	setSelectOptions("selFITSimage", ['cgps.fits','test.fits']);
+}
+
+// Switches between decimal and sexagecimal coordinates
+function switchDecSex() {
+	if (coordOptions.decSex)
+		coordOptions.decSex = false;
+	else
+		coordOptions.decSex = true;
+}
+
+function setCoordType(value) {
+	
+	if (value == "B1950")
+		coordOptions.eqB = !coordOptions.eqB;
+	if (value == "J2000")
+		coordOptions.eqJ = !coordOptions.eqJ;
+	if (value == "Galactic")
+		coordOptions.gal = !coordOptions.gal;
+	else
+		coordOptions.ecl = !coordOptions.ecl;
+}
+
+// Display the contents of the FITS header in a new window
+function showHeader() {
+	var content = "";
+	for (var i = 0; i < globals.hdr.length; i++) {
+		content += globals.hdr[i].content + "<br>";
+	}
+
+	top.consoleRef=window.open('','data',
+	'width=640,height=480'
+	+',menubar=0'
+	+',toolbar=1'
+	+',status=0'
+	+',scrollbars=1'
+	+',resizable=1')
+	top.consoleRef.document.writeln(
+	'<html><head><title>' + "FITS Header" + '</title></head>'
+	+'<body bgcolor=white onLoad="self.focus()">'
+	+content
+	+'</body></html>');
+	top.consoleRef.document.close();
+	}
+
+// Start converting the FITS image and read in the header
+function startViewer() {
+	showStatus(ICON_URL_SPINNER, "Converting FITS image..."); 
+	makeFITSrequest(getSelectedOption('selFITSimage'));
+	loadJsFile("../images/FITSConverter/header.js");
+}
+
+function resetZoom() {
+	scale = 100;
+	imgX = canvas.width/2-(FITSthumb.width/2);
+	imgY = 0;
+	handleThumbnail();
+}
+
+</script>
+</head>
+<body>
+
+<input type="button" onclick="resetZoom();" value="Reset Zoom">
+<input type="radio" id="radDecSex" name="radDecSex" value="Decimal" checked="checked" onclick="switchDecSex();" /><label>Decimal</label>
+<input type="radio" id="radDecSex" name="radDecSex" value="Sexagecimal" onclick="switchDecSex();" /><label>Sexagecimal</label>
+<div align="right" id="coordType">
+<!--<input type="checkbox" id="checkCoordType" name="checkCoordType" value="B1950" checked="checked" onclick="setCoordType(this.value);" /><label>B1950</label>
+<input type="checkbox" id="checkCoordType" name="checkCoordType" value="J2000" onclick="setCoordType(this.value);" /><label>J2000</label>
+<input type="checkbox" id="checkCoordType" name="checkCoordType" value="Galactic" onclick="setCoordType(this.value);" /><label>Galactic</label>
+<input type="checkbox" id="checkCoordType" name="checkCoordType" value="Ecliptic" onclick="setCoordType(this.value);" /><label>Ecliptic</label>
+--></div>
+<select id="selFITSimage">
+<option value="test.fits" selected="selected">test.fits</option>
+<option value="cgps.fits">cgps.fits</option></select><br> 
+<input type="button" onclick="startViewer();" value="Go">
+<input type="button" onclick="showHeader();" value="View Header">
+<div id="divStatusText" style="display: inline; margin-left: 10px"></div><br>
+
+<canvas id="FITSimage" height="500" style="width: 100%; background-color: #DDDDDD;"></canvas>
+
+<div id="mousePixel"> X: - Y: - </div>
+<div id="celCoord"> <br><br><br><br> </div>
+
+</body>
+</html>
