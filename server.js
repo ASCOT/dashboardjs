@@ -60,22 +60,12 @@ app.get('/convertFITS/:file', function(req, res){
 			});
 
 	var run = libc.system;
-	// Remove all previous file created by the converter
+	// Remove all previous files created by the converter
 	run("cd ./resources/images/FITSConverter; rm header.js; rm tile*.js; rm thumb.jpg;");
 	// Convert the next fits image
 	run("cd ./resources/images/FITSConverter; ./extractFitsFrame ../"+req.params.file+" 0 512;");
 	console.log('shell script done');
 	res.send('done');
-	/*console.log('executing shell script');
-	var commandExecuted = function(error, stdout, stderr) {
-		sys.print('stdout: ' + stdout);
-  		sys.print('stderr: ' + stderr);
-  		console.log('shell script done');
-  		res.send('done');
-	}
-	var command = "cd ./resources/images/FITSConverter; ./extractFitsFrame ../"+req.params.file+" 0 512;";
-	// run the shell script
-	var child = exec(command, commandExecuted);*/
 	
 });
 
