@@ -111,7 +111,7 @@ var chartOptions = {
           selectionObject = {'seriesId': 'series1', 'xMin': selectionEvent.xAxis[0].min, 'xMax':  selectionEvent.xAxis[0].max, 
                               'yMin': selectionEvent.yAxis[0].min, 'yMax':  selectionEvent.yAxis[0].max, color: selectedColor};
           // We make this call ashyncronous and the plot gives the impression of being more responsive
-          setTimeout("gadget.dashboard.notify('pointsSelected', selectionObject, true)",1);                                 
+          setTimeout("gadget.dashboard.notify('pointsSelected', selectionObject)",1);                                 
         }
       }
     }
@@ -225,11 +225,14 @@ function setSelectedByMinMax(obj) {
       colorChartPoint(point, selectedMarkerColor);
     }
   }
-  plot.redraw();
-  color = (selectedMarkerColor === "unselect") ? "" : selectedMarkerColor;
   // update the dataset with the selected points 
   // set dataset points colors in bulk
-  selectedDataSet.setRecordsMetaData({'color': color}, selectedIds);  
+  if(selectedIds.length > 0){
+    color = (selectedMarkerColor === "unselect") ? "" : selectedMarkerColor;
+    selectedDataSet.setRecordsMetaData({'color': color}, selectedIds); 
+    plot.redraw();
+  }
+   
 }
 
 // Checks the public dataset to update the selection status of all the points in the chart

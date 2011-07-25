@@ -17,18 +17,18 @@ var everyone = nowjs.initialize(app);
 
 everyone.now.sendMessageToDashboard = function(message, dashboardId){
   var dashboardChannel = nowjs.getGroup(dashboardId);
-  dashboardChannel.now.receiveMessage(message);
+  dashboardChannel.exclude([this.user.clientId]).now.receiveMessage(message);
 }
 
 everyone.now.addUserToDashboardChannel = function(dashboardId){
    var dashboardChannel = nowjs.getGroup(dashboardId);
    dashboardChannel.addUser(this.user.clientId);
-   dashboardChannel.now.userAddedToDashboardChannel(this.user.clientId);
+   this.now.userAddedToDashboardChannel(this.user.clientId);
 }
 
 everyone.now.notifyToDashboard = function(dashboardId, notification){
    var dashboardChannel = nowjs.getGroup(dashboardId);
-   dashboardChannel.now.receiveNotification(this.user.clientId, notification);
+   dashboardChannel.exclude([this.user.clientId]).now.receiveNotification(this.user.clientId, notification);
 } 
 
 // Configuration
