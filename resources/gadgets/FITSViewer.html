@@ -27,7 +27,7 @@ var ICON_URL_SUCCESS = '/images/successIcon.gif';
 var canvas = null;
 var context = null;
 var FITSstage = null;
-var scale = 100;
+var scale = 1;
 var FITSthumb = null;
 var imgX = 0;
 var draggingImgOffsetX = 0;
@@ -37,6 +37,7 @@ var mouseDownZoom = false;
 var mouseDownPan = false;
 var dragStartX;
 var dragStartY;
+var objectsToDraw = []
 
 // FITS info variables
 var globals;
@@ -50,8 +51,8 @@ var coordOptions = { decSex: false,
 // HTML fields on the page
 myFields = {};
 
-gadget.init = function(callback){	
-	// Set all relevant triggers
+gadget.init = function(callback){
+	gadget.dashboard.bind('dataSetChanged', updateDataSetList);
 	callback();
 }
 
@@ -67,6 +68,11 @@ gadget.loadState = function(state){
   	// format variable = state.value
 };
 
+// When the list of public datasets change, rewrite the list of available datasets to plot    
+function updateDataSetList(){
+	setSelectOptions("selDatasetName", gadget.dashboard.getDataSetList());
+}
+
 $(resizeCanvas);
 
 function resizeCanvas(){
@@ -74,6 +80,16 @@ function resizeCanvas(){
 	canvas.get(0).width = canvas.width();
   var canvas = $("#FITSimage");
   canvas.get(0).width = canvas.width();
+}
+
+function getSelectedDataset() {
+	return getSelectedOption("selDatasetName");
+}
+function getSelectedRA() {
+  return getSelectedOption("selRA");
+}
+function getSelectedDec() {
+  return getSelectedOption("selDec");
 }
 
 // Look at the header file to set up some important variables pertaining to the coordinates
@@ -114,11 +130,11 @@ function precalcCoordInfo() {
 function pixelToCC(args) {
 
 	// First need to convert mouse coordinates into native pixel value
-	var scaleFactor = (globals.naxis1/(FITSthumb.height*(scale/100)));
+	var scaleFactor = (globals.naxis1/(FITSthumb.height*scale));
 	
 	var cursorPosition = [];
-		cursorPosition[0] = (args.x-imgX)*scaleFactor;
-		cursorPosition[1] = (args.y+imgY)*scaleFactor;
+		cursorPosition[0] = args.x;
+		cursorPosition[1] = args.y;
 	for( var i = 2 ; i <= globals.naxis ; i ++ ) {
 		cursorPosition[i] = 1;
 	}
@@ -163,6 +179,27 @@ function pixelToCC(args) {
 	return allCoordinates;
 }
 
+// Convert from celestial coordinates to a pixel coordinate on the fits image
+// Parameters: args.ra, args.dec
+function CCtoPixel(args) {
+	if( globals.haveCelestialCoordinates) {
+		// calculate the native coordinates first
+		var crval1 = globals.coords[ globals.lonInd].crval,
+			crpix1 = globals.coords[ globals.lonInd].crpix,
+			cdelt1 = globals.coords[ globals.lonInd].cdelt,
+			crval2 = globals.coords[ globals.latInd].crval,
+			crpix2 = globals.coords[ globals.latInd].crpix,
+			cdelt2 = globals.coords[ globals.latInd].cdelt,
+			alg    = globals.coords[ globals.latInd].cinfo.pctype.alg;
+			npix   = FITSthumb.width;
+			
+		var wcsObj = { xref: crval1, yref: crval2, xrefpix: crpix1, yrefpix: crpix2, xinc: cdelt1, yinc: cdelt2, rot: 0, prjcode: alg, nxpix: npix };
+		var coord = UnitsLib.worldpix(args.ra, args.dec, wcsObj);
+		
+		return coord;
+	}
+}
+
 // Called after the FITS thumbnail is loaded
 // Set up the kinetic stage and draw on the canvas
 function handleThumbnail() {
@@ -173,9 +210,9 @@ function handleThumbnail() {
 		
 		FITSstage.beginRegion();
 		context.clearRect(0,0,this.canvas.width,this.canvas.height);
-		context.drawImage(FITSthumb, imgX, imgY, FITSthumb.height*(scale/100), FITSthumb.height*(scale/100));
+		context.drawImage(FITSthumb, imgX, imgY, FITSthumb.height*scale, FITSthumb.height*scale);
 		context.beginPath();
-		context.rect(imgX, imgY, FITSthumb.height*(scale/100), FITSthumb.height*(scale/100));
+		context.rect(imgX, imgY, FITSthumb.height*scale, FITSthumb.height*scale);
 		context.rect((canvas.width-mapWidth-10), 10, mapWidth, mapHeight);
 		context.closePath();
 		
@@ -199,18 +236,18 @@ function handleThumbnail() {
 		// Figure out how much of the larger image is being cut off
 		if (imgY < 0)
 			topClip = Math.abs(imgY);
-		if ((imgY-(FITSthumb.height-FITSthumb.height*scale/100)) > 0)
-			bottomClip = imgY-(FITSthumb.height-FITSthumb.height*scale/100);
+		if ((imgY-(FITSthumb.height-FITSthumb.height*scale)) > 0)
+			bottomClip = imgY-(FITSthumb.height-FITSthumb.height*scale);
 		if (imgX < 0)
 			leftClip = Math.abs(imgX);
-		if (imgX > (canvas.width - FITSthumb.width*(scale/100)) )
-			rightClip = (imgX + (FITSthumb.width*(scale/100))) - canvas.width;
+		if (imgX > (canvas.width - FITSthumb.width*scale) )
+			rightClip = (imgX + (FITSthumb.width*scale)) - canvas.width;
 			
 		// Scale these amounts down to the size of the map image
-		topClip = topClip/FITSthumb.height/(scale/100)*mapHeight;
-		bottomClip = bottomClip/FITSthumb.height/(scale/100)*mapHeight;
-		leftClip = leftClip/FITSthumb.width/(scale/100)*mapWidth;
-		rightClip = rightClip/FITSthumb.width/(scale/100)*mapWidth;
+		topClip = topClip/FITSthumb.height/scale*mapHeight;
+		bottomClip = bottomClip/FITSthumb.height/scale*mapHeight;
+		leftClip = leftClip/FITSthumb.width/scale*mapWidth;
+		rightClip = rightClip/FITSthumb.width/scale*mapWidth;
 			
 		mapContext.globalAlpha = 0.5;
 		mapContext.fillStyle = '#E3C059';
@@ -236,7 +273,7 @@ function handleThumbnail() {
 		FITSstage.addRegionEventListener("onmouseup", function(){
 			if (mouseDownZoom) {
 		   	// scale is changed according to the height of the box
-		   	scale = (FITSthumb.height*(scale/100))/(Math.abs(mousePos.y - dragStartY))*100;
+		   	scale = (FITSthumb.height*scale)/(Math.abs(mousePos.y - dragStartY));
 		   	imgX -= (dragStartX-imgX);
 				imgY -= (dragStartY-imgY);
 		   }
@@ -248,10 +285,13 @@ function handleThumbnail() {
 		});
 		FITSstage.addRegionEventListener("onmousemove", function(){
 			// Need to invert y mouse position so origin is in bottom left
-			var transformedMouse = { x: (mousePos.x-imgX)*100/scale,
-									 y: ((FITSthumb.height*scale/100)-mousePos.y+imgY)*100/scale };
-			var coordinates = pixelToCC({ x: transformedMouse.x, y: transformedMouse.y });
-			document.getElementById('mousePixel').innerHTML = "X: " + Math.floor(transformedMouse.x) + " Y: " + Math.floor(transformedMouse.y);
+			var transformedMouse = { x: mousePos.x-imgX,
+									 y: (FITSthumb.height*scale)-mousePos.y+imgY };
+									 
+			// Convert mouse coordinates into native pixel value
+			var scaleFactor = (globals.naxis1/(FITSthumb.width*scale));
+			var coordinates = pixelToCC({ x: transformedMouse.x*scaleFactor, y: transformedMouse.y*scaleFactor });
+			document.getElementById('mousePixel').innerHTML = "X: " + Math.floor(transformedMouse.x*scaleFactor) + " Y: " + Math.floor(transformedMouse.y*scaleFactor);
 			
 			var celCoordHTML = "";
 			
@@ -271,6 +311,17 @@ function handleThumbnail() {
 		});
 		FITSstage.closeRegion();
 		
+		// Draw overlaid objects, if there are any
+		var overlayContext = canvas.getContext('2d');
+		for (var i = 0; i < objectsToDraw.length; i++) {
+			overlayContext.beginPath();
+			overlayContext.arc((objectsToDraw[i].x/globals.naxis1*FITSthumb.width)*scale+imgX, FITSthumb.height*scale-((objectsToDraw[i].y/globals.naxis2*FITSthumb.height)*scale-imgY), 8, 0, 2 * Math.PI, false);
+   		overlayContext.closePath();overlayContext.lineWidth = 1;
+    		overlayContext.strokeStyle = "#7DFF58";
+    		overlayContext.stroke();
+		}
+		
+		// The box that the mouse drags out when zooming
 		if (mouseDownZoom) {
 			context.globalAlpha = 0.5;
 			context.fillStyle = '#E3C059';
@@ -279,8 +330,8 @@ function handleThumbnail() {
 		}
 		
 		if (mouseDownPan) {
-			imgX -= (mousePos.x-dragStartX)*(FITSthumb.width/mapWidth)*(scale/100);
-			imgY -= (mousePos.y-dragStartY)*(FITSthumb.height/mapHeight)*(scale/100);
+			imgX -= (mousePos.x-dragStartX)*(FITSthumb.width/mapWidth)*scale;
+			imgY -= (mousePos.y-dragStartY)*(FITSthumb.height/mapHeight)*scale;
 			dragStartX = mousePos.x;
 			dragStartY = mousePos.y;
 		}
@@ -416,10 +467,66 @@ function startViewer() {
 }
 
 function resetZoom() {
-	scale = 100;
+	scale = 1;
 	imgX = canvas.width/2-(FITSthumb.width/2);
 	imgY = 0;
 	handleThumbnail();
+}
+
+// Populates the X/Y axis dropdowns with values from the chosen datasets column names
+// If no dataset is chosen, then it blanks them
+function populateRaDecSelect(datasetName) {
+	var columnNames = [""];
+ 	if (datasetName !== "") {
+  	var ds = gadget.dashboard.getDataSet(datasetName);
+    	columnNames = ds.getColumns();
+	}
+	setSelectOptions("selRA", columnNames);
+	setSelectOptions("selDec", columnNames);
+}
+
+function overlayObjects() {
+	/*var convert = CCtoPixel({ ra: 132.44188, dec: -29.31 });
+	objectsToDraw.push( convert );
+	
+	convert = CCtoPixel({ ra: 129.17, dec: -25.36 });
+	objectsToDraw.push( convert );*/
+	
+	// Read the RA and Dec list in from the dataset
+	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+	var dsData = ds.getRecords();
+	
+	for (var i=0; i < dsData.length; i++) {
+		var convert = CCtoPixel({ ra: parseFloat(dsData[i][getSelectedRA()]), dec: parseFloat(dsData[i][getSelectedDec()]) });
+		objectsToDraw.push(convert);
+	}
+	
+	console.log(objectsToDraw.length);
+	
+	handleThumbnail();
+}
+
+// Accepts the name of a select object, and an array of strings
+// replaces the options with the array of strings
+function setSelectOptions(selectName, options) {
+var select = getField(selectName);
+  if (select === null) {
+   	return;
+  }
+  // save old selected option so maybe it can be reselected
+  var selectedOption = getSelectedOption(selectName);
+  // Default. First option selected
+  if (selectedOption == "")
+ 		 selectedOption == options[0];
+  // clear options
+  select.length = 0;
+  // add options
+  for (var i=0, len=options.length; i<len; i++) {
+  	// if oldOption is in the list, then select it
+     select.add(new Option(options[i], options[i], false, (selectedOption == options[i])), null);
+  }
+  if(select.onchange)
+  	select.onchange();
 }
 
 </script>
@@ -444,8 +551,18 @@ function resetZoom() {
 
 <canvas id="FITSimage" height="500" style="width: 100%; background-color: #DDDDDD;"></canvas>
 
+<table width="100%">
+<tc><td align="left">
 <div id="mousePixel"> X: - Y: - </div>
 <div id="celCoord"> <br><br><br><br> </div>
+</td></tc>
+<tc><td align="right">
+Dataset: <select id="selDatasetName" onchange="populateRaDecSelect(this.options[this.selectedIndex].value);"></select>
+RA: <select id="selRA"></select>
+Dec: <select id="selDec"></select> <br>
+<input type="button" value="Overlay Objects" onclick="overlayObjects();">
+</td></tc>
+</table>
 
 </body>
 </html>
