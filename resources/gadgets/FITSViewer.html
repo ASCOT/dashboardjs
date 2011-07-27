@@ -35,9 +35,25 @@ var imgY = 0;
 var draggingImgOffsetY = 0;
 var mouseDownZoom = false;
 var mouseDownPan = false;
+var mouseDownSelect = false;
 var dragStartX;
 var dragStartY;
 var objectsToDraw = []
+var overlayCircleRad = 8;
+var select = false;
+
+var    DEFAULT_MARKER_COLOR = '#FFFFFF';
+       SELECTED_MARKER_COLOR = '#D21E64'
+    	 MARKER_COLOR = { red: '#FF0000',
+                     green: '#00FF00',
+                     blue: '#0000FF',
+                     yellow: '#DCDC00',
+                     unselect: DEFAULT_MARKER_COLOR
+                    }
+
+// RA and Dec external data
+var columnNames;
+var dsData;
 
 // FITS info variables
 var globals;
@@ -68,11 +84,6 @@ gadget.loadState = function(state){
   	// format variable = state.value
 };
 
-// When the list of public datasets change, rewrite the list of available datasets to plot    
-function updateDataSetList(){
-	setSelectOptions("selDatasetName", gadget.dashboard.getDataSetList());
-}
-
 $(resizeCanvas);
 
 function resizeCanvas(){
@@ -81,6 +92,54 @@ function resizeCanvas(){
   var canvas = $("#FITSimage");
   canvas.get(0).width = canvas.width();
 }
+
+// When the list of public datasets change, rewrite the list of available datasets to plot    
+function updateDataSetList(){
+	updateSelectedPoints();
+	setSelectOptions("selDatasetName", gadget.dashboard.getDataSetList());
+	FITSstage.reset( { clientX: 0, clientY: 0 } );
+}
+
+// Given a list of point ids, change those points in the public dataset to a given color
+function setSelectedColor(obj) {
+	var useColor = obj.color;
+	if (obj.color == 'unselect') {
+		useColor = '';
+	}
+	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+	ds.setRecordsMetaData({'color': useColor}, obj.modifiedPointIds); 
+	gadget.dashboard.trigger('dataSetChanged');
+	return;
+}
+
+// Checks the public dataset to update the selection status of all the points in the chart
+// TODO: set the color according to the ds color
+function updateSelectedPoints() {
+ 	// select or unselect all the points in the chart to change the way they look
+ 	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+ 	if (ds === undefined || ds === null) {
+	 	return;
+	 }
+ 	var colorIndexArray = ds.getIndex('color');
+ 	var colorIndex;
+ 	var point;
+ 	
+ 	for (color in colorIndexArray) {
+ 		colorIndex = colorIndexArray[color];
+ 		for (var i = 0; i < colorIndex.length; i++) {
+ 			point = objectsToDraw[colorIndex[i]];
+ 			colorChartPoint(point,color);
+ 		}
+ 	}
+}
+
+// Colors a selected point on chart by the color name
+ function colorChartPoint(point, colorName) {
+     if (colorName === "") {
+         colorName = "unselect";
+     }
+     point.color = MARKER_COLOR[colorName];
+ }
 
 function getSelectedDataset() {
 	return getSelectedOption("selDatasetName");
@@ -258,27 +317,47 @@ function handleThumbnail() {
 		mapContext.strokeRect((canvas.width-mapWidth-10)+leftClip,10+topClip, mapWidth-rightClip-leftClip, mapHeight-bottomClip-topClip);
 
 		FITSstage.addRegionEventListener("onmousedown", function(){
-			// Check to see if the mouse is inside of the view box
-			if (mousePos.x >= (canvas.width-mapWidth-14)+leftClip && mousePos.x <= (canvas.width-6)-rightClip
-				&& mousePos.y >= 6+topClip && mousePos.y <= 14+mapHeight-bottomClip) {
-				mouseDownPan = true;
+			console.log('mouse down');
+			if (!select){
+				// Check to see if the mouse is inside of the view box
+				if (mousePos.x >= (canvas.width-mapWidth-14)+leftClip && mousePos.x <= (canvas.width-6)-rightClip
+					&& mousePos.y >= 6+topClip && mousePos.y <= 14+mapHeight-bottomClip) {
+					mouseDownPan = true;
+				}
+				else {
+					mouseDownZoom = true;
+				}
 			}
-			else {
-				mouseDownZoom = true;
-			}
+			else
+				mouseDownSelect = true;
 			
 			dragStartX = mousePos.x;
 			dragStartY = mousePos.y;
 		});
 		FITSstage.addRegionEventListener("onmouseup", function(){
-			if (mouseDownZoom) {
-		   	// scale is changed according to the height of the box
-		   	scale = (FITSthumb.height*scale)/(Math.abs(mousePos.y - dragStartY));
-		   	imgX -= (dragStartX-imgX);
-				imgY -= (dragStartY-imgY);
+			console.log('mouse up');
+			// Check to see if we are doing a zoom action or a select action
+			if (mouseDownSelect) {
+				var modifiedPointIds = []
+				for (var i = 0; i < objectsToDraw.length; i++) {
+					if (objectsToDraw[i].screenX > dragStartX && objectsToDraw[i].screenX < mousePos.x
+						&& objectsToDraw[i].screenY > dragStartY && objectsToDraw[i].screenY < mousePos.y)
+						modifiedPointIds.push(i);
+				}
+				var selectionObj = {modifiedPointIds: modifiedPointIds, color: getSelectionMarkerColor()};
+				setSelectedColor(selectionObj);
+			}
+			else {
+				if (mouseDownZoom) {
+					// scale is changed according to the height of the box
+					scale = (FITSthumb.height*scale)/(Math.abs(mousePos.y - dragStartY));
+					imgX -= (dragStartX-imgX);
+					imgY -= (dragStartY-imgY);
+				}
 		   }
 		   mouseDownZoom = false;
-		   mouseDownPan = false;
+			mouseDownPan = false;
+			mouseDownSelect = false;
 		});
 		FITSstage.addRegionEventListener("onmouseout", function(){
 		    document.body.style.cursor = "default";
@@ -293,6 +372,7 @@ function handleThumbnail() {
 			var coordinates = pixelToCC({ x: transformedMouse.x*scaleFactor, y: transformedMouse.y*scaleFactor });
 			document.getElementById('mousePixel').innerHTML = "X: " + Math.floor(transformedMouse.x*scaleFactor) + " Y: " + Math.floor(transformedMouse.y*scaleFactor);
 			
+			// Display coordinates of the mouse
 			var celCoordHTML = "";
 			
 			for (var i = 0; i < coordinates.length; i++) {
@@ -301,6 +381,7 @@ function handleThumbnail() {
 			
 			document.getElementById('celCoord').innerHTML = celCoordHTML;
 			
+			// Change the pointer if the mouse is in the map window
 			if (mousePos.x >= (canvas.width-mapWidth-14)+leftClip && mousePos.x <= (canvas.width-6)-rightClip
 				&& mousePos.y >= 6+topClip && mousePos.y <= 14+mapHeight-bottomClip)
 				document.body.style.cursor = "pointer";
@@ -308,21 +389,48 @@ function handleThumbnail() {
 				document.body.style.cursor = "default";
 				mouseDownPan = false;
 			}
+			
+			// Check to see if an overlay circle is being moused over
+			for (var i = 0; i < objectsToDraw.length; i++) {
+				var dist = Math.sqrt( (mousePos.x - objectsToDraw[i].screenX)*(mousePos.x - objectsToDraw[i].screenX) + (mousePos.y - objectsToDraw[i].screenY)*(mousePos.y - objectsToDraw[i].screenY) );
+				if (dist < overlayCircleRad+2)
+					objectsToDraw[i].mouseOver = true;
+				else
+					objectsToDraw[i].mouseOver = false;
+			}
 		});
 		FITSstage.closeRegion();
 		
 		// Draw overlaid objects, if there are any
 		var overlayContext = canvas.getContext('2d');
 		for (var i = 0; i < objectsToDraw.length; i++) {
+			// Recalculate the object's position on the screen
+			objectsToDraw[i].screenX = (objectsToDraw[i].x/globals.naxis1*FITSthumb.width)*scale+imgX;
+			objectsToDraw[i].screenY = FITSthumb.height*scale-((objectsToDraw[i].y/globals.naxis2*FITSthumb.height)*scale-imgY);
 			overlayContext.beginPath();
-			overlayContext.arc((objectsToDraw[i].x/globals.naxis1*FITSthumb.width)*scale+imgX, FITSthumb.height*scale-((objectsToDraw[i].y/globals.naxis2*FITSthumb.height)*scale-imgY), 8, 0, 2 * Math.PI, false);
-   		overlayContext.closePath();overlayContext.lineWidth = 1;
-    		overlayContext.strokeStyle = "#7DFF58";
+			overlayContext.arc(objectsToDraw[i].screenX+overlayCircleRad, objectsToDraw[i].screenY, overlayCircleRad, 0, 2 * Math.PI, false);
+   		overlayContext.closePath();
+   		overlayContext.lineWidth = 2;
+   		
+   		// If the object is being moused over, display a tooltip
+   		if (objectsToDraw[i].mouseOver == true) {
+   			overlayContext.fillStyle = '#FFFFDA';
+   			overlayContext.font="15px sans-serif";
+   			overlayContext.fillRect(objectsToDraw[i].screenX+10, objectsToDraw[i].screenY-10-columnNames.length*15, 100, columnNames.length*15);
+   			for (var j = columnNames.length-1; j >= 0; j--) {
+    				overlayContext.fillStyle = '#000000';
+    				overlayContext.fillText(columnNames[j] + ": " + dsData[i][columnNames[j]], objectsToDraw[i].screenX+10+1, objectsToDraw[i].screenY-10-j*15-1);
+    			}
+    			overlayContext.strokeStyle = "#69FD56";
+    		}
+    		else {
+    			overlayContext.strokeStyle = objectsToDraw[i].color;
+    		}
     		overlayContext.stroke();
 		}
 		
-		// The box that the mouse drags out when zooming
-		if (mouseDownZoom) {
+		// The box that the mouse drags out when zooming and selecting
+		if (mouseDownZoom || mouseDownSelect) {
 			context.globalAlpha = 0.5;
 			context.fillStyle = '#E3C059';
 			context.fillRect(dragStartX, dragStartY, mousePos.x-dragStartX, mousePos.y-dragStartY);
@@ -358,7 +466,7 @@ function drawThumbnail() {
 	FITSthumb.onload = function() {
 		imgX = canvas.width/2-(FITSthumb.width/2);
 		imgY = 0;
-		handleThumbnail();
+		redrawCanvas();
 		showStatus(ICON_URL_SUCCESS, "Image loaded");
 	}
 }
@@ -414,7 +522,7 @@ function loadJsFile(filename) {
 
 // Adds items to the dropdown menu of FITS images
 function populateFITSdropdown() {
-	setSelectOptions("selFITSimage", ['cgps.fits','test.fits']);
+	setSelectOptions("selFITSimage", ['cgps.fits','test.fits','dss_search.fits']);
 }
 
 // Switches between decimal and sexagecimal coordinates
@@ -423,6 +531,14 @@ function switchDecSex() {
 		coordOptions.decSex = false;
 	else
 		coordOptions.decSex = true;
+}
+
+// Switches between zooming and selecting with the mouse
+function switchZoomSel() {
+	if (select)
+		select = false;
+	else
+		select = true;
 }
 
 function setCoordType(value) {
@@ -470,7 +586,7 @@ function resetZoom() {
 	scale = 1;
 	imgX = canvas.width/2-(FITSthumb.width/2);
 	imgY = 0;
-	handleThumbnail();
+	redrawCanvas();
 }
 
 // Populates the X/Y axis dropdowns with values from the chosen datasets column names
@@ -486,23 +602,49 @@ function populateRaDecSelect(datasetName) {
 }
 
 function overlayObjects() {
-	/*var convert = CCtoPixel({ ra: 132.44188, dec: -29.31 });
-	objectsToDraw.push( convert );
-	
-	convert = CCtoPixel({ ra: 129.17, dec: -25.36 });
-	objectsToDraw.push( convert );*/
 	
 	// Read the RA and Dec list in from the dataset
 	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
-	var dsData = ds.getRecords();
+	dsData = ds.getRecords();
+	columnNames = ds.getColumns();
 	
 	for (var i=0; i < dsData.length; i++) {
-		var convert = CCtoPixel({ ra: parseFloat(dsData[i][getSelectedRA()]), dec: parseFloat(dsData[i][getSelectedDec()]) });
+		// Does the dataset's coordinate system need to be converted?
+		var coords = { ra: parseFloat(dsData[i][getSelectedRA()]), dec: parseFloat(dsData[i][getSelectedDec()]) };
+		if (getSelectedOption("selDataCoordSys") != nativeCoordSystem.label) {
+			if (getSelectedOption("selDataCoordSys") == 'J2000' && nativeCoordSystem.label == 'B1950')
+				coords = UnitsLib.convertFK5toFK4(coords);
+			else if (getSelectedOption("selDataCoordSys") == 'B1950' && nativeCoordSystem.label == 'J2000')
+				coords = UnitsLib.convertFK4toFK5(coords);
+			else if (getSelectedOption("selDataCoordSys") == 'B1950' && nativeCoordSystem.label == 'Galactic')
+				coords = UnitsLib.convertFK4toGAL(coords);
+			else if (getSelectedOption("selDataCoordSys") == 'Galactic' && nativeCoordSystem.label == 'B1950')
+				coords = UnitsLib.convertGALtoFK4(coords);
+			else if (getSelectedOption("selDataCoordSys") == 'J2000' && nativeCoordSystem.label == 'Ecliptic')
+				coords = UnitsLib.convertFK5toECL(coords);
+			else if (getSelectedOption("selDataCoordSys") == 'Ecliptic' && nativeCoordSystem.label == 'J2000')
+				coords = UnitsLib.convertECLtoFK5(coords);
+			else
+				alert('Coordinate system of dataset and native coordinate system not compatible');
+		}
+	
+		// The pixel coordinates of the object on the FITS image
+		var convert = CCtoPixel({ ra: coords.ra, dec: coords.dec });
+		
+		// The pixel coordinates of the object on the canvas
+		convert.screenX = (convert.x/globals.naxis1*FITSthumb.width)*scale+imgX;
+		convert.screenY = FITSthumb.height*scale-((convert.y/globals.naxis2*FITSthumb.height)*scale-imgY);
+
+		convert.mouseOver = false;
+		convert.color = DEFAULT_MARKER_COLOR;
+		
 		objectsToDraw.push(convert);
 	}
-	
-	console.log(objectsToDraw.length);
-	
+	redrawCanvas();
+}
+
+function redrawCanvas() {
+	FITSstage = new Kinetic.Stage(canvas);
 	handleThumbnail();
 }
 
@@ -529,25 +671,37 @@ var select = getField(selectName);
   	select.onchange();
 }
 
+// returns the color name in the selection color dropdown
+function getSelectionMarkerColor() {
+	return colorText = getSelectedOption("selColor");
+}
+
 </script>
 </head>
 <body>
 
-<input type="button" onclick="resetZoom();" value="Reset Zoom">
-<input type="radio" id="radDecSex" name="radDecSex" value="Decimal" checked="checked" onclick="switchDecSex();" /><label>Decimal</label>
-<input type="radio" id="radDecSex" name="radDecSex" value="Sexagecimal" onclick="switchDecSex();" /><label>Sexagecimal</label>
-<div align="right" id="coordType">
-<!--<input type="checkbox" id="checkCoordType" name="checkCoordType" value="B1950" checked="checked" onclick="setCoordType(this.value);" /><label>B1950</label>
-<input type="checkbox" id="checkCoordType" name="checkCoordType" value="J2000" onclick="setCoordType(this.value);" /><label>J2000</label>
-<input type="checkbox" id="checkCoordType" name="checkCoordType" value="Galactic" onclick="setCoordType(this.value);" /><label>Galactic</label>
-<input type="checkbox" id="checkCoordType" name="checkCoordType" value="Ecliptic" onclick="setCoordType(this.value);" /><label>Ecliptic</label>
---></div>
-<select id="selFITSimage">
-<option value="test.fits" selected="selected">test.fits</option>
-<option value="cgps.fits">cgps.fits</option></select><br> 
+<table width="100%">
+<tc><td align="left">
 <input type="button" onclick="startViewer();" value="Go">
 <input type="button" onclick="showHeader();" value="View Header">
 <div id="divStatusText" style="display: inline; margin-left: 10px"></div><br>
+<select id="selFITSimage">
+<option value="test.fits" selected="selected">test.fits</option>
+<option value="cgps.fits">cgps.fits</option>
+<option value="dss_search.fits">dss_search.fits</option></select>
+</td></tc>
+<tc><td align="right">
+<input type="button" onclick="resetZoom();" value="Reset Zoom"><br>
+<input type="radio" id="radZoomSel" name="radZoomSel" value="Zoom" checked="checked" onclick="switchZoomSel();" /><label>Zoom</label>
+<input type="radio" id="radZoomSel" name="radZoomSel" value="Select" onclick="switchZoomSel();" /><label>Select</label><br>
+Selection Color: <select id="selColor">
+<option value="red" selected="selected">red</option>
+<option value="green">green</option>
+<option value="blue">blue</option>
+<option value="yellow">yellow</option>
+<option value="unselect">unselect</option></select>
+</td></tc>
+</table>
 
 <canvas id="FITSimage" height="500" style="width: 100%; background-color: #DDDDDD;"></canvas>
 
@@ -555,12 +709,20 @@ var select = getField(selectName);
 <tc><td align="left">
 <div id="mousePixel"> X: - Y: - </div>
 <div id="celCoord"> <br><br><br><br> </div>
+<input type="radio" id="radDecSex" name="radDecSex" value="Decimal" checked="checked" onclick="switchDecSex();" /><label>Decimal</label>
+<input type="radio" id="radDecSex" name="radDecSex" value="Sexagecimal" onclick="switchDecSex();" /><label>Sexagecimal</label>
 </td></tc>
 <tc><td align="right">
 Dataset: <select id="selDatasetName" onchange="populateRaDecSelect(this.options[this.selectedIndex].value);"></select>
 RA: <select id="selRA"></select>
 Dec: <select id="selDec"></select> <br>
-<input type="button" value="Overlay Objects" onclick="overlayObjects();">
+<input type="button" value="Overlay Objects" onclick="overlayObjects();"><br> <br>
+Coordinate System of Dataset:<br>
+<select id="selDataCoordSys">
+<option value="J2000" selected="selected">J2000</option>
+<option value="B1950">B1950</option>
+<option value="Galactic">Galactic</option>
+<option value="Ecliptic">Ecliptic</option></select>
 </td></tc>
 </table>
 
