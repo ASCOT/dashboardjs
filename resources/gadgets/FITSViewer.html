@@ -55,6 +55,9 @@ var    DEFAULT_MARKER_COLOR = '#FFFFFF';
 var columnNames;
 var dsData;
 
+cd1 = { a: -0.0002802052, b: 0.0000015445 };
+cd2 = { a: 0.0000016611, b: 0.0002796522 };
+
 // FITS info variables
 var globals;
 var nativeCoordSystem;
@@ -208,9 +211,10 @@ function pixelToCC(args) {
 			crpix2 = globals.coords[ globals.latInd].crpix,
 			cdelt2 = globals.coords[ globals.latInd].cdelt,
 			alg    = globals.coords[ globals.latInd].cinfo.pctype.alg;
+			
 		var coord = UnitsLib.worldpos(
 				cursorPosition[globals.lonInd], cursorPosition[globals.latInd],
-				crval1, crval2, crpix1, crpix2, cdelt1, cdelt2, 0, alg);
+				crval1, crval2, crpix1, crpix2, cdelt1, cdelt2, cd1, cd2, 0, alg);
 		allCoordinates.push( nativeCoordSystem.label + ' ' +
 				UnitsLib.formatCoordinates( coord, nativeCoordSystem, coordOptions.decSex));
 		// add all alternate coordinates
@@ -252,7 +256,7 @@ function CCtoPixel(args) {
 			alg    = globals.coords[ globals.latInd].cinfo.pctype.alg;
 			npix   = FITSthumb.width;
 			
-		var wcsObj = { xref: crval1, yref: crval2, xrefpix: crpix1, yrefpix: crpix2, xinc: cdelt1, yinc: cdelt2, rot: 0, prjcode: alg, nxpix: npix };
+		var wcsObj = { xref: crval1, yref: crval2, xrefpix: crpix1, yrefpix: crpix2, xinc: cdelt1, yinc: cdelt2, rot: 0, cd1: cd1, cd2: cd2, prjcode: alg, nxpix: npix };
 		var coord = UnitsLib.worldpix(args.ra, args.dec, wcsObj);
 		
 		return coord;
@@ -267,11 +271,17 @@ function handleThumbnail() {
 	FITSstage.setDrawStage(function(){
 		var mousePos = FITSstage.getMousePos();
 		
+		// How many pixels should be clipped off of each side of the viewport box?
+		var topClip = 0;
+		var bottomClip = 0;
+		var leftClip = 0;
+		var rightClip = 0;
+		
 		FITSstage.beginRegion();
 		context.clearRect(0,0,this.canvas.width,this.canvas.height);
 		context.drawImage(FITSthumb, imgX, imgY, FITSthumb.height*scale, FITSthumb.height*scale);
 		context.beginPath();
-		context.rect(imgX, imgY, FITSthumb.height*scale, FITSthumb.height*scale);
+		context.rect(0, 0, canvas.width, canvas.height);
 		context.rect((canvas.width-mapWidth-10), 10, mapWidth, mapHeight);
 		context.closePath();
 		
@@ -286,11 +296,6 @@ function handleThumbnail() {
 		mapContext.drawImage(FITSthumb, (canvas.width-mapWidth-10), 10, mapWidth, mapHeight);
 		
 		// The viewport box
-		// How many pixels should be clipped off of each side of the viewport box?
-		var topClip = 0;
-		var bottomClip = 0;
-		var leftClip = 0;
-		var rightClip = 0;
 		
 		// Figure out how much of the larger image is being cut off
 		if (imgY < 0)
@@ -319,11 +324,21 @@ function handleThumbnail() {
 		FITSstage.addRegionEventListener("onmousedown", function(){
 			console.log('mouse down');
 			if (!select){
-				// Check to see if the mouse is inside of the view box
-				if (mousePos.x >= (canvas.width-mapWidth-14)+leftClip && mousePos.x <= (canvas.width-6)-rightClip
-					&& mousePos.y >= 6+topClip && mousePos.y <= 14+mapHeight-bottomClip) {
-					mouseDownPan = true;
+				// Check to see if the mouse is inside of the map window
+				if (mousePos.x >= (canvas.width-mapWidth-10) && mousePos.x <= (canvas.width-10) &&
+					mousePos.y >= 10 && mousePos.y <= 10+mapHeight) {
+					// If the mouse is in the viewport, pan
+					if (mousePos.x >= (canvas.width-mapWidth-14)+leftClip && mousePos.x <= (canvas.width-6)-rightClip
+						&& mousePos.y >= 6+topClip && mousePos.y <= 14+mapHeight-bottomClip) {
+						mouseDownPan = true;
+					}
+					// Otherwise, snap the viewport to that location
+					else {
+						imgX -= (mousePos.x-((canvas.width-mapWidth-10)+leftClip+((mapWidth-rightClip-leftClip)/2)))*(FITSthumb.width/mapWidth)*scale;
+						imgY -= (mousePos.y-(10+topClip+((mapHeight-bottomClip-topClip)/2)))*(FITSthumb.height/mapHeight)*scale;
+					}
 				}
+				// Mouse is not in the map window, we must be zooming
 				else {
 					mouseDownZoom = true;
 				}
@@ -349,10 +364,18 @@ function handleThumbnail() {
 			}
 			else {
 				if (mouseDownZoom) {
+					// Pan the image based on the distance from dragStart to the viewport center
+					imgX += (canvas.width/2)-dragStartX;
+					imgY += (canvas.height/2)-dragStartY;
+				
 					// scale is changed according to the height of the box
+					var originalScale = scale;
 					scale = (FITSthumb.height*scale)/(Math.abs(mousePos.y - dragStartY));
-					imgX -= (dragStartX-imgX);
-					imgY -= (dragStartY-imgY);
+					
+					// Scoot the image up and left depending on how many pixels it grew
+					var growthDelta = (FITSthumb.height*scale)-(FITSthumb.height*originalScale);
+					imgX -= growthDelta/2;
+					imgY -= growthDelta/2;
 				}
 		   }
 		   mouseDownZoom = false;
@@ -403,6 +426,7 @@ function handleThumbnail() {
 		
 		// Draw overlaid objects, if there are any
 		var overlayContext = canvas.getContext('2d');
+		var tooltipIndex = -1;
 		for (var i = 0; i < objectsToDraw.length; i++) {
 			// Recalculate the object's position on the screen
 			objectsToDraw[i].screenX = (objectsToDraw[i].x/globals.naxis1*FITSthumb.width)*scale+imgX;
@@ -414,19 +438,32 @@ function handleThumbnail() {
    		
    		// If the object is being moused over, display a tooltip
    		if (objectsToDraw[i].mouseOver == true) {
-   			overlayContext.fillStyle = '#FFFFDA';
-   			overlayContext.font="15px sans-serif";
-   			overlayContext.fillRect(objectsToDraw[i].screenX+10, objectsToDraw[i].screenY-10-columnNames.length*15, 100, columnNames.length*15);
-   			for (var j = columnNames.length-1; j >= 0; j--) {
-    				overlayContext.fillStyle = '#000000';
-    				overlayContext.fillText(columnNames[j] + ": " + dsData[i][columnNames[j]], objectsToDraw[i].screenX+10+1, objectsToDraw[i].screenY-10-j*15-1);
-    			}
+   			tooltipIndex = i;
     			overlayContext.strokeStyle = "#69FD56";
     		}
     		else {
     			overlayContext.strokeStyle = objectsToDraw[i].color;
     		}
     		overlayContext.stroke();
+		}
+		
+		if (tooltipIndex != -1) {
+			overlayContext.fillStyle = '#FFFFDA';
+   		overlayContext.font="15px sans-serif";
+   		
+   		overlayContext.save();
+    		overlayContext.beginPath();
+   		overlayContext.rect(objectsToDraw[tooltipIndex].screenX+10, objectsToDraw[tooltipIndex].screenY-10-columnNames.length*15, 200, columnNames.length*15);
+   	 	overlayContext.clip();
+   		overlayContext.fillRect(objectsToDraw[tooltipIndex].screenX+10, objectsToDraw[tooltipIndex].screenY-10-columnNames.length*15, 200, columnNames.length*15);
+   		for (var j = columnNames.length-1; j >= 0; j--) {
+   			overlayContext.beginPath();
+   			overlayContext.rect(objectsToDraw[tooltipIndex].screenX+10, objectsToDraw[tooltipIndex].screenY-10-columnNames.length*15, 200, columnNames.length*15);
+   	 		overlayContext.clip();
+    			overlayContext.fillStyle = '#000000';
+    			overlayContext.fillText(columnNames[j] + ": " + dsData[tooltipIndex][columnNames[j]], objectsToDraw[tooltipIndex].screenX+10+1, objectsToDraw[tooltipIndex].screenY-10-j*15-1);
+    		}
+    		overlayContext.restore();
 		}
 		
 		// The box that the mouse drags out when zooming and selecting
@@ -518,11 +555,6 @@ function loadJsFile(filename) {
 		}
 	}
 	HTTPrequest.send(null);
-}
-
-// Adds items to the dropdown menu of FITS images
-function populateFITSdropdown() {
-	setSelectOptions("selFITSimage", ['cgps.fits','test.fits','dss_search.fits']);
 }
 
 // Switches between decimal and sexagecimal coordinates
@@ -688,7 +720,8 @@ function getSelectionMarkerColor() {
 <select id="selFITSimage">
 <option value="test.fits" selected="selected">test.fits</option>
 <option value="cgps.fits">cgps.fits</option>
-<option value="dss_search.fits">dss_search.fits</option></select>
+<option value="dss_search.fits">dss_search.fits</option>
+<option value="Ramp.fits">Ramp.fits</option></select>
 </td></tc>
 <tc><td align="right">
 <input type="button" onclick="resetZoom();" value="Reset Zoom"><br>
@@ -716,13 +749,13 @@ Selection Color: <select id="selColor">
 Dataset: <select id="selDatasetName" onchange="populateRaDecSelect(this.options[this.selectedIndex].value);"></select>
 RA: <select id="selRA"></select>
 Dec: <select id="selDec"></select> <br>
-<input type="button" value="Overlay Objects" onclick="overlayObjects();"><br> <br>
-Coordinate System of Dataset:<br>
+Coordinate System of Dataset: 
 <select id="selDataCoordSys">
 <option value="J2000" selected="selected">J2000</option>
 <option value="B1950">B1950</option>
 <option value="Galactic">Galactic</option>
-<option value="Ecliptic">Ecliptic</option></select>
+<option value="Ecliptic">Ecliptic</option></select><br>
+<input type="button" value="Overlay Objects" onclick="overlayObjects();">
 </td></tc>
 </table>
 

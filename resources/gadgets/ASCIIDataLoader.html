@@ -1,265 +1,254 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!-- Author: Spencer Wallace (spencerw@email.arizona.edu) -->
 <!DOCTYPE html>
 <html lang="en">
-<meta http-equiv="Pragma" content="no-cache">
-
 <head>
-<title>ASCII Data Loader</title>
-
-<!-- chart dependencies -->
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js" type="text/javascript"></script>
-<script src="/util.js" type="text/javascript"></script>
-<script src="/highcharts.src.js" type="text/javascript"></script>
-
+<meta charset="utf-8">
+<meta http-equiv="Pragma" content="no-cache">
+<title>ASCIIDataLoader</title>
 <!-- ASCOT Basic Style Sheets -->
 <link href="/css/reset.css" rel="stylesheet" type="text/css">
 <link href="/css/text.css" rel="stylesheet" type="text/css"> 
 
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js"></script>
+<script src="/util.js" type="text/javascript"></script>
+
 <script type="text/javascript">
 
-// The gadget
-var ga = null;
-
-// Create the Histogram object
-function init() {
-	//document.getElementById("exportContent").style.display="none";
+gadget.init = function(callback){
 	document.getElementById("importButtonDiv").style.visibility="hidden";
-	document.getElementById("importContent").style.visibility="visible";
-	ga = new ASCIIDataLoader();
-	gadget.resize();
+	document.getElementById("importContent").style.display="block";
+	document.getElementById("exportContent").style.display="none";
+	gadget.dashboard.bind('dataSetChanged', updateDataSetList);
+	callback();
 }
 
-function ASCIIDataLoader() {
-	var my = new Object();
-	
-	var textFile = '';							// The text that was read in from the ASCII file
-	var numDatapoints;							// The number of datapoints to extract from the text file
-	
-	// Status Icons
-    var ICON_URL_SELECTED = '/images/target_yellow.png',
-        ICON_URL_DEFAULT = '/images/target.png',
-        ICON_URL_SPINNER = '/images/spinnerGrey.gif',
-        ICON_URL_ERROR = '/images/errorIcon.gif',
-        ICON_URL_SUCCESS = '/images/successIcon.gif';
+gadget.saveState = function(){
 
-    var ICON = { SUCCESS : ICON_URL_SUCCESS,
-              ERROR : ICON_URL_ERROR,
-              SPINNER : ICON_URL_SPINNER,
-              NONE : ""}
-              
-    myFields = { }				     // Pointers to HTML fields on the page
-              
-    gadget.dashboard.bind('dataSetChanged', updateDataSetList);
+};
+
+gadget.loadState = function(state){
+
+};
+
+// GLOBAL CONSTANTS
+ var ICON_URL_SELECTED = '/images/target_yellow.png',
+     ICON_URL_DEFAULT = '/images/target.png',
+     ICON_URL_SPINNER = '/images/spinnerGrey.gif',
+     ICON_URL_ERROR = '/images/errorIcon.gif',
+     ICON_URL_SUCCESS = '/images/successIcon.gif';
+
+ var ICON = { SUCCESS : ICON_URL_SUCCESS,
+           ERROR : ICON_URL_ERROR,
+           SPINNER : ICON_URL_SPINNER,
+           NONE : ""}
+	
+var textFile = '';							// The text that was read in from the ASCII file
+var numDatapoints;							// The number of datapoints to extract from the text file
+	
+myFields = { }				     // Pointers to HTML fields on the page
     
-   // When the list of public datasets change, rewrite the list of available datasets to export
-	function updateDataSetList(){
-    	setSelectOptions("selDatasetNameExport", gadget.dashboard.getDataSetList());
+// When the list of public datasets change, rewrite the list of available datasets to export
+function updateDataSetList(){
+ 	setSelectOptions("selDatasetNameExport", gadget.dashboard.getDataSetList());
+}
+
+function dataSetToString(dataSetName) {
+	var ds = gadget.dashboard.getDataSet(dataSetName);
+	var string = '';
+	
+	// Get the column headers
+	var columns = ds.getNonDBColumns();
+	for (var i = 0; i < columns.length; i++) {
+		string += columns[i];
+		if (i != (columns.length-1))
+				string += ' ';
 	}
 	
-	function dataSetToString(dataSetName) {
-		var ds = gadget.dashboard.getDataSet(dataSetName);
-		var string = '';
-		
-		// Get the column headers
-		var columns = ds.getNonDBColumns();
-		for (var i = 0; i < columns.length; i++) {
-			string += columns[i];
-			if (i != (columns.length-1))
-					string += ' ';
+	// Get the data
+	var dsData = ds.getPoints();
+	for (var i = 0; i < ds.getSize(); i++) {
+		string += '<br>';
+		for (var j = 0; j < columns.length; j++) {
+			string += dsData[i][columns[j]];
+			if (j != (columns.length-1))
+				string += ' ';
 		}
-		
-		// Get the data
-		var dsData = ds.getPoints();
-		for (var i = 0; i < ds.getSize(); i++) {
-			string += '<br>';
-			for (var j = 0; j < columns.length; j++) {
-				string += dsData[i][columns[j]];
-				if (j != (columns.length-1))
-					string += ' ';
-			}
-		}
-		
-		return string;
 	}
 	
-	// Create a dataset object from the data array
-   function createDataset() {
-   	
-   	textFile = textFile.split('\n');
-   	var columns = textFile[0].split(' ');
-   	records = [];
-   	var fileEntry;
-   	var dataSet = gadget.dashboard.createDataSet(document.getElementById('datasetNameInput').value); 
-   	var numRecords = textFile.length;
-   	textFile.splice(parseInt(numDatapoints) + 1, numRecords);
-    //Row 0 holds the attribute names
-   	for (var i = 1; i <= numDatapoints; i++) {   
-      fileEntry = textFile[1].split(' ');
-      textFile.splice(1,1);
-      newRecord = {};
-   	  for (var j=0; j < fileEntry.length; j++) {
-   	    newRecord[columns[j]] = parseFloat(fileEntry[j]);
-      }
-      dataSet.addRecord(newRecord);
+	return string;
+}
+
+// Create a dataset object from the data array
+function createDataset() {
+	
+	textFile = textFile.split('\n');
+	var columns = textFile[0].split(' ');
+	records = [];
+	var fileEntry;
+	var dataSet = gadget.dashboard.createDataSet(document.getElementById('datasetNameInput').value); 
+	var numRecords = textFile.length;
+	
+	if (numDatapoints > numRecords)
+		numDatapoints = numRecords-2;
+	
+	textFile.splice(parseInt(numDatapoints)+1, numRecords);
+ 	//Row 0 holds the attribute names
+	for (var i = 1; i <= numDatapoints; i++) {   
+   	fileEntry = textFile[1].split(' ');
+   	textFile.splice(1,1);
+   	newRecord = {};
+		for (var j=0; j < fileEntry.length; j++) {
+			newRecord[columns[j]] = parseFloat(fileEntry[j]);
    	}
-   	textFile.splice(0, textFile.length);
-    
-   	if (dataSet.length() == 0){
-      // the special case answer is that no rows were returned
-      showError('No objects found');
-      return;
-    }
-   	
-   	// indicate status to user
-    showSuccess("Returned " + dataSet.length() + " records.");
-  	// create dataset
-    dataSet.change()
+  		dataSet.addRecord(newRecord);
+	}
+	textFile.splice(0, textFile.length);
+ 
+	if (dataSet.length() == 0){
+   	showError('No objects found');
+   	return;
+ 	}
+ 	else {
+ 		showSuccess("Returned " + dataSet.length() + " records.");
+ 		dataSet.change();
+ 	}
+}
+	
+// HELPER
+ function clearStatus() {
+     showStatus(ICON.NONE, "");
+ }
+ function showSpinner(text) {
+     showStatus(ICON.SPINNER, text);
+ }
+ function showSuccess(text) {
+     showStatus(ICON.SUCCESS, text);
+ }
+ function showError(text) {
+     showStatus(ICON.ERROR, text);
+ }
+  
+ function showStatus(iconUrl, text){
+     if (iconUrl !== ICON.NONE) {
+         setStatus( '<img id="imgStatus" style="vertical-align:middle;" src="' + iconUrl + '" /> ' + "<span style='vertical-align:middle;'>" + text + "</span>");
+     } else {
+         setStatus(text);
+     }
+ }
+
+ function setStatus(text) {
+     // set text status
+     var statusDiv = document.getElementById('divStatusText');
+     statusDiv.innerHTML = text;
+     // make visible
+     statusDiv.style.visibility = 'inline';
+ }
+
+function getField(field) {
+	if (!(field in myFields) || (myFields[field] === null)) {
+  		myFields[field] = document.getElementById(field);
    }
-	
-	// HELPER
-    function clearStatus() {
-        showStatus(ICON.NONE, "");
-    }
-    function showSpinner(text) {
-        showStatus(ICON.SPINNER, text);
-    }
-    function showSuccess(text) {
-        showStatus(ICON.SUCCESS, text);
-    }
-    function showError(text) {
-        showStatus(ICON.ERROR, text);
-    }
-     
-    function showStatus(iconUrl, text){
-        if (iconUrl !== ICON.NONE) {
-            setStatus( '<img id="imgStatus" style="vertical-align:middle;" src="' + iconUrl + '" /> ' + "<span style='vertical-align:middle;'>" + text + "</span>");
-        } else {
-            setStatus(text);
-        }
-    }
-   
-    function setStatus(text) {
-        // set text status
-        var statusDiv = document.getElementById('divStatusText');
-        statusDiv.innerHTML = text;
-        // make visible
-        statusDiv.style.visibility = 'inline';
-    }
+	return myFields[field];
+}
     
-    // Accepts the name of a select object, and an array of strings
-    // replaces the options with the array of strings
-	 function setSelectOptions(selectName, options) {
-   	var select = getField(selectName);
-      if (select === null) {
-  	   	return;
-      }
-      // save old selected option so maybe it can be reselected
-      var selectedOption = getSelectedOption(selectName);
-      // Default. First option selected
-      if (selectedOption == "")
-     		 selectedOption == options[0];
-      // clear options
-      select.length = 0;
-      // add options
-      for (var i=0, len=options.length; i<len; i++) {
-      	// if oldOption is in the list, then select it
-         select.add(new Option(options[i], options[i], false, (selectedOption == options[i])), null);
-      }
-      if(select.onchange)
-      	select.onchange();
-	 }
-	 
-	 function getField(field) {
-   	if (!(field in myFields) || (myFields[field] === null)) {
-     		myFields[field] = document.getElementById(field);
-      }
-   	return myFields[field];
+function getSelectedOption(select) {
+   var selName = getField(select);
+   if (selName.length > 0){
+     return selName.options[selName.selectedIndex].value;
+   } else {
+      return "";
+   }
+}
+
+function setSelectOptions(selectName, options) {
+	var select = getField(selectName);
+   if (select === null) {
+   	return;
+   }
+   // save old selected option so maybe it can be reselected
+   var selectedOption = getSelectedOption(selectName);
+   // Default. First option selected
+   if (selectedOption == "")
+  		 selectedOption == options[0];
+   // clear options
+   select.length = 0;
+   // add options
+   for (var i=0, len=options.length; i<len; i++) {
+   	// if oldOption is in the list, then select it
+      select.add(new Option(options[i], options[i], false, (selectedOption == options[i])), null);
+   }
+   if(select.onchange)
+   	select.onchange();
+}
+	
+function writeNewWindow() {
+	var content = dataSetToString(getSelectedOption("selDatasetNameExport"));
+	top.consoleRef=window.open('','data',
+	'width=640,height=480'
+   +',menubar=0'
+   +',toolbar=1'
+   +',status=0'
+   +',scrollbars=1'
+   +',resizable=1')
+	top.consoleRef.document.writeln(
+	'<html><head><title>' + getSelectedOption("selDatasetNameExport") + '</title></head>'
+	+'<body bgcolor=white onLoad="self.focus()">'
+	+content
+	+'</body></html>');
+	top.consoleRef.document.close();
+}
+
+function displayDataWindow() {
+	writeNewWindow('test');
+}
+
+function loadFile(files) {
+ 	var reader = new FileReader();
+ 	reader.onload = function(e) {
+   		textFile = e.target.result;
+   		document.getElementById("importButtonDiv").style.visibility="visible";
+ 	}
+ 	reader.readAsText(files[0]);
+}
+
+function switchRadioVis() {
+	if (document.getElementById("exportContent").style.display == "none") {
+		document.getElementById("importContent").style.display="none";
+		document.getElementById("exportContent").style.display="block";
 	}
-	
-	// accepts name of select box
-   // returns the value in the select box, or ""
-   function getSelectedOption(select) {
-	   var selName = getField(select);
-      if (selName.length > 0){
- 	     return selName.options[selName.selectedIndex].value;
-      } else {
-	      return "";
-      }
+	else {
+		document.getElementById("importContent").style.display="block";
+		document.getElementById("exportContent").style.display="none";
 	}
-	
-	function writeNewWindow() {
-		var content = dataSetToString(getSelectedOption("selDatasetNameExport"));
- 		top.consoleRef=window.open('','data',
-  		'width=640,height=480'
-  	   +',menubar=0'
-  	   +',toolbar=1'
-  	   +',status=0'
-  	   +',scrollbars=1'
-      +',resizable=1')
-  		top.consoleRef.document.writeln(
-  		'<html><head><title>' + getSelectedOption("selDatasetNameExport") + '</title></head>'
-   	+'<body bgcolor=white onLoad="self.focus()">'
-   	+content
-   	+'</body></html>');
- 		top.consoleRef.document.close();
-	}
-	
-	// PUBLIC METHODS
-	my.displayDataWindow = function() {
-		writeNewWindow('test');
-	}
-	
-	my.loadFile = function(files) {
-    	var reader = new FileReader();
-    	reader.onload = function(e) {
-      		textFile = e.target.result;
-      		document.getElementById("importButtonDiv").style.visibility="visible";
-    	}
-    	reader.readAsText(files[0]);
-  	}
-  	
-  	my.switchRadioVis = function() {
-  		if (document.getElementById("exportContent").style.display == "none") {
-  			document.getElementById("importContent").style.display="none";
-  			document.getElementById("exportContent").style.display="block";
-  		}
-  		else {
-  			document.getElementById("importContent").style.display="block";
-  			document.getElementById("exportContent").style.display="none";
-  		}
-  	}
-  	
-  	my.initColumns = function() {
-  		showSpinner('Getting objects...');
-  		var dsName = document.getElementById('datasetNameInput').value;
-  		if (dsName.length < 1) {
-            showError("Enter dataset name");
-            return;
-        }
-  		numDatapoints = document.getElementById('numDatapointsInput').value;
-  		createDataset();
-  	}
-	
-	return my;
+}
+
+function initColumns() {
+	showSpinner('Getting objects...');
+	var dsName = document.getElementById('datasetNameInput').value;
+	if (dsName.length < 1) {
+         showError("Enter dataset name");
+         return;
+     }
+	numDatapoints = document.getElementById('numDatapointsInput').value;
+	createDataset();
 }
 
 </script>
 </head>
-<body onload="init();">
+<body>
 
-<!--<input type="radio" id="radImportExport" name="radImportExport" value="import" checked="checked" onclick="ga.switchRadioVis();" /><labe>Import</label>
-<input type="radio" id="radImportExport" name="radImportExport" value="export" onclick="ga.switchRadioVis();" /><label>Export</label>-->
+<input type="radio" id="radImportExport" name="radImportExport" value="import" checked="checked" onclick="switchRadioVis();" /><labe>Import</label>
+<input type="radio" id="radImportExport" name="radImportExport" value="export" onclick="switchRadioVis();" /><label>Export</label>
 
 <div id="importContent">
 	Dataset Name: <input id="datasetNameInput"> <br>
 	# of Points to Extract: <input id="numDatapointsInput" value="5000">
-	<input type="file" onchange="ga.loadFile(this.files)"> <br>
-	<div id="importButtonDiv" style="display: inline;"><input type="button" value="Import" onclick="ga.initColumns();"><div id="divStatusText" style="display: inline; margin-left: 10px"></div> </div>
+	<input type="file" onchange="loadFile(this.files)"> <br>
+	<div id="importButtonDiv" style="display: inline;"><input type="button" value="Import" onclick="initColumns();"><div id="divStatusText" style="display: inline; margin-left: 10px"></div> </div>
 </div>
 
-<!--<div id="exportContent">
+<div id="exportContent">
 	Dataset: <select id="selDatasetNameExport"></select> <br>
-	<input type="button" value="Export" onclick="ga.displayDataWindow();"> <br>-->
+	<input type="button" value="Export" onclick="displayDataWindow();"> <br>
 </body>
 </html>
