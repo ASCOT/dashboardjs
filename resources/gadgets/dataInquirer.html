@@ -147,7 +147,31 @@ function makeGETRequest(url, query, callback) {
    'url': '/XMLHttpRequest/' + encodeURIComponent(url + '?format=xml&cmd=' + encodeURIComponent(query)),
     success: callback 
   });
-} 
+}
+
+function makeSQLRequest() {
+	
+	var user = prompt("Username for LSST mySQL database: ", "");
+	var pass = prompt("Password for LSST mySQL database: ", "");
+	
+	var login = user + " " + pass;
+
+	showStatus(ICON_URL_SPINNER, "Querying LSST database");
+
+	$.ajax({
+   'url': '/SQLQuery/' + login,
+    success: parseSQLQueryResponse
+  });
+}
+
+function parseSQLQueryResponse(data) {
+	if (data == "access denied") {
+		showStatus(ICON_URL_ERROR, "Access denied");
+		return;
+	}
+	console.log(data);
+	showStatus(ICON_URL_SUCCESS, "Returned " + data.length + " records.");
+}
 
 function parseQueryResponse(data) {
   // parse the XML
@@ -264,5 +288,7 @@ function populateSelect(selectName, options) {
 		<div id="divStatusText" style="display: inline; margin-left: 10px"></div> 
 	</div>
 </div>
+
+<input type="button" value="LSST Query" onclick="makeSQLRequest();">
 </body>
 </html>

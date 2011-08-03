@@ -6,6 +6,11 @@ var sys = require('sys');
 var FFI = require('node-ffi');
 var exec = require('child_process').exec;
 
+// SQL access
+var Client = require('mysql').Client,
+    client = new Client();
+client.host = 'lsst10.ncsa.uiuc.edu';
+
 var express = require('express');
 var dashboards = require('./lib/server/dashboardsInfo');
 var gadgets = require('./resources/gadgets/gadgetsInfo');
@@ -49,6 +54,28 @@ app.configure('development', function(){
 
 app.configure('production', function(){
   app.use(express.errorHandler()); 
+});
+
+app.get('/SQLQuery/:login' , function(req, res) {
+	console.log('doing query');
+	
+	var login = req.params.login;
+	var splitLogin = login.split(' ');
+	
+	client.user = splitLogin[0];
+	client.password = splitLogin[1];
+	
+	client.connect(function cb(err) {
+		if (err) {
+			if (err.number == Client.ERROR_ACCESS_DENIED_ERROR)
+    			res.send("access denied");
+    	}
+	});
+	client.query('use test;');
+	client.query('select * from DbStorage_Test_1;', function cb(err, results, fields) {
+			res.send(results);
+	});
+	client.end();
 });
 
 // Convert a FITS file into a thumbnail and raw data
