@@ -126,9 +126,10 @@ app.get('/gadgets/', function(req, res){
   res.send(gadgets.all);
 });
 
-app.post('/newDashboard/:gadgets', function(req, res){
-  var gadgetsList = req.params.gadgets !== "undefined"? JSON.parse(req.params.gadgets) : undefined;
-  var newDashboardId = dashboards.new(gadgetsList);
+app.post('/newDashboard/:configuration', function(req, res){
+  var configuration = req.params.configuration !== "undefined"? JSON.parse(req.params.configuration) : undefined;
+  console.log("CONFIG " + configuration);
+  var newDashboardId = dashboards.new(configuration);
   res.send(newDashboardId.toString());
 });               
 

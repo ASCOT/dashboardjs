@@ -19,9 +19,9 @@
 var gadgets;
 var selectedGadgets = {};
 
-function requestNewDashboard(gadgetsList){
+function requestNewDashboard(configuration){
   $.ajax({
-    url: '/newDashboard/' + JSON.stringify(gadgetsList),
+    url: '/newDashboard/' + JSON.stringify(configuration),
     type: 'POST',
     success: function(newId) { document.location.href = "/dashboards/" + newId; }
   });
@@ -42,7 +42,7 @@ jQuery(function($) {
    });
    
    $(".startDashboard").click(function() {
-     requestNewDashboard(selectedGadgets);
+     requestNewDashboard({gadgets: selectedGadgets});
    });
 
    $(".toFront").click(function() {
