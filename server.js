@@ -5,6 +5,7 @@ var util = require('util');
 var sys = require('sys');
 var FFI = require('node-ffi');
 var exec = require('child_process').exec;
+var _ = require('underscore');
 
 // SQL access
 var Client = require('mysql').Client,
@@ -12,7 +13,9 @@ var Client = require('mysql').Client,
 client.host = 'lsst10.ncsa.uiuc.edu';
 
 var express = require('express');
-var dashboards = require('./lib/server/dashboardsInfo');
+var dashboardsManager = require('./lib/server/dashboardsManager');
+var dataSetsManager = require('./lib/server/dataSetsManager');
+
 var gadgets = require('./resources/gadgets/gadgetsInfo');
 var XMLHttpRequest = require("./lib/server/XMLHttpRequest").XMLHttpRequest;
   
@@ -23,18 +26,18 @@ var everyone = nowjs.initialize(app);
 everyone.now.sendMessageToDashboard = function(message, dashboardId){
   var dashboardChannel = nowjs.getGroup(dashboardId);
   dashboardChannel.exclude([this.user.clientId]).now.receiveMessage(message);
-}
+};
 
 everyone.now.addUserToDashboardChannel = function(dashboardId){
    var dashboardChannel = nowjs.getGroup(dashboardId);
    dashboardChannel.addUser(this.user.clientId);
    this.now.userAddedToDashboardChannel(this.user.clientId);
-}
+};
 
 everyone.now.notifyToDashboard = function(dashboardId, notification){
    var dashboardChannel = nowjs.getGroup(dashboardId);
    dashboardChannel.exclude([this.user.clientId]).now.receiveNotification(this.user.clientId, notification);
-} 
+}; 
 
 // Configuration
 app.configure(function(){
@@ -119,12 +122,13 @@ app.get('/XmlHttpRequest/:request', function(req, res){
   };
 
   xhr.open("GET", req.params.request);
+  console.log(req.params.request);
   xhr.send();
     
 });
 
 app.get('/dashboards/gadgets/', function(req, res){
-  res.send(JSON.stringify(dashboards.find(req.params.id)));
+  res.send(JSON.stringify(dashboardsManager.find(req.params.id)));
 });
 
 app.get('/dashboards/:id', function(req, res){
@@ -136,28 +140,33 @@ app.get('/dashboards/:id', function(req, res){
   });
 });
 
+app.get('/dataSets/:id', function(req, res){
+  res.send(JSON.stringify(dataSetsManager.find(req.params.id)));
+});
+
 app.get('/dashboards/state/:id', function(req, res){
-  res.send(JSON.stringify(dashboards.find(req.params.id)));
+  res.send(JSON.stringify(dashboardsManager.find(req.params.id)));
 });
 
 app.put('/saveDashboard/:id', function(req, res){
-  dashboards.set(req.params.id, req.body);
+  dashboardsManager.set(req.params.id, req.body);
 });
 
 app.post('/saveDashboard/:id', function(req, res){
   console.log("STATE: " + req.body);
-  dashboards.set(req.params.id, req.body);
+  dashboardsManager.set(req.params.id, req.body);
 });
 
 app.get('/gadgets/', function(req, res){
   res.send(gadgets.all);
 });
 
-app.post('/newDashboard/:configuration', function(req, res){
-  var configuration = req.params.configuration !== "undefined"? JSON.parse(req.params.configuration) : undefined;
-  console.log("CONFIG " + configuration);
-  var newDashboardId = dashboards.new(configuration);
-  res.send(newDashboardId.toString());
+app.post('/newDashboard/', function(req, res){
+  var configuration = req.rawBody? JSON.parse(req.rawBody) : undefined;
+  var dashboardCreated = function(dashboardId){
+    res.send(dashboardId.toString());
+  }
+  var newDashboardId = dashboardsManager.new(configuration, dashboardCreated);
 });               
 
 if (!module.parent) {

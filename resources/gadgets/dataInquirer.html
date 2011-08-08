@@ -36,7 +36,7 @@ var ICON_URL_ERROR = '/images/errorIcon.gif';
 var ICON_URL_SUCCESS = '/images/successIcon.gif';
 
 var myFields = {}
-var catalogs =  [ { name: "SDSS", url: "http://cas.sdss.org/public/en/tools/search/x_sql.asp"  } ]; // contains info for catalogs and thier urls
+var catalogs =  [ { name: "SDSS", url: "http://skyserver.sdss3.org/public/en/tools/search/x_sql.asp"  } ]; // contains info for catalogs and thier urls
 
 // Gadget State Variables
 var viewportBounds;
@@ -153,11 +153,8 @@ function makeSQLRequest() {
 	
 	var user = prompt("Username for LSST mySQL database: ", "");
 	var pass = prompt("Password for LSST mySQL database: ", "");
-	
 	var login = user + " " + pass;
-
 	showStatus(ICON_URL_SPINNER, "Querying LSST database");
-
 	$.ajax({
    'url': '/SQLQuery/' + login,
     success: parseSQLQueryResponse

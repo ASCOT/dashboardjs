@@ -21,8 +21,9 @@ var selectedGadgets = {};
 
 function requestNewDashboard(configuration){
   $.ajax({
-    url: '/newDashboard/' + JSON.stringify(configuration),
+    url: '/newDashboard/',
     type: 'POST',
+    data: JSON.stringify(configuration),
     success: function(newId) { document.location.href = "/dashboards/" + newId; }
   });
 }

@@ -317,9 +317,8 @@ function drawPlot() {
 }
 
 function generatePoints(){
-  var xVal;
-  var yVal;
-  var id;
+  var xValue;
+  var yValue;
   var records;
   var shift;
   var points = [];
@@ -328,14 +327,15 @@ function generatePoints(){
   records = selectedDataSet.getRecords(); 
   
   for (i=0,len=records.length; i<len; i++) {
-    xVal = parseFloat(records[i][selectedXAxis]);
-    yVal = parseFloat(records[i][selectedYAxis]);
+    xValue = records[i][selectedXAxis]; 
+    xValue = /\./.test(xValue)? parseFloat(xValue) : xValue;
+    yValue = records[i][selectedYAxis];
+    yValue = /\./.test(yValue)? parseFloat(yValue) : yValue;
     // each point has unique id so a pointer to point can be had by chart.get(id)
-    id = records[i]["id"];
-    if (xVal !== NaN && yVal !== NaN){
-      points.push({'id': id,
-                    x: xVal, 
-                    y: yVal,
+    if (xValue !== NaN && yValue !== NaN){
+      points.push({'id': records[i]["id"],
+                    x: xValue, 
+                    y: yValue,
                     color: DEFAULT_MARKER_COLOR,
                     marker: { fillColor: DEFAULT_MARKER_COLOR }
                   });
