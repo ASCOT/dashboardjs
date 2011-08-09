@@ -116,6 +116,7 @@ app.get('/XmlHttpRequest/:request', function(req, res){
    // End of response
 	 if (this.readyState == 4) {
 		httpResponse += this.responseText;
+		console.log(httpResponse);
     res.send(this.responseText);
 	 }
 	 
