@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>ASCOTT Button</title>
+	<meta name="author" content="Diego Marcos">
+	<script language="javascript" src="http://ascot.astro.washington.edu/ascotButton.js"></script>
+	<!-- <script language="javascript" src="http://localhost/ascotButton.js"></script> -->
+</head>
+<body>
+<div style="width: 800px; height: 480px; margin: auto; margin-top: 250px">
+  Buttons to embed ASCOT services in third party web applications: 
+  <button class="ascot" dashboard="{'gadgets':{'skyView':1, 'plotView': 1}}" dataSets='[{"name": "Stars", "source": "sdss", "query":"SELECT TOP 500 objid, ra, dec, modelMag_u, modelMag_g, modelMag_r, modelMag_i, modelMag_z, (modelMag_u - modelMag_g) as u_g, (modelMag_g - modelMag_r) as g_r, (modelMag_r - modelMag_i) as r_i, (modelMag_i - modelMag_z) as i_z from Star where ra between 132.765732 and 132.884267 and dec between 11.756152 and 11.843848 and modelMag_g > -9999 ORDER BY modelMag_g ASC"}]' onclick="ASCOT.button.createDashboard(this)"></button><button class="ascot shuttle" dashboard="" dataSets=""></button>
+</div>
+</body>
+</html>
