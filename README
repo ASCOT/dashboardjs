@@ -1,5 +1,12 @@
 dashboard.js
 
+libxmljs requires Pythton scons
+
+$ wget http://sourceforge.net/projects/scons/files/scons/2.0.1/scons-2.0.1.tar.gz
+$ tar xvf scons-2.0.1.tar.gz
+$ cd scons-2.0.1
+$ sudo python setup.py install --standalone-lib
+
 wget query
 ----------
 
