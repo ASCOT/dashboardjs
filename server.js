@@ -46,10 +46,10 @@ app.configure(function(){
   app.set('view engine', 'mustache');
   app.register(".mustache", require('stache'));
   app.set('view options', {layout: false });
+  app.use(express.static(__dirname + '/examples')); 
   app.use(express.static(__dirname + '/lib/client'));
   app.use(express.static(__dirname + '/lib/shared'));  
   app.use(express.static(__dirname + '/resources')); 
-  app.use(express.static(__dirname + '/examples')); 
 });
 
 app.configure('development', function(){
