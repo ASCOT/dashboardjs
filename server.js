@@ -165,10 +165,10 @@ app.get('/gadgets/', function(req, res){
 
 app.post('/newDashboard/', function(req, res){
   var configuration = req.rawBody? JSON.parse(req.rawBody) : undefined;
-  //var dashboardCreated = function(dashboardId){
-  //  res.send(dashboardId.toString());
-  //}
-  //var newDashboardId = dashboardsManager.new(configuration, dashboardCreated);
+  var dashboardCreated = function(dashboardId){
+    res.send(dashboardId.toString());
+  }
+  var newDashboardId = dashboardsManager.new(configuration, dashboardCreated);
 });               
 
 if (!module.parent) {
