@@ -81,7 +81,8 @@ $("#gadgetsList li").click(function(){
 $(":checkbox").click(function() {
   var displayValue = this.checked? 'block' : 'none';
   if (this.checked){
-    selectedGadgets[this.id] = 1;
+    selectedGadgets[this.id] = {};
+    selectedGadgets[this.id].number = 1;
     $(this).closest('li').find("div.counter").find("p").text("1");
   }
   else{
@@ -92,19 +93,20 @@ $(":checkbox").click(function() {
   
 $(".circle.counter").click(function() {
   var gadgetId = $(this).closest('li').find('input').attr('id');
-  selectedGadgets[gadgetId] = selectedGadgets[gadgetId] || 1;
+  selectedGadgets[gadgetId] = selectedGadgets[gadgetId] || {};
+  selectedGadgets[gadgetId].number = selectedGadgets[gadgetId].number || 1;
   if($(this).hasClass('minus')) {
-    selectedGadgets[gadgetId]--;
-    if(selectedGadgets[gadgetId] == 0){
+    selectedGadgets[gadgetId].number--;
+    if(selectedGadgets[gadgetId].number == 0){
       $(this).closest('div.counter').css('display', 'none');
       $(this).closest('li').find(':checkbox').get(0).checked = false;
       delete selectedGadgets[gadgetId];
     }
   }
   else{
-    selectedGadgets[gadgetId]++;
+    selectedGadgets[gadgetId].number++;
   }
-  $(this).parent().find("p").text(selectedGadgets[gadgetId]);
+  $(this).parent().find("p").text(selectedGadgets[gadgetId].number);
 });
  
 }
