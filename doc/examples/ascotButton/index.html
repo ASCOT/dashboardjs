@@ -4,8 +4,8 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title>ASCOTT Button</title>
 	<meta name="author" content="Diego Marcos">
-	<script language="javascript" src="http://ascot.astro.washington.edu/ascotButton.js"></script>
-	<!-- <script language="javascript" src="http://localhost/ascotButton.js"></script> -->
+	<!-- <script language="javascript" src="http://ascot.astro.washington.edu/ascotButton.js"></script> -->
+	<script language="javascript" src="http://localhost/ascotButton.js"></script>
 	<style type="text/css">
     html{
       font: 20px 'Lucida Grande', 'Helvetica Neue', Arial, sans-serif;
@@ -18,7 +18,7 @@
 <div style="width: 800px; height: 480px; margin: auto; margin-top: 250px">
   Buttons to embed ASCOT services in third party web applications: 
   <!-- <ascot:createDashboard id="myButton" dashboard="" dataSets=""></ascot:createDashboard> -->
-  <button class="ascot" dashboard='{"gadgets":{"skyView": {"number": 1, "state": {"longitude":-47.17500000000001, "latitude":11.8, "flySpeed":1}}, "plotView": {"number": 1}}}' dataSets='[{"name": "Stars", "source": "sdss", "query":"SELECT TOP 500 objid, ra, dec, modelMag_u, modelMag_g, modelMag_r, modelMag_i, modelMag_z, (modelMag_u - modelMag_g) as u_g, (modelMag_g - modelMag_r) as g_r, (modelMag_r - modelMag_i) as r_i, (modelMag_i - modelMag_z) as i_z from Star where ra between 132.765732 and 132.884267 and dec between 11.756152 and 11.843848 and modelMag_g > -9999 ORDER BY modelMag_g ASC"}]' onclick="ASCOT.button.createDashboard(this)">
+  <button id="sdssButton" class="ascot" onclick="ASCOT.button.createDashboard(this)">
     <div class="clickedButtonState" style="display: none">
       <div class="spinner"> 
         <div class="bar1"></div> 
@@ -32,7 +32,7 @@
       </div> 
     </div>
   </button>
-  <button class="ascot shuttle" dashboard="" dataSets="">
+  <button id="lsstButton" class="ascot shuttle" onclick="ASCOT.button.createDashboard(this)">
     <div class="clickedButtonState" style="display: none">
       <div class="spinner"> 
         <div class="bar1"></div> 
@@ -47,5 +47,37 @@
     </div>
   </button>
 </div>
+<script language="javascript">
+  var dashboard = {
+    gadgets: { 
+      skyView : {number: 1, state: {longitude:-47.17500000000001, latitude:11.8, flySpeed:1} }, 
+      plotView: {number: 1}
+    }
+  }
+  var sdssDataSets = [{ 
+    name: 'Stars', 
+    source: 'sdss', 
+    query: 'SELECT TOP 500 objid, ra, dec, modelMag_u, modelMag_g, modelMag_r, modelMag_i, ' +
+           'modelMag_z, (modelMag_u - modelMag_g) as u_g, (modelMag_g - modelMag_r) as g_r, ' +
+           '(modelMag_r - modelMag_i) as r_i, (modelMag_i - modelMag_z) as i_z from Star ' + 
+           'where ra between 132.765732 and 132.884267 and dec between 11.756152 and 11.843848 ' +
+           'and modelMag_g > -9999 ORDER BY modelMag_g ASC'
+  }] 
+  
+  var lsstDataSets = [{ 
+    name: 'Stars', 
+    source: 'lsst', 
+    query: 'select * from DbStorage_Test_1;'
+  }];
+    
+  var sdssButton = document.getElementById('sdssButton');
+  var lsstButton = document.getElementById('lsstButton');
+  
+  sdssButton.setAttribute("dashboard", JSON.stringify(dashboard));
+  sdssButton.setAttribute("dataSets", JSON.stringify(sdssDataSets));
+  lsstButton.setAttribute("dashboard", JSON.stringify(dashboard));
+  lsstButton.setAttribute("dataSets", JSON.stringify(lsstDataSets));
+  
+</script>
 </body>
 </html>

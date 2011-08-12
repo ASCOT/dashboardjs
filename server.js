@@ -8,9 +8,9 @@ var exec = require('child_process').exec;
 var _ = require('underscore');
 
 // SQL access
-var Client = require('mysql').Client,
-    client = new Client();
-client.host = 'lsst10.ncsa.uiuc.edu';
+//var Client = require('mysql').Client,
+//    client = new Client();
+//client.host = 'lsst10.ncsa.uiuc.edu';
 
 var express = require('express');
 var dashboardsManager = require('./lib/server/dashboardsManager');
@@ -69,12 +69,6 @@ app.get('/SQLQuery/:login' , function(req, res) {
 	client.user = splitLogin[0];
 	client.password = splitLogin[1];
 	
-	client.connect(function cb(err) {
-		if (err) {
-			if (err.number == Client.ERROR_ACCESS_DENIED_ERROR)
-    			res.send("access denied");
-    	}
-	});
 	client.query('use test;');
 	client.query('select * from DbStorage_Test_1;', function cb(err, results, fields) {
 			res.send(results);
