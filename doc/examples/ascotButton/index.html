@@ -4,8 +4,8 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title>ASCOTT Button</title>
 	<meta name="author" content="Diego Marcos">
-	<script language="javascript" src="http://ascot.astro.washington.edu/ascotButton.js"></script>
-	<!-- <script language="javascript" src="http://localhost/ascotButton.js"></script> -->
+	<!-- <script language="javascript" src="http://ascot.astro.washington.edu/ascotButton.js"></script> -->
+	<script language="javascript" src="http://localhost/ascotButton.js"></script>
 	<style type="text/css">
     html{
       font: 20px 'Lucida Grande', 'Helvetica Neue', Arial, sans-serif;
@@ -48,12 +48,13 @@
   </button>
 </div>
 <script language="javascript">
-  var dashboard = {
+  var sdssDashboard = {
     gadgets: { 
       skyView : {number: 1, state: {longitude:-47.17500000000001, latitude:11.8, flySpeed:1} }, 
       plotView: {number: 1}
     }
   }
+  
   var sdssDataSets = [{ 
     name: 'Stars', 
     source: 'sdss', 
@@ -64,8 +65,15 @@
            'and modelMag_g > -9999 ORDER BY modelMag_g ASC'
   }] 
   
+  var lsstDashboard = {
+    gadgets: { 
+      tableView : {number: 1}, 
+      plotView: {number: 1}
+    }
+  }
+  
   var lsstDataSets = [{ 
-    name: 'Stars', 
+    name: 'Stars2', 
     source: 'lsst', 
     query: 'select * from DbStorage_Test_1;'
   }];
@@ -73,9 +81,9 @@
   var sdssButton = document.getElementById('sdssButton');
   var lsstButton = document.getElementById('lsstButton');
   
-  sdssButton.setAttribute("dashboard", JSON.stringify(dashboard));
+  sdssButton.setAttribute("dashboard", JSON.stringify(sdssDashboard));
   sdssButton.setAttribute("dataSets", JSON.stringify(sdssDataSets));
-  lsstButton.setAttribute("dashboard", JSON.stringify(dashboard));
+  lsstButton.setAttribute("dashboard", JSON.stringify(lsstDashboard));
   lsstButton.setAttribute("dataSets", JSON.stringify(lsstDataSets));
   
 </script>
