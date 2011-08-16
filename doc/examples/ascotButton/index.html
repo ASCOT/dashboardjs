@@ -2,8 +2,7 @@
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<title>ASCOTT Button</title>
-	<meta name="author" content="Diego Marcos">
+	<title>ASCOTT Button Example</title>
 	<!-- <script language="javascript" src="http://ascot.astro.washington.edu/ascotButton.js"></script> -->
 	<script language="javascript" src="http://localhost/ascotButton.js"></script>
 	<style type="text/css">
@@ -17,46 +16,19 @@
 <body>
 <div style="width: 800px; height: 480px; margin: auto; margin-top: 250px">
   Buttons to embed ASCOT services in third party web applications: 
-  <!-- <ascot:createDashboard id="myButton" dashboard="" dataSets=""></ascot:createDashboard> -->
-  <button id="sdssButton" class="ascot" onclick="ASCOT.button.createDashboard(this)">
-    <div class="clickedButtonState" style="display: none">
-      <div class="spinner"> 
-        <div class="bar1"></div> 
-        <div class="bar2"></div> 
-        <div class="bar3"></div> 
-        <div class="bar4"></div> 
-        <div class="bar5"></div> 
-        <div class="bar6"></div> 
-        <div class="bar7"></div> 
-        <div class="bar8"></div> 
-      </div> 
-    </div>
-  </button>
-  <button id="lsstButton" class="ascot shuttle" onclick="ASCOT.button.createDashboard(this)">
-    <div class="clickedButtonState" style="display: none">
-      <div class="spinner"> 
-        <div class="bar1"></div> 
-        <div class="bar2"></div> 
-        <div class="bar3"></div> 
-        <div class="bar4"></div> 
-        <div class="bar5"></div> 
-        <div class="bar6"></div> 
-        <div class="bar7"></div> 
-        <div class="bar8"></div> 
-      </div> 
-    </div>
-  </button>
+  <ascot id="sdssButton" class="ascot" onclick="ASCOT.button.createDashboard(this)"></ascot>
+  <ascot id="lsstButton" class="ascot shuttle" onclick="ASCOT.button.createDashboard(this)"></ascot>
 </div>
 <script language="javascript">
   var sdssDashboard = {
     gadgets: { 
-      skyView : {number: 1, state: {longitude:-47.17500000000001, latitude:11.8, flySpeed:1} }, 
+      skyView: {number: 1, state: {longitude:-47.17500000000001, latitude:11.8, flySpeed:1} }, 
       plotView: {number: 1}
     }
   }
   
   var sdssDataSets = [{ 
-    name: 'Stars', 
+    name: 'stars', 
     source: 'sdss', 
     query: 'SELECT TOP 500 objid, ra, dec, modelMag_u, modelMag_g, modelMag_r, modelMag_i, ' +
            'modelMag_z, (modelMag_u - modelMag_g) as u_g, (modelMag_g - modelMag_r) as g_r, ' +
@@ -67,13 +39,13 @@
   
   var lsstDashboard = {
     gadgets: { 
-      tableView : {number: 1}, 
+      tableView: {number: 1}, 
       plotView: {number: 1}
     }
   }
   
   var lsstDataSets = [{ 
-    name: 'Stars2', 
+    name: 'stars2', 
     source: 'lsst', 
     query: 'select * from DbStorage_Test_1;'
   }];
@@ -85,7 +57,6 @@
   sdssButton.setAttribute("dataSets", JSON.stringify(sdssDataSets));
   lsstButton.setAttribute("dashboard", JSON.stringify(lsstDashboard));
   lsstButton.setAttribute("dataSets", JSON.stringify(lsstDataSets));
-  
 </script>
 </body>
 </html>
