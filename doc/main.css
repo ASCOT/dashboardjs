@@ -1,0 +1,144 @@
+body {
+  background: url('images/background.png');
+  font-size: 16px;
+  line-height: 24px;
+  color: #662d91;
+  font-family: Helvetica;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+div.wrapper {
+  width: 960px;
+  margin: auto;
+}
+
+header {
+  border-top: 0px;
+  border-bottom: 1px solid #662d91;
+  font-size: 32px;
+  padding-left: 20px;
+  padding-top: 40px;
+  padding-right: 20px;
+  padding-bottom: 30px;
+}
+ 
+.navigation ul li {
+  margin: 0px 0px 10px 0px;
+}
+
+.navigation {
+  float: right;
+  font-size: 24px;
+  line-height: 22px;
+}
+
+.secondaryNavigation {
+  width: 140px;
+  float: left;
+  padding-top: 40px;
+  margin-left: -140px;
+}
+
+.navigation ul {
+  list-style-type: none;
+  margin: 0px;
+  padding: 0px; 
+}
+ 
+.navigation ul li {
+  margin: 0px 0px 40px 0px;
+  display: inline;
+}
+
+.secondaryNavigation ul li {
+  margin: 0px 0px 10px 0px;      
+  display: block;
+}
+
+.navigation ul li a{
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 500; 
+  background: none;
+  color: #363737;
+  text-shadow: 0 1px 0 #c0b9ce;
+  padding: 5px;
+}
+
+.navigation ul li a.disabledLink{
+  pointer-events: none;
+  cursor: default;
+  opacity: 0.5;
+}
+
+.navigation ul li a.selected{
+  background: #363737;
+  border-radius: 5px;
+  text-shadow: none;
+  pointer-events: none;
+  cursor: default;
+  color: white;
+}
+
+.navigation ul li a:hover{
+  background: #ffffff;
+  border-radius: 5px;
+  text-shadow: none;
+}
+
+#content{
+  padding-left: 50px;
+  border-bottom: 1px solid #662d91;
+  border-top: 1px solid #c0b9ce;
+  padding-top: 40px;
+  padding-right: 10px;
+  padding-bottom: 30px;
+}
+
+footer {
+  padding: 5px 20px 5px 20px;
+  font-size: 12px;
+  color: #363737;
+  border-top: 1px solid #c0b9ce;  
+}
+
+p, li {
+  margin: 20px 0 20px 0;
+  width: 550px;
+}
+
+p {
+  margin-left: 20px;
+}
+
+a, a:visited {
+  color: #363737;
+  text-shadow: 0 1px 0 #c0b9ce;
+  text-decoration: underline;
+}
+a:active, a:hover {
+  color: white;
+  text-shadow: none;
+}
+h1, h2, h3, h4, h5, h6 {
+  margin: 0px 0px 20px 0px;
+  font-size: 24px;
+  text-shadow: 1px 2px 0 #c0b9ce;
+}
+code, pre, tt {
+  font-family: Monaco, Consolas, "Lucida Console", monospace;
+  font-size: 14px;
+  line-height: 18px;
+  color: #363737;
+  text-shadow: 0 1px 0 #c0b9ce;
+}
+code {
+  margin-left: 20px;
+}
+pre {
+  font-size: 14px;
+  padding: 2px 0 2px 12px;
+  border-left: 6px solid #99aabb;
+  margin: 0px 0 30px;
+}
