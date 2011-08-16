@@ -1,22 +1,111 @@
-
 <!DOCTYPE HTML> 
-<html> 
+<html lang="en"> 
 <head> 
-  <meta http-equiv="content-type" content="text/html;charset=UTF-8" /> 
-  <meta http-equiv="X-UA-Compatible" content="chrome=1"> 
-  <title>Dashboard</title> 
+  <meta charset="utf-8">
+  <meta name="author" content="Diego Marcos" />
+  <title>ASCOT Documentation</title> 
   <style> 
     body {
+      background: url('images/background.png');
       font-size: 16px;
       line-height: 24px;
-      background: #A29AC4;
       color: #662d91;
       font-family: Helvetica;
+      padding-left: 0;
+      margin-left: 0;
     }
-    div.container {
-      width: 720px;
-      margin: 50px 0 50px 50px;
+
+    div.wrapper {
+      width: 960px;
+      margin: auto;
     }
+    
+    header {
+      border-top: 0px;
+      border-bottom: 1px solid #662d91;
+      font-size: 32px;
+      padding-left: 50px;
+      padding-top: 40px;
+      padding-right: 10px;
+      padding-bottom: 30px;
+    }
+
+    #mainArea {
+      padding-left: 50px;
+      border-bottom: 1px solid #662d91;
+      border-top: 1px solid #c0b9ce;
+      padding-top: 40px;
+      padding-right: 10px;
+      padding-bottom: 30px;
+    }
+     
+    #secondaryNavigation {
+      float: left;
+      width: 15%;
+    }
+    
+    #secondaryNavigation ul {
+      list-style-type: none;
+      margin: 0px;
+      padding: 0px;  
+    }
+     
+    #secondaryNavigation ul li {
+      margin: 0px 0px 10px 0px;
+    }
+    
+    #mainNavigation {
+      float: right;
+      font-size: 24px;
+      line-height: 22px;
+    }
+    
+    #mainNavigation ul {
+      list-style-type: none;
+      margin: 0px;
+      padding: 0px; 
+    }
+     
+    #mainNavigation ul li {
+      margin: 0px 0px 40px 0px;
+      display: inline;
+      margin-right: 5px;
+    }
+    
+    #mainNavigation ul li a{
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 500; 
+      background: none;
+      color: #363737;
+      text-shadow: 0 1px 0 #c0b9ce;
+      padding: 5px;
+    }
+    
+    #mainNavigation ul li a:hover{
+      background: #ffffff;
+      border-radius: 5px;
+      text-shadow: none;
+    }
+    
+    #content{
+      float: left;
+      padding-left: 50px;      
+    }
+    
+    #footer {
+      clear:both;
+      padding: 5px;
+      font-size: 12px;
+      color: #363737;
+      border-top: 1px solid #c0b9ce;  
+    }
+     
+    #clear {
+       clear:both;
+       margin: 0px;
+    }
+   
     p, li {
       margin: 16px 0 16px 0;
       width: 550px;
@@ -32,105 +121,90 @@
       background: #bacada;
     }
     h1, h2, h3, h4, h5, h6 {
-      margin-top: 40px;
+      margin-top: 0px;
     }
-    b.header {
-      font-size: 18px;
-    }
-    span.alias {
-      font-size: 14px;
-      font-style: italic;
-      margin-left: 20px;
-    }
-    table {
-      margin: 16px 0; padding: 0;
-    }
-      tr, td {
-        margin: 0; padding: 0;
-      }
-        td {
-          padding: 9px 15px 9px 0;
-        }
-          td.definition {
-            line-height: 18px;
-            font-size: 14px;
-          }
     code, pre, tt {
       font-family: Monaco, Consolas, "Lucida Console", monospace;
-      font-size: 12px;
+      font-size: 13px;
       line-height: 18px;
-      color: #294555;
+      color: #363737;
+      text-shadow: 0 1px 0 #c0b9ce;
     }
-      code {
-        margin-left: 20px;
-      }
-      pre {
-        font-size: 12px;
-        padding: 2px 0 2px 12px;
-        border-left: 6px solid #99aabb;
-        margin: 0px 0 30px;
-      }
+    code {
+      margin-left: 20px;
+    }
+    pre {
+      font-size: 12px;
+      padding: 2px 0 2px 12px;
+      border-left: 6px solid #99aabb;
+      margin: 0px 0 30px;
+    }
     #diagram {
       margin: 20px 0 0 0;
-    }
+    }  
   </style> 
 </head> 
 <body> 
- 
-  <div class="container"> 
- 
-    <p> 
-      <a href="https://github.com/dmarcos/dashboardjs">DashboardJS</a><br/>
-      Author: <a href="mailto:diego.marcos@gmail.com">Diego Marcos</a> 
-    </p> 
- 
-    <p> 
-      <b>Current Version:</b> 0.0.1 
-    </p> 
-     
-    <p> 
-      <i>DashboardJS is an open-source component of <a href="http://ascot.astro.washington.edu/dashboards/">ASCOT</a></i> 
-    </p> 
- 
-    <h2>Table of Contents</h2> 
- 
-    <p style="line-height: 30px;"> 
-      <a href="#installation">Installation</a>
-    </p> 
- 
-    <h2>Links</h2> 
- 
-    <p style="line-height: 30px;"> 
-      <a href="https://github.com/dmarcos/dashboardjs">Source Code</a> |
-      <a href="http://dashboardjs.com/dashboard.html">Docs</a>
-    </p> 
- 
-    <h2 id="installation">Installation</h2> 
- 
-    <ol> 
-      <li> 
-        Install <a href="http://github.com/joyent/node/wiki/Installation">node.js</a><br/> 
-        <tt>(On Ubuntu I had to do: sudo apt-get install libssl-dev)</tt>
-      </li> 
-      <li> 
-        Install <a href="http://npmjs.org/">Node Package Manager</a>
-      </li>  
-      <li> 
-        Install the necessary node modules<br/>
-        <tt>npm install express stache now node-ffi</tt><br/>
-        <tt>Check that the NODE_PATH variable properly points to the directory where you installed the modules</tt>
-      </li> 
-      <li> 
-        Checkout dashboardjs code<br/>
-        <tt>git clone git://github.com/dmarcos/dashboardjs.git</tt>
-      </li>
-      <li>
-        Run the node server <br/>
-        <tt>cd dashboardjs</tt> <br/>
-        <tt>sudo node server.js</tt>
-      </li> 
-      <li>
-        Test the server. Visit in your browser:<br/>
-        <tt>http://localhost/dashboards/</tt>
-      </li> 
-    </ol>  
+
+<a href="https://github.com/dmarcos/dashboardjs"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://a248.e.akamai.net/assets.github.com/img/71eeaab9d563c2b3c590319b398dd35683265e85/687474703a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67" alt="Fork me on GitHub"></a>  <div class="container"> 
+  <div class="wrapper">     
+    <header>
+      ASCOT
+       <div id="mainNavigation">
+          <ul>
+            <li><a href="#">Documentation</a></li>
+            <li><a href="#">Installation</a></li>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Blog</a></li>
+          <lu>
+        </div>
+    </header>
+    
+    <div id="mainArea">     
+      <div id="secondaryNavigation">
+        <ul>
+          <li>Source Code</li>
+          <li>API</li>
+          <li>Ascot Button</li>
+        <lu>
+      </div>
+    
+      <div id="content">
+        <section>
+          <h2>Installation</h2> 
+          <ol> 
+            <li> 
+              Install <a href="http://github.com/joyent/node/wiki/Installation">node.js</a><br/> 
+              <tt>(On Ubuntu I had to do: sudo apt-get install libssl-dev)</tt>
+            </li> 
+            <li> 
+              Install <a href="http://npmjs.org/">Node Package Manager</a>
+            </li>  
+            <li> 
+              Install the necessary node modules<br/>
+            <tt>npm install express stache now node-ffi</tt><br/>
+            <tt>Check that the NODE_PATH variable properly points to the directory where you installed the modules</tt>
+          </li> 
+          <li> 
+            Checkout dashboardjs code<br/>
+            <tt>git clone git://github.com/dmarcos/dashboardjs.git</tt>
+          </li>
+          <li>
+            Run the node server <br/>
+            <tt>cd dashboardjs</tt> <br/>
+            <tt>sudo node server.js</tt>
+          </li> 
+          <li>
+            Test the server. Visit in your browser:<br/>
+            <tt>http://localhost/dashboards/</tt>
+          </li> 
+        </ol> 
+      </section>
+    </div>
+    <div id="clear"></div>
+  </div> 
+  <div id="footer">University of Washington</div>
+  </div> 
+  
+</body>
+</htmt>  
