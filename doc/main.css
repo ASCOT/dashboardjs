@@ -51,6 +51,11 @@ header {
   display: inline;
 }
 
+.secondaryNavigation ul li {
+  margin: 0px 0px 10px 0px;      
+  display: block;
+}
+
 .navigation ul li a{
   text-decoration: none;
   font-size: 16px;
