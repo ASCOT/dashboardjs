@@ -17,10 +17,11 @@
 <body>
 <div style="width: 800px; height: 480px; margin: auto; margin-top: 250px">
   Buttons to embed ASCOT services in third party web applications: 
-  <ascot id="sdssButton" class="ascot" onclick="ASCOT.button.createDashboard(this)"></ascot>
-  <ascot id="lsstButton" class="ascot shuttle" onclick="ASCOT.button.createDashboard(this)"></ascot>
+  <ascot id="sdssButton"></ascot>
+  <ascot id="lsstButton"></ascot>
 </div>
 <script language="javascript">
+
   var sdssDashboard = {
     gadgets: { 
       skyView: {number: 1, state: {longitude:-47.17500000000001, latitude:11.8, flySpeed:1} }, 
@@ -58,6 +59,7 @@
   sdssButton.setAttribute("dataSets", JSON.stringify(sdssDataSets));
   lsstButton.setAttribute("dashboard", JSON.stringify(lsstDashboard));
   lsstButton.setAttribute("dataSets", JSON.stringify(lsstDataSets));
+  
 </script>
 </body>
 </html>
