@@ -26,7 +26,7 @@
       skyView: {number: 1, state: {longitude:-47.17500000000001, latitude:11.8, flySpeed:1} }, 
       plotView: {number: 1}
     }
-  }
+  };
   
   var sdssDataSets = [{ 
     name: 'stars', 
@@ -36,14 +36,14 @@
            '(modelMag_r - modelMag_i) as r_i, (modelMag_i - modelMag_z) as i_z from Star ' + 
            'where ra between 132.765732 and 132.884267 and dec between 11.756152 and 11.843848 ' +
            'and modelMag_g > -9999 ORDER BY modelMag_g ASC'
-  }] 
+  }]; 
   
   var lsstDashboard = {
     gadgets: { 
       tableView: {number: 1}, 
       plotView: {number: 1}
     }
-  }
+  };
   
   var lsstDataSets = [{ 
     name: 'stars2', 
