@@ -73,12 +73,12 @@ header {
 }
 
 .navigation ul li a.selected{
-  background: #363737;
+  background: #c0b9ce;
   border-radius: 5px;
   text-shadow: none;
   pointer-events: none;
   cursor: default;
-  color: white;
+  color: #363737;
 }
 
 .navigation ul li a:hover{
