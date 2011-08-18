@@ -1,0 +1,17 @@
+button.ascot {
+  background: url(../images/ascotButton/ascotButton.png);  
+  width: 60px;
+  height: 23px;
+  margin: 0px 2px 0px 2px;
+  padding: 0px;
+  cursor: pointer;
+  border-width: 0px;
+  vertical-align: middle;
+}
+
+button:hover{
+  background-position: 60px 0px;
+}
+
+
+
