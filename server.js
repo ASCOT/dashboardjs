@@ -105,13 +105,13 @@ app.get('/XmlHttpRequest/:request', function(req, res){
 	 // Receiving response
 	 if (this.readyState == 3) {
 		  httpResponse += this.responseText;
-      console.log(util.inspect(process.memoryUsage()));
+      //console.log(util.inspect(process.memoryUsage()));
 	 }
 
    // End of response
 	 if (this.readyState == 4) {
 		httpResponse += this.responseText;
-		console.log(httpResponse);
+		//console.log(httpResponse);
     res.send(this.responseText);
 	 }
 	 
