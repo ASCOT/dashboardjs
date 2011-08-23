@@ -216,7 +216,8 @@ UW.Dashboard = function(container){
           var dataSet = JSON.parse(data);
           var newDataSet;
           remainingDataSets--;
-          newDataSet = this.createDataSet(dataSet.name).addRecords(dataSet.records, true);
+          newDataSet = this.createDataSet(dataSet.name);
+          newDataSet.addRecords(dataSet.records, true);
           newDataSet.setAllRecordsMetaData({'color': 'grey'});
           if(remainingDataSets == 0){
             this.notify("dataSetChanged", {});
