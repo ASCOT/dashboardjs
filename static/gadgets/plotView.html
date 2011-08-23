@@ -48,10 +48,10 @@ var selectionObject;
 // Gadget intialization
 gadget.init = function(callback){
   
-  gadget.dashboard.bind('dataSetChanged', redrawAll);  
-  gadget.dashboard.bind('plotRendered', syncPlot);
-  gadget.dashboard.bind('pointsSelected', setSelectedByMinMax);
-  gadget.dashboard.bind('axisInverted', invertAxis);
+  gadget.onNotification('dataSetChanged', redrawAll);  
+  gadget.onNotification('plotRendered', syncPlot);
+  gadget.onNotification('pointsSelected', setSelectedByMinMax);
+  gadget.onNotification('axisInverted', invertAxis);
   
   $("#checkVerboseInfo").change( function(){
     verboseTooltip = $("#checkVerboseInfo").get(0).checked;
@@ -193,7 +193,7 @@ function plotData(){
   }
   else{
     drawPlot();
-    gadget.dashboard.notify("plotRendered", { 'dataSetName': selectedDataSetName, 'color': selectedColor, 'xAxis': selectedXAxis, 'yAxis': selectedYAxis });
+    gadget.notify("plotRendered", { 'dataSetName': selectedDataSetName, 'color': selectedColor, 'xAxis': selectedXAxis, 'yAxis': selectedYAxis }, {'private': true});
   }
 }
                                                                         
@@ -228,7 +228,7 @@ function setSelectedByMinMax(obj) {
   // update the dataset with the selected points 
   // set dataset points colors in bulk
   if(selectedIds.length > 0){
-    color = (selectedMarkerColor === "unselect") ? "" : selectedMarkerColor;
+    color = (selectedMarkerColor === "unselect") ? "grey" : selectedMarkerColor;
     selectedDataSet.setRecordsMetaData({'color': color}, selectedIds); 
     plot.redraw();
   }
@@ -284,7 +284,7 @@ function setPointColor(point, colorName) {
 function zoomToPoint(point) {
   var cc = selectedDataSet.getRecord(point.id);
   if (cc !== null && cc !== undefined) {
-    gadget.dashboard.notify("centerOfCoordinatesChanged",{'longitude': parseFloat(cc.ra) - 180, 'latitude': parseFloat(cc.dec)});
+    gadget.notify("centerOfCoordinatesChanged",{'longitude': parseFloat(cc.ra) - 180, 'latitude': parseFloat(cc.dec)});
   }
 }
 
@@ -408,7 +408,7 @@ function invertX(){
   } else {
     $('#invertXAxisButton').text('>');
   }
-  gadget.dashboard.notify('axisInverted',"x")
+  gadget.notify('axisInverted',"x")
 }
 
 function invertY(){
@@ -418,7 +418,7 @@ function invertY(){
    } else {
      $('#invertYAxisButton').text('^');
    }
-  gadget.dashboard.notify('axisInverted',"y")
+  gadget.notify('axisInverted',"y")
 }
       
 </script>

@@ -45,7 +45,7 @@ var selectedDataSetName = "";
 
 // Creates gadget object
 gadget.init = function(callback){ 
-  gadget.dashboard.bind('dataSetChanged', updateDataSetList);  
+  gadget.onNotification('dataSetChanged', updateDataSetList);  
   // add colors to the select box (pass the select Name and color array)
   $('#selectDatasetName').change( function(){
     if(this.selectedIndex != -1){

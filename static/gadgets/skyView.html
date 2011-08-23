@@ -27,8 +27,8 @@ google.load("earth", "1");
 google.setOnLoadCallback();
 
 gadget.init = function(callback){	
-  gadget.dashboard.bind('centerOfCoordinatesChanged', moveMap);
-  gadget.dashboard.bind('dataSetChanged', redrawAll);
+  gadget.onNotification('centerOfCoordinatesChanged', moveMap);
+  gadget.onNotification('dataSetChanged', redrawAll);
   google.earth.createInstance('content', success, failure);
   callback();
 }
@@ -118,7 +118,7 @@ function writeCurrentBounds(){
     longitude = lookAt.getLongitude();
     curBounds = { topLeft: {ra: boxBounds.getWest() + 180, dec: boxBounds.getNorth() },
                   bottomRight: {ra: boxBounds.getEast() + 180, dec: boxBounds.getSouth()} };     
-    gadget.dashboard.trigger('viewBoundsChanged', curBounds); 
+    gadget.notify('viewBoundsChanged', curBounds); 
   }, 200);
   // add the new timer id to the array
   tidsViewchangeend.push(tid);

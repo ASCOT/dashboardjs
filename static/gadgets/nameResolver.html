@@ -79,7 +79,7 @@ function parseCoordinates(coordinatesString) {
              
 function writeCoordinates(ra, dec) {
   showSuccess('<div style="display: inline; vertical-align:middle;"><b>Ra:</b>' + ra.toFixed(4) + "&deg Dec:" + dec.toFixed(4) + "&deg</div>");
-  gadget.dashboard.notify("centerOfCoordinatesChanged",{'longitude': ra - 180, 'latitude': dec});
+  gadget.notify("centerOfCoordinatesChanged",{'longitude': ra - 180, 'latitude': dec});
 };
 
 function clearStatus() {

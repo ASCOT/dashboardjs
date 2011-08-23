@@ -18,7 +18,7 @@ gadget.init = function(callback){
 	document.getElementById("importButtonDiv").style.visibility="hidden";
 	document.getElementById("importContent").style.display="block";
 	document.getElementById("exportContent").style.display="none";
-	gadget.dashboard.bind('dataSetChanged', updateDataSetList);
+	gadget.onNotification('dataSetChanged', updateDataSetList);
 	callback();
 }
 

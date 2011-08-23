@@ -96,9 +96,9 @@ module.exports.new = function(configuration, callback) {
   
   for(id in gadgets){
     i = gadgets[id].number;
-    newGadget = {};
     for(i; i>0; --i){
-      newGadget['id'] = id + 1;
+      newGadget = {};
+      newGadget['id'] = id + i;
       newGadget['gadgetInfoId'] = id;
       if(gadgets[id].state){
         newGadget['state'] = gadgets[id].state;

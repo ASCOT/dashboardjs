@@ -16,6 +16,23 @@ UW.Gadget = Backbone.View.extend({
   
   saveState: function() { return {}; },
   
+  onNotification: function(notification, callback){
+    var gadgetId = this.id;
+    var newCallback = function(notificationObject){
+      if(notificationObject['private'] && notificationObject['sourceId'] !== gadgetId){
+        return;
+      }
+      callback(notificationObject.data);
+    }  
+    this.dashboard.bind(notification, newCallback);
+  },
+  
+  notify: function(notification, data, options){
+    var optionsParameter = options || {};
+    optionsParameter['sourceId'] = this.id;
+    this.dashboard.notify(notification, data, optionsParameter);
+  },
+  
   inflateState: function(){
     this.loadState(this.model.toJSON());
   },

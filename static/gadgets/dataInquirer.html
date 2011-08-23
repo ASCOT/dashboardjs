@@ -44,8 +44,8 @@ var currentQuery = {};
 
 // create HR object
 gadget.init = function(callback){
-  gadget.dashboard.bind('viewBoundsChanged', setViewPortBounds);
-  gadget.dashboard.bind('dataRequested', launchQuery);
+  gadget.onNotification('viewBoundsChanged', setViewPortBounds);
+  gadget.onNotification('dataRequested', launchQuery);
   setFields();
   gadget.inflateState();
   callback();
@@ -115,7 +115,7 @@ var getData = function() {
   }
     
   var queryObj = {'dataSet': dataSetName, 'query': query, 'url': url};
-  gadget.dashboard.notify("dataRequested", queryObj);
+  gadget.notify("dataRequested", queryObj);
 
 }
 

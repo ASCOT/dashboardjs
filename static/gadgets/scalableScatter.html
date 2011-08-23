@@ -19,7 +19,7 @@
 window.ondragstart = function() { return false; } 
 
 gadget.init = function(callback){	
-  gadget.dashboard.bind('dataSetChanged', updateDataSetList);
+  gadget.onNotification('dataSetChanged', updateDataSetList);
   document.getElementById("debugSettings").style.display="none";
   callback();
 }
@@ -77,7 +77,7 @@ function setSelectedColor(obj) {
 	}
 	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
 	ds.setRecordsMetaData({'color': useColor}, obj.modifiedPointIds); 
-   gadget.dashboard.trigger('dataSetListChanged');
+   gadget.notify('dataSetListChanged');
 	return;
 }
 	

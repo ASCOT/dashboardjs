@@ -126,10 +126,22 @@ UW.Dashboard = function(container){
     now.sendMessageToDashboard(message, id);
   };
   
-  this.notify = function(notification, data, self){
-    this.trigger(notification,data);
-    if(!self){
-      now.notifyToDashboard(id, {'notification': notification, 'data': data});
+  this.notify = function(notification, data, options){
+    var optionsArgument = options || {};
+    var notificationObject = {};
+    notificationObject['notification'] = notification;
+    if(data){
+      notificationObject['data'] = data;
+    }
+    if(optionsArgument.sourceId){
+      notificationObject['sourceId'] = options.sourceId;
+    }
+    if(optionsArgument['private']){
+      notificationObject['private'] = true;
+    }
+    this.trigger(notification, notificationObject);
+    if(!optionsArgument.self){
+      now.notifyToDashboard(id, notificationObject);
     }
   };
   
