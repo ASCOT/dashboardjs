@@ -96,7 +96,7 @@ function createDataSetColorsList(dataSet) {
     // create the color name span
     var colorSpan = document.createElement("span");
     colorSpan.style.marginRight = "8px";
-    colorSpan.innerHTML = color;
+    colorSpan.innerHTML = color == 'grey'? 'unselected': color;
     if (color === "") {
       colorSpan.innerHTML = "default";
     }

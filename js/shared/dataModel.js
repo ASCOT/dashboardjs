@@ -203,7 +203,7 @@ if (!UW) var UW={};
       var indexEntry = this.getIndex(indexId)[valueId];
       _.each(indexEntry, function(entry, index, list) { 
                           if(entry===recordId){
-                            list.splice(index,index+1);
+                            list.splice(index,1);
                           }
                         });
     },
