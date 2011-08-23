@@ -17,7 +17,7 @@ var dashboardsManager = require('./lib/server/dashboardsManager');
 var dataSetsManager = require('./lib/server/dataSetsManager');
 
 var gadgets = require('./resources/gadgets/gadgetsInfo');
-var XMLHttpRequest = require("./lib/server/XMLHttpRequest").XMLHttpRequest;
+var xhr = require("./lib/shared/xhr");
   
 var app = express.createServer();
 var nowjs = require('now')
@@ -96,30 +96,12 @@ app.get('/convertFITS/:file', function(req, res){
 
 app.get('/XmlHttpRequest/:request', function(req, res){
 
-  var xhr = new XMLHttpRequest();
-  var httpResponse = "";
-  
-  xhr.onreadystatechange = function() {
-	console.log("State: " + this.readyState);
-	
-	 // Receiving response
-	 if (this.readyState == 3) {
-		  httpResponse += this.responseText;
-      //console.log(util.inspect(process.memoryUsage()));
-	 }
-
-   // End of response
-	 if (this.readyState == 4) {
-		httpResponse += this.responseText;
-		//console.log(httpResponse);
-    res.send(this.responseText);
-	 }
-	 
-  };
-
-  xhr.open("GET", req.params.request);
-  console.log(req.params.request);
-  xhr.send();
+  var options = {
+    url: req.params.request,
+    type: "GET",
+    success: function(response) { res.send(response); }
+  }
+  xhr.ajax(options);
     
 });
 
