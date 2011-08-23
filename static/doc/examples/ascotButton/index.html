@@ -50,20 +50,18 @@
   var lsstDataSets = [{ 
     name: 'stars2', 
     source: 'lsst', 
-    query:  'select sce.visit visit, sce.raftName raft, sce.ccdName ccd,sro.rMag refMag, sro.ra refRa, sro.decl refDec,sro.isStar isStar, sro.refObjectId ' +
-            'refId,rom.nSrcMatches nMatch,s.sourceId sourceId,s.ra sourceRa,s.decl sourceDec,s.xAstrom xPix,s.yAstrom yPix,dnToAbMag(s.psfFlux, sce.fluxMag0) '+ 
-            'as psfMag,dnToAbMagSigma(s.psfFlux, s.psfFluxSigma, sce.fluxMag0, sce.fluxMag0Sigma) as psfMagErr,s.psfFlux psfFlux,s.psfFluxSigma psfFluxSigma,dnToAbMag(s.apFlux, sce.fluxMag0) ' + 
-            'as apMag,dnToAbMagSigma(s.apFlux, s.apFluxSigma, sce.fluxMag0, sce.fluxMag0Sigma) as apMagErr,s.apFlux apFlux,s.apFluxSigma apFlux,dnToAbMag(s.flux_ESG, sce.fluxMag0) as ' + 
-            'instMag,dnToAbMagSigma(s.flux_ESG, s.flux_ESG_Sigma, sce.fluxMag0, sce.fluxMag0Sigma) as instMagErr,s.flux_ESG instFlux,s.flux_ESG_Sigma instFluxSigma,dnToAbMag(s.flux_Gaussian, sce.fluxMag0) ' +
-            'as modelMag,dnToAbMagSigma(s.flux_Gaussian, s.flux_Gaussian_Sigma, sce.fluxMag0, sce.fluxMag0Sigma) as modelMagErr,s.flux_Gaussian modelFlux,s.flux_Gaussian_Sigma modelFluxSigma,s.ixx ' +
-            'ixx,s.iyy iyy,s.ixy ixy,s.psfIxx psfIxx,s.psfIxxSigma psfIxxSigma,s.psfIyy psfIyy,s.psfIyySigma psfIyySigma,s.psfIxy psfIxy,s.psfIxySigma psfIxySigma,s.resolution_SG ' + 
-            'resolution_SG,s.e1_SG e1_SG, s.e1_SG_Sigma e1_SG_Sigma,s.e2_SG e2_SG,s.e2_SG_Sigma e2_SG_Sigma,s.shear1_SG shear1_SG,s.shear1_SG_Sigma shear1_SG_Sigma,s.shear2_SG shear2_SG,s.shear2_SG_Sigma ' +
-            'shear2_SG_Sigma,s.sourceWidth_SG sourceWidth_SG,s.sourceWidth_SG_Sigma sourceWidth_SG_Sigma,s.flagForDetection flags,s.ra - sro.ra dRa,s.decl - sro.decl ' +
-            'dDec,dnToAbMag(s.apFlux, sce.fluxMag0)-sro.rMag ap_cat,dnToAbMag(s.flux_ESG, sce.fluxMag0) -sro.rMag inst_cat,dnToAbMag(s.flux_Gaussian, sce.fluxMag0)-sro.rMag ' +
-            'mod_cat,dnToAbMag(s.psfFlux, sce.fluxMag0)-sro.rMag psf_cat,dnToAbMag(s.flux_Gaussian, sce.fluxMag0) - dnToAbMag(s.flux_ESG, sce.fluxMag0) mod_inst,dnToAbMag(s.psfFlux, sce.fluxMag0) ' +
-            '- dnToAbMag(s.apFlux, sce.fluxMag0) psf_ap,dnToAbMag(s.psfFlux, sce.fluxMag0) - dnToAbMag(s.flux_ESG, sce.fluxMag0) psf_inst,dnToAbMag(s.psfFlux, sce.fluxMag0) - ' +
-            'dnToAbMag(s.flux_Gaussian, sce.fluxMag0) psf_mod from Source as s, Science_Ccd_Exposure as sce, RefSrcMatch as rom,SimRefObject as sro where (s.scienceCcdExposureId = sce.scienceCcdExposureId) ' +
-            'and (s.sourceId = rom.sourceId) and (rom.refObjectId = sro.refObjectId) and (sce.visit = 887029093) and (sce.raftName = "1,1") and (sce.ccdName = "2,0")'
+    query: 'select sce.visit visit, sce.raftName raft, sce.ccdName ccd,sro.rMag refMag, sro.ra refRa, sro.decl refDec,sro.isStar isStar, ' +
+           'sro.refObjectId refId,rom.nSrcMatches nMatch,s.sourceId sourceId,s.ra sourceRa,s.decl sourceDec,s.xAstrom xPix,s.yAstrom yPix,dnToAbMag(s.psfFlux, sce.fluxMag0) ' +
+           'as psfMag,dnToAbMagSigma(s.psfFlux, s.psfFluxSigma, sce.fluxMag0, sce.fluxMag0Sigma) as psfMagErr,s.psfFlux psfFlux,s.psfFluxSigma psfFluxSigma,dnToAbMag(s.apFlux, sce.fluxMag0) ' +
+           'as apMag,dnToAbMagSigma(s.apFlux, s.apFluxSigma, sce.fluxMag0, sce.fluxMag0Sigma) as apMagErr,s.apFlux apFlux,s.apFluxSigma apFlux,dnToAbMag(s.flux_ESG, sce.fluxMag0) ' +
+           'as instMag,dnToAbMagSigma(s.flux_ESG, s.flux_ESG_Sigma, sce.fluxMag0, sce.fluxMag0Sigma) as instMagErr,s.flux_ESG instFlux,s.flux_ESG_Sigma instFluxSigma,dnToAbMag(s.flux_Gaussian, sce.fluxMag0) ' +
+           'as modelMag,dnToAbMagSigma(s.flux_Gaussian, s.flux_Gaussian_Sigma, sce.fluxMag0, sce.fluxMag0Sigma) as modelMagErr,s.flux_Gaussian modelFlux,s.flux_Gaussian_Sigma ' + 
+           'modelFluxSigma,s.flagForDetection flags, s.ra - sro.ra dRa,s.decl - sro.decl dDec,dnToAbMag(s.apFlux, sce.fluxMag0)-sro.rMag ap_cat,dnToAbMag(s.flux_ESG, sce.fluxMag0)' +
+           ' -sro.rMag inst_cat,dnToAbMag(s.flux_Gaussian, sce.fluxMag0)-sro.rMag mod_cat,dnToAbMag(s.psfFlux, sce.fluxMag0)-sro.rMag psf_cat,dnToAbMag(s.flux_Gaussian, sce.fluxMag0) - ' +
+           'dnToAbMag(s.flux_ESG, sce.fluxMag0) mod_inst,dnToAbMag(s.psfFlux, sce.fluxMag0) - dnToAbMag(s.apFlux, sce.fluxMag0) psf_ap,dnToAbMag(s.psfFlux, sce.fluxMag0) - ' +
+           'dnToAbMag(s.flux_ESG, sce.fluxMag0) psf_inst,dnToAbMag(s.psfFlux, sce.fluxMag0) - dnToAbMag(s.flux_Gaussian, sce.fluxMag0) psf_mod from Source as s, Science_Ccd_Exposure ' +
+           'as sce, RefSrcMatch as rom,SimRefObject as sro where (s.scienceCcdExposureId = sce.scienceCcdExposureId)and (s.sourceId = rom.sourceId) and ' + 
+           '(rom.refObjectId = sro.refObjectId)and (sce.visit = 887029093) and (sce.raftName = "2,2") and (sce.ccdName = "1,1") and sro.rMag < 22.5'
   }];
     
   var sdssButton = document.getElementById('sdssButton');
