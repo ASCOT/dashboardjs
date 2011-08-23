@@ -46,7 +46,6 @@ app.configure(function(){
   app.set('view engine', 'mustache');
   app.register(".mustache", require('stache'));
   app.set('view options', {layout: false });
-  app.use(express.static(__dirname + '/doc')); 
   app.use(express.static(__dirname + '/js/client'));
   app.use(express.static(__dirname + '/js/shared'));  
   app.use(express.static(__dirname + '/static')); 
