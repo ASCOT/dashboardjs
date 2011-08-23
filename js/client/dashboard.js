@@ -218,7 +218,7 @@ UW.Dashboard = function(container){
           remainingDataSets--;
           newDataSet = this.createDataSet(dataSet.name);
           newDataSet.addRecords(dataSet.records, true);
-          newDataSet.setAllRecordsMetaData({'color': 'grey'});
+          //newDataSet.setAllRecordsMetaData({'color': 'grey'});
           if(remainingDataSets == 0){
             this.notify("dataSetChanged", {});
           }
