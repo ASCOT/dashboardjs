@@ -82,15 +82,15 @@ ASCOT.button.xslt;
     requestData.gadgets = dashboard.gadgets;
     requestData.dataSets = dataSets;
     if(typeof dashboard == 'number'){
-      window.location = ASCOT.button.serverPrefix + 'dashboards/' + dashboard;
+      window.location = ASCOT.button.serverPrefix + 'dashboard/' + dashboard;
     }
     else{
       crossdomain.ajax({
         type: "POST",
-        url:  ASCOT.button.serverPrefix + 'newDashboard/',
+        url:  ASCOT.button.serverPrefix + 'dashboard/',
         data: JSON.stringify(requestData),
         success: function (newDashboardId) {
-          window.location = ASCOT.button.serverPrefix + 'dashboards/' + newDashboardId;
+          window.location = ASCOT.button.serverPrefix + 'dashboard/' + newDashboardId;
         }
       });
     }

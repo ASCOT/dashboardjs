@@ -150,7 +150,6 @@ function makeGETRequest(url, query, callback) {
 }
 
 function makeSQLRequest() {
-	
 	var user = prompt("Username for LSST mySQL database: ", "");
 	var pass = prompt("Password for LSST mySQL database: ", "");
 	var login = user + " " + pass;
@@ -218,6 +217,7 @@ function createDataset(id, rows) {
   newDataSet = gadget.dashboard.createDataSet(id); 
   newDataSet.createIndex('color');
   newDataSet.addRecords(json);
+  newDataSet.setAllRecordsMetaData({'color': 'grey'})
   return newDataSet;
 }
 

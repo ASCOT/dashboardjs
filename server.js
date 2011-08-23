@@ -13,11 +13,11 @@ var _ = require('underscore');
 //client.host = 'lsst10.ncsa.uiuc.edu';
 
 var express = require('express');
-var dashboardsManager = require('./lib/server/dashboardsManager');
-var dataSetsManager = require('./lib/server/dataSetsManager');
+var dashboardsManager = require('./js/server/dashboardsManager');
+var dataSetsManager = require('./js/server/dataSetsManager');
 
-var gadgets = require('./resources/gadgets/gadgetsInfo');
-var xhr = require("./lib/shared/xhr");
+var gadgets = require('./static/gadgets/gadgetsInfo');
+var xhr = require("./js/shared/xhr");
   
 var app = express.createServer();
 var nowjs = require('now')
@@ -47,9 +47,9 @@ app.configure(function(){
   app.register(".mustache", require('stache'));
   app.set('view options', {layout: false });
   app.use(express.static(__dirname + '/doc')); 
-  app.use(express.static(__dirname + '/lib/client'));
-  app.use(express.static(__dirname + '/lib/shared'));  
-  app.use(express.static(__dirname + '/resources')); 
+  app.use(express.static(__dirname + '/js/client'));
+  app.use(express.static(__dirname + '/js/shared'));  
+  app.use(express.static(__dirname + '/static')); 
 });
 
 app.configure('development', function(){
@@ -86,9 +86,9 @@ app.get('/convertFITS/:file', function(req, res){
 
 	var run = libc.system;
 	// Remove all previous files created by the converter
-	run("cd ./resources/images/FITSConverter; rm header.js; rm tile*.js; rm thumb.jpg;");
+	run("cd ./static/images/FITSConverter; rm header.js; rm tile*.js; rm thumb.jpg;");
 	// Convert the next fits image
-	run("cd ./resources/images/FITSConverter; ./extractFitsFrame ../"+req.params.file+" 0 512;");
+	run("cd ./static/images/FITSConverter; ./extractFitsFrame ../"+req.params.file+" 0 512;");
 	console.log('shell script done');
 	res.send('done');
 	
@@ -105,46 +105,42 @@ app.get('/XmlHttpRequest/:request', function(req, res){
     
 });
 
-app.get('/dashboards/gadgets/', function(req, res){
+app.get('/dashboard/gadgets/', function(req, res){
   res.send(JSON.stringify(dashboardsManager.find(req.params.id)));
-});
-
-app.get('/dashboards/:id', function(req, res){
-  res.render("dashboard", {
-    locals: {
-      id: req.params.id,
-      serviceUrl: '"/dashboards/state/"'
-    }
-  });
-});
-
-app.get('/dataSets/:id', function(req, res){
-  res.send(JSON.stringify(dataSetsManager.find(req.params.id)));
-});
-
-app.get('/dashboards/state/:id', function(req, res){
-  res.send(JSON.stringify(dashboardsManager.find(req.params.id)));
-});
-
-app.put('/saveDashboard/:id', function(req, res){
-  dashboardsManager.set(req.params.id, req.body);
-});
-
-app.post('/saveDashboard/:id', function(req, res){
-  console.log("STATE: " + req.body);
-  dashboardsManager.set(req.params.id, req.body);
 });
 
 app.get('/gadgets/', function(req, res){
   res.send(gadgets.all);
 });
 
-app.post('/newDashboard/', function(req, res){
+app.get('/dashboard/:id', function(req, res){
+  res.render("dashboard", {
+    locals: {
+      id: req.params.id,
+      resourceUrl: '"/dashboard"'
+    }
+  });
+});
+
+app.post('/dashboard/', function(req, res){
   var configuration = req.rawBody? JSON.parse(req.rawBody) : undefined;
   var dashboardCreated = function(dashboardId){
     res.send(dashboardId.toString());
   }
   var newDashboardId = dashboardsManager.new(configuration, dashboardCreated);
+});
+
+app.get('/dashboard/:id/state', function(req, res){
+  res.send(JSON.stringify(dashboardsManager.find(req.params.id)));
+});
+
+app.post('/dashboard/:id', function(req, res){
+  console.log("STATE: " + req.body);
+  dashboardsManager.set(req.params.id, req.body);
+});
+
+app.get('/dataSet/:id', function(req, res){
+  res.send(JSON.stringify(dataSetsManager.find(req.params.id)));
 });               
 
 if (!module.parent) {

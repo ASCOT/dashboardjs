@@ -109,7 +109,7 @@ UW.Dashboard = function(container){
     //         
     //          $.ajax({
     //              type: 'POST',
-    //              url: '/saveDashboard/' + dashboardState.id,
+    //              url: '/dashboard/' + dashboardState.id,
     //              data: JSON.stringify(dashboardState.export()),
     //              contentType: "application/json",
     //              dataType: "text",
@@ -197,13 +197,15 @@ UW.Dashboard = function(container){
   
   this.loadDataSets = function(dataSets){
     var remainingDataSets = dataSets.length;
+    var newDataSet;
     for(var i = 0; i < dataSets.length; ++i){
       $.ajax({
         'url': '/dataSets/' + dataSets[i],
         success: _.bind(function(data) {
           var dataSet = JSON.parse(data);
           remainingDataSets--;
-          this.createDataSet(dataSet.name).addRecords(dataSet.records, true);
+          newDataSet = this.createDataSet(dataSet.name).addRecords(dataSet.records, true);
+          newDataSet.setAllRecordsMetaData({'color': 'grey'});
           if(remainingDataSets == 0){
             this.notify("dataSetChanged", {});
           }

@@ -21,17 +21,17 @@ var selectedGadgets = {};
 
 function requestNewDashboard(configuration){
   $.ajax({
-    url: '/newDashboard/',
+    url: '/dashboard/',
     type: 'POST',
     data: JSON.stringify(configuration),
-    success: function(newId) { document.location.href = "/dashboards/" + newId; }
+    success: function(newId) { document.location.href = "/dashboard/" + newId; }
   });
 }
 
 jQuery(function($) {
   
    $("#cube").gfxCube({
-     width: 900,
+     width: 960,
      height: 562
    });
 
@@ -116,9 +116,9 @@ $(".circle.counter").click(function() {
 <style type="text/css">
 
 #container{
-  width: 900px;
+  width: 960px;
   margin: auto;
-  padding-top: 100px;
+  padding-top: 63px;
 }
 
 .box{
@@ -167,7 +167,7 @@ $(".circle.counter").click(function() {
   display: block;
   position: absolute;
   top: -10px;
-  left: 325px;
+  left: 355px;
   width: 236px;
   height: 96px;
   background-image: url(/images/logoLogin.png);
@@ -231,7 +231,7 @@ $(".circle.counter").click(function() {
   <div id="container">
     <div id="cube"> 
       <div class="box front face">         
-        <header><a href="/dashboards/" id="logo"></a></header>
+        <header><a href="/dashboard/" id="logo"></a></header>
         <div style="width: 320px; margin: auto; padding-top: 275px">
           <button class="big toRight">Create Dashboard</button>     
           <button class="big quickDashboard">Quick Dashboard</button>           

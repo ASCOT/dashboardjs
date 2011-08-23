@@ -74,43 +74,47 @@ if (!UW) var UW = {};
     var crossDomainRequest;
     var newProxyIframe;
       
-    // #8138, IE may throw an exception when accessing
-    // a field from window.location if document.domain has been set
-    try {
-      documentUrl = location.href;
-    } catch( e ) {
-      // Use the href attribute of an A element
-      // since IE will modify it given document.location
-      documentUrl = document.createElement( "a" );
-      documentUrl.href = "";
-      documentUrl = documentUrl.href;
-    }
+    if(server){
+      launchRequest(xhr, options.url, type, options.headers, options.data, options.success, options.error)
+    } 
+    else{ 
+      // #8138, IE may throw an exception when accessing
+      // a field from window.location if document.domain has been set
+      try {
+        documentUrl = location.href;
+      } catch( e ) {
+        // Use the href attribute of an A element
+        // since IE will modify it given document.location
+        documentUrl = document.createElement( "a" );
+        documentUrl.href = "";
+        documentUrl = documentUrl.href;
+      }
 
-    documentDomainParts = urlRegularExpression.exec(documentUrl.toLowerCase()); 
-    requestDomainParts = urlRegularExpression.exec(options.url.toLowerCase()); 
-    crossDomainRequest = !!(requestDomainParts &&
+      documentDomainParts = urlRegularExpression.exec(documentUrl.toLowerCase()); 
+      requestDomainParts = urlRegularExpression.exec(options.url.toLowerCase()); 
+      crossDomainRequest = !!(requestDomainParts &&
     				  (requestDomainParts[1] != documentDomainParts[1] || requestDomainParts[2] != documentDomainParts[2] ||
     					(requestDomainParts[3] || (requestDomainParts[1] === "http:" ? 80 : 443)) !=
     					(documentDomainParts[3] || (documentDomainParts[1] === "http:" ? 80 : 443))));
     
-    if(!crossDomainRequest){
-      launchRequest(xhr, options.url, type, options.headers, options.data, options.success, options.error)
-    }
-    else{ // Cross-domain fallbacks
-      newProxyIframe = document.createElement("iframe");
-      newProxyIframe.id = 'proxyFrame';
-      newProxyIframe.name = newProxyIframe.id;
-      newProxyIframe.src = requestDomainParts[2];
-      newProxyIframe.style.display = 'none';
-      newProxyIframe.style.position = 'absolute';
-      newProxyIframe.style.left = '-2000px';
-      newProxyIframe.style.top = '-2000px';
-      newProxyIframe.onload = function() {
+      if(!crossDomainRequest){
         launchRequest(xhr, options.url, type, options.headers, options.data, options.success, options.error)
-      } 
-      document.body.appendChild(newProxyIframe);
-    }
-    
-  }
+      }
+      else{ // Cross-domain fallbacks
+        newProxyIframe = document.createElement("iframe");
+        newProxyIframe.id = 'proxyFrame';
+        newProxyIframe.name = newProxyIframe.id;
+        newProxyIframe.src = requestDomainParts[2];
+        newProxyIframe.style.display = 'none';
+        newProxyIframe.style.position = 'absolute';
+        newProxyIframe.style.left = '-2000px';
+        newProxyIframe.style.top = '-2000px';
+        newProxyIframe.onload = function() {
+          launchRequest(xhr, options.url, type, options.headers, options.data, options.success, options.error)
+        } 
+        document.body.appendChild(newProxyIframe);
+      }
+   } 
+ }
   
 })();

@@ -34,7 +34,7 @@
 var ASCOT = ASCOT || {};
 
 var dashboardId = {{id}};
-var remoteService = {{serviceUrl}};
+var resourceUrl = {{resourceUrl}};
 
 var initDashboard = function(){
   loadState();  
@@ -47,12 +47,12 @@ $(function(){
 
 function loadState() {
   ASCOT.dashboard = new UW.Dashboard($("#" + 'dashboard').get(0));
-  ASCOT.dashboard.loadState(remoteService + dashboardId);
+  ASCOT.dashboard.loadState(resourceUrl + '/' + dashboardId + '/state');
   return ASCOT.dashboard;
 };
 
 function saveDashboard() {
-  ASCOT.dashboard.saveState('/saveDashboard/' + dashboardId);
+  ASCOT.dashboard.saveState('/dashboard/' + dashboardId);
 }
 
 function initGUI() {
@@ -127,7 +127,7 @@ function initGUI() {
   <div class="container_12 clearfix">
     <div class="grid_12">
       <h1>
-        <a href="/dashboards/" title="Astronomical Collaborative Toolkit">Astronomical Collaborative Toolkit</a>
+        <a href="/dashboard/" title="Astronomical Collaborative Toolkit">Astronomical Collaborative Toolkit</a>
       </h1>
       <nav>
         <ul>

@@ -68,6 +68,15 @@ if (!UW) var UW={};
       return this.records[id].metaData;
     },
     
+    setAllRecords: function(attributes, silent){
+      for(var i=0; i < this.records.length; ++i){
+        this.setRecord(attributes, i);
+      }
+      if(!silent){
+        this.trigger('publish', { event: 'changedMetaData', id: this.id});
+      }
+    },
+    
     setRecords: function(attributes, ids){
       if(!ids){
         this.setAllRecords(attributes);
@@ -85,9 +94,18 @@ if (!UW) var UW={};
       this.trigger('publish', { event: 'dataSetChanged', id: this.id });
     },
     
+    setAllRecordsMetaData: function(attributes, silent){
+      for(var i=0; i < this.records.length; ++i){
+        this.setRecordMetaData(attributes, i);
+      }
+      if(!silent){
+        this.trigger('publish', { event: 'changedMetaData', id: this.id});
+      }
+    },
+    
     setRecordsMetaData: function(attributes, ids, silent){
       if(!ids){
-        this.setAllRecords(attributes);
+        this.setAllRecordsMetaData(attributes);
       }
       else{
         if (_.isArray(ids)) {
