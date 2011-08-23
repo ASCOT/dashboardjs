@@ -212,7 +212,7 @@ UW.Dashboard = function(container){
     var newDataSet;
     for(var i = 0; i < dataSets.length; ++i){
       $.ajax({
-        'url': '/dataSets/' + dataSets[i],
+        'url': '/dataSet/' + dataSets[i],
         success: _.bind(function(data) {
           var dataSet = JSON.parse(data);
           remainingDataSets--;
