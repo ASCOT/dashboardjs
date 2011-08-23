@@ -209,12 +209,12 @@ UW.Dashboard = function(container){
   
   this.loadDataSets = function(dataSets){
     var remainingDataSets = dataSets.length;
-    var newDataSet;
     for(var i = 0; i < dataSets.length; ++i){
       $.ajax({
         'url': '/dataSet/' + dataSets[i],
         success: _.bind(function(data) {
           var dataSet = JSON.parse(data);
+          var newDataSet;
           remainingDataSets--;
           newDataSet = this.createDataSet(dataSet.name).addRecords(dataSet.records, true);
           newDataSet.setAllRecordsMetaData({'color': 'grey'});
