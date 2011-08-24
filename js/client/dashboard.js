@@ -88,7 +88,9 @@ UW.Dashboard = function(container){
     var newDataSet = new UW.DataSetModel();
     newDataSet.id = id;
     dataSets[id] = newDataSet;
-    newDataSet.bind('publish', _.bind(function(data) {this.notify("dataSetChanged", data)}, this));    
+    newDataSet.bind('publish', _.bind(function(data) {
+      this.notify("dataSetChanged", data)}, 
+    this));    
     return newDataSet;
   };
 
@@ -231,7 +233,7 @@ UW.Dashboard = function(container){
     this.loadedGadgets--; 
     if(this.loadedGadgets == 0){ 
       // We need a timeout due to a now.js bug that makes initialization asyncronous when syncronous behavior is expected
-      setTimeout(_.bind(function() { this.notify("dataSetChanged"); }, this), 1000);
+      //setTimeout(_.bind(function() { this.notify("dataSetChanged"); }, this), 1000);
       callback(); 
     } 
   };

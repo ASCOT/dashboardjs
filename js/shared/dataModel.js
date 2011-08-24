@@ -73,7 +73,7 @@ if (!UW) var UW={};
         this.setRecord(attributes, i);
       }
       if(!silent){
-        this.trigger('publish', { event: 'changedMetaData', id: this.id});
+        this.trigger('publish', { event: 'dataSetChanged', id: this.id});
       }
     },
     
@@ -105,7 +105,7 @@ if (!UW) var UW={};
     
     setRecordsMetaData: function(attributes, ids, silent){
       if(!ids){
-        this.setAllRecordsMetaData(attributes);
+        this.setAllRecordsMetaData(attributes, silent);
       }
       else{
         if (_.isArray(ids)) {
@@ -170,7 +170,8 @@ if (!UW) var UW={};
     
     addToIndex: function(indexId, valueId, recordsIds){
       var index = this.getIndex(indexId) || this.createIndex(indexId);
-      var indexEntry = index[valueId] = index[valueId] || [];
+      index[valueId] = index[valueId] || [];
+      var indexEntry = index[valueId];
       if (_.isArray(recordsIds)) {
         for (var i = 0, l = recordsIds.length; i < l; i++) {
           indexEntry.push(recordsIds[i]);
