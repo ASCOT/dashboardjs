@@ -51,11 +51,11 @@ var selectionObject;
 
 // Gadget intialization
 gadget.init = function(callback){
-  
   gadget.onNotification('dataSetChanged', redrawAll);  
   gadget.onNotification('plotRendered', syncPlot);
   gadget.onNotification('pointsSelected', setSelectedByMinMax);
   gadget.onNotification('axisInverted', invertAxis);
+  callback();
   
   $("#checkVerboseInfo").change( function(){
     verboseTooltip = $("#checkVerboseInfo").get(0).checked;
@@ -68,8 +68,8 @@ gadget.init = function(callback){
       selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetName);
       if(selectedDataSet){
         columnNames = selectedDataSet.getColumns();
-        populateSelect("selectXAxis", columnNames);
-        populateSelect("selectYAxis", columnNames);
+        populateSelect("selectXAxis", columnNames, selectedXAxis);
+        populateSelect("selectYAxis", columnNames, selectedYAxis);
       }
     }    
   });
@@ -95,9 +95,16 @@ gadget.init = function(callback){
   $('#invertXAxisButton').click(invertX);
   $('#invertYAxisButton').click(invertY);
   $('#plotButton').click(plotData);
-  plot = new Highcharts.Chart(chartOptions);         
-  populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"]);
-  callback();
+  plot = new Highcharts.Chart(chartOptions);     
+  populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"],selectedColor);
+  if(axisInverted.x){
+    axisInverted.x = false;
+    invertX();
+  }
+  if(axisInverted.y){
+    axisInverted.y = false;
+    invertY();
+  }
 }
 
 gadget.saveState = function(){
@@ -114,16 +121,42 @@ gadget.saveState = function(){
 };
 
 gadget.loadState = function(state){
-	console.log("Loaded State: "+selectedXAxis);
-	axisInverted = state.axisInverted;
-	verboseTooltip = state.verboseTooltip;
-	selectedDataSetName = state.selectedDataSetName;
-	selectedXAxis = state.selectedXAxis;
-	selectedYAxis = state.selectedYAxis;
-	selectedColor = state.selectedColor;
-	selectedDataSet = state.selectedDataSet;
-	selectionObject = state.selectionObject;
+   if(isDef(state.axisInverted)){
+	  axisInverted = state.axisInverted;
+	}
+	if(isDef(state.verboseTooltip)){
+	  verboseTooltip = state.verboseTooltip;
+	  $("#checkVerboseInfo").get(0).checked = verboseTooltip;
+	}
+	if(isDef(state.selectedDataSetName)){
+	  selectedDataSetName = state.selectedDataSetName;
+   }
+   if(isDef(state.selectedXAxis)){
+	  selectedXAxis = state.selectedXAxis;
+	}
+	if(isDef(state.selectedYAxis)){  
+	  selectedYAxis = state.selectedYAxis;
+   }
+   if(isDef(state.selectedColor)){
+	  selectedColor = state.selectedColor;
+   }
+   if(isDef(state.selectedDataSet)){
+	  selectedDataSet = state.selectedDataSet;
+   }
+   if(isDef(state.selectionObject)){
+	  selectionObject = state.selectionObject;
+   }
 };
+
+// Check definedness
+function isDef(testvar){
+  if (typeof testvar === 'undefined') {
+    return false;
+  }
+  else {
+    return true;
+  }
+}
 
 // Highcharts plot options
 var chartOptions = {
@@ -201,7 +234,7 @@ function generateToolTip(xValue, yValue, pointId) {
   var record;
   var info = [];
   if (verboseTooltip) {
-    record = selectedDataSet.getRecord(pointId).toJSON();
+    record = selectedDataSet.getRecord(pointId);
     if (record){
       for (var prop in record) {
         info.push(prop + ": " + record[prop] + "<br/>");
@@ -228,11 +261,11 @@ function plotData(){
                                                                         
 function redrawAll(){
   var columnNames = [];
-  populateSelect('selectDatasetName', gadget.dashboard.getDataSetList());
+  populateSelect('selectDatasetName', gadget.dashboard.getDataSetList(), selectedDataSetName);
   if(selectedDataSet){
     columnNames = selectedDataSet.getColumns();
-    populateSelect("selectXAxis", columnNames);
-    populateSelect("selectYAxis", columnNames);
+    populateSelect("selectXAxis", columnNames, selectedXAxis);
+    populateSelect("selectYAxis", columnNames, selectedYAxis);
   }
   drawPlot();
 }
@@ -380,13 +413,13 @@ function showPlot(show) {
 	gadget.resize();
 }
 
-function populateSelect(selectName, options) { 
+function populateSelect(selectName, options, selectedOption) { 
   var html = '';
   var currentSelection = $("#" + selectName + " option:selected").text();
   var len = options.length;
   var keepSelection = false;
   for (var i = 0; i< len; i++) {
-    if (options[i]===currentSelection){
+    if (options[i]===currentSelection && !selectedOption){
       keepSelection = true;
     }
     html += '<option value="' + options[i] + '">' + options[i] + '</option>';
@@ -394,7 +427,12 @@ function populateSelect(selectName, options) {
   $("#" + selectName).html(html);
   if(keepSelection){
     $("#" + selectName).val(currentSelection).attr('selected',true);    
+  }else if(isDef(selectedOption)){
+    $("#" + selectName).val(selectedOption).attr('selected',true);
+  }else{
+    $("#" + selectName).val(options[0]).attr('selected',true);
   }
+  
   $('#' + selectName).change();
 }
     
@@ -404,7 +442,6 @@ function syncPlot(plotOptions){
   $('#selectXAxis option[value=' + plotOptions.xAxis + ']').attr('selected', 'selected');
   $('#selectYAxis option[value=' + plotOptions.yAxis + ']').attr('selected', 'selected');
   $('#selectColor option[value=' + plotOptions.color + ']').attr('selected', 'selected');
-  
   $('#selectDatasetName').change();
   $('#selectXAxis').change();
   $('#selectYAxis').change();
@@ -428,21 +465,21 @@ function invertAxis(axis){
 }          
 
 function invertX(){
-  var value = $('#invertXAxisButton').text(); 
+  var value = $('#invertXAxisButton').get(0).value; 
   if (value === '>') {
-    $('#invertXAxisButton').text('<');
+    $('#invertXAxisButton').get(0).value = '<';
   } else {
-    $('#invertXAxisButton').text('>');
+    $('#invertXAxisButton').get(0).value = '>';
   }
   gadget.notify('axisInverted',"x")
 }
 
 function invertY(){
-  var value = $('#invertYAxisButton').text(); 
+  var value = $('#invertYAxisButton').get(0).value; 
    if (value === '^') {
-     $('#invertYAxisButton').text('v');
+     $('#invertYAxisButton').get(0).value = ('v');
    } else {
-     $('#invertYAxisButton').text('^');
+     $('#invertYAxisButton').get(0).value = ('^');
    }
   gadget.notify('axisInverted',"y")
 }
