@@ -68,9 +68,10 @@ function createDataSetItem(dataSetName) {
 function createDataSetColorsList(dataSet) {
   var dataSetId = dataSet.getId();
   var subDiv = document.createElement("div");
-  var colorList = dataSet.getIndexKeys('color');
+  var colorList = dataSet.getAttributeValues('color');
   var indentSpan = document.createElement("span");
-  var colorRecords;
+  var colorRecord;
+  var colorRecordsIndices;
   indentSpan.innerHTML = "&nbsp; \\-";
   subDiv.appendChild(indentSpan);
       
@@ -78,17 +79,13 @@ function createDataSetColorsList(dataSet) {
   // for each color, make a checkbox and name
   for (var i=0, len=colorList.length; i<len; i++) {
     var color = colorList[i];
-    if(dataSet.getIndexEntries('color',color).length > 0){
+    colorRecordsIndices = dataSet.getRecordsIndicesWithAttribute('color', color);
+    colorRecord = dataSet.getRecord(colorRecordsIndices[0]);
+    if(colorRecordsIndices.length > 0){
       var checkBoxVisibility = document.createElement("input");
       checkBoxVisibility.type = "checkbox";
       checkBoxVisibility.id = "ckVis_" + dataSetId + "_" + color;
-      colorRecords = dataSet.getIndex('color')[color]; 
-      if(colorRecords.length != 0){
-        checkBoxVisibility.checked = dataSet.getRecordMetaData(colorRecords[0]).visible;
-      }
-      else{
-        checkBoxVisibility.checked = true;
-      }
+      checkBoxVisibility.checked = colorRecord.visible;
       checkBoxVisibility.value = color;
       checkBoxVisibility.onclick = function() {
         toggleDataSetColorVisibility(dataSetId, this.value, this.checked);
@@ -98,7 +95,7 @@ function createDataSetColorsList(dataSet) {
       var colorSpan = document.createElement("span");
       colorSpan.style.marginRight = "8px";
       colorSpan.innerHTML = color == 'grey' || color == ''? 'unselected': color;
-      colorSpan.innerHTML += " (" + dataSet.getIndexEntries('color',color).length + ")";
+      colorSpan.innerHTML += " (" + colorRecordsIndices.length + ")";
       subDiv.appendChild(colorSpan);
     }
   }
@@ -142,7 +139,7 @@ function toggleDataSetVisbility(id) {
   
 function toggleDataSetColorVisibility(id, color, visible) {
   var dataSet = gadget.dashboard.getDataSet(id);
-  dataSet.setRecords({'visible': visible}, dataSet.getIndexEntries('color', color));
+  dataSet.setRecords({'visible': visible}, dataSet.getRecordsIndicesWithAttribute('color', color));
 }
       
 </script>

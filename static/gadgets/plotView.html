@@ -47,8 +47,6 @@ var selectionObject;
 
 //Load gadget state
 
-
-
 // Gadget intialization
 gadget.init = function(callback){
   gadget.onNotification('dataSetChanged', redrawAll);  
@@ -314,7 +312,7 @@ function updateSelectedPoints() {
   if (!selectedDataSet) {
     return;
   }
-  colorIndexArray = selectedDataSet.getIndexKeys('color');
+  colorIndexArray = selectedDataSet.getAttributeValues('color');
   // color selected points
   for (color in colorIndexArray){
     colorIndex = colorIndexArray[color];
