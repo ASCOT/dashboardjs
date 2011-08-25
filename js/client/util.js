@@ -22,6 +22,15 @@ function extractKeys(obj){
   return keys;
 }
 
+function isEmpty(obj){ 
+  for(var prop in obj) {
+    if(obj.hasOwnProperty(prop)){ 
+      return false; 
+    }
+  } 
+  return true; 
+}
+
 /**
  * Input: A string representing 2 ints and a float, or just a single float
  * Output: Returns A decimal representation of the coordinate string
