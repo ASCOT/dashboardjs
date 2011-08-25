@@ -70,14 +70,24 @@ if (!UW) var UW={};
       }
     },
     
-    getIndexKeys: function(attribute){
+    getAttributeValues: function(attribute){
       var modifier = this.modifiers[attribute];
       if(!modifier){
         return [];
       }
       else{
-        return modifier.getValues();
+        return modifier.getKeys();
       }
+    },
+    
+    getRecordsIndicesWithAttribute: function(attribute, value){
+      var modifier = this.modifiers[attribute];
+       if(!modifier){
+          return [];
+        }
+        else{
+          return modifier.getTargetIndices(value);
+        }
     },
     
     setRecords: function(attributes, ids, silent){
@@ -143,7 +153,7 @@ if (!UW) var UW={};
       var recordModifier;
       for(var attribute in this.modifiers){
         recordModifier = this.modifiers[attribute].getModifier(id);
-        if(recordModifier){
+        if(recordModifier != undefined){
           record[attribute] = recordModifier;
         }
       }
