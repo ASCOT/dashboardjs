@@ -24,7 +24,7 @@ UW.Renderer = function(pTarget, numberOfColumns){
   
   this.renderGadget = function(gadget, callback){
 
-    var succesCallBack = function(id) { return function() { autoResize(id); callback(); } }(gadget.id);
+    var succesCallBack = function(id) { return function() { autoResize(id); gadget.inflateState(); callback(); } }(gadget.id);
     var initGadget = function(){ gadget.init(succesCallBack); };
     var iframeContainer = document.createElement('div');
     var gadgetFrame = document.createElement('div');

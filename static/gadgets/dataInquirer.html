@@ -43,12 +43,11 @@ var viewportBounds;
 var currentQuery = {};
 
 // create HR object
-gadget.init = function(callback){
+gadget.init = function(finishedLoading){
   gadget.onNotification('viewBoundsChanged', setViewPortBounds);
   gadget.onNotification('dataRequested', launchQuery);
   setFields();
-  gadget.inflateState();
-  callback();
+  finishedLoading();
 }
 
 gadget.saveState = function(){

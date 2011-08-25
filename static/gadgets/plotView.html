@@ -259,7 +259,6 @@ function setSelectedByMinMax(obj) {
   if(selectedIds.length > 0){
     color = (selectedMarkerColor === "unselect") ? "grey" : selectedMarkerColor;
     selectedDataSet.setRecords({'color': color}, selectedIds); 
-    plot.redraw();
   }
    
 }
@@ -364,7 +363,7 @@ function generatePoints(){
                     x: xValue, 
                     y: yValue,
                     color: MARKER_COLOR[selectedDataSet.getRecord(i).color],
-                    marker: MARKER_COLOR[selectedDataSet.getRecord(i).color]
+                    marker: { fillColor: MARKER_COLOR[selectedDataSet.getRecord(i).color] } 
                   });
     }
   }

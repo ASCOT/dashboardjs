@@ -35,6 +35,48 @@ Count words in file. One per line
 
 cat * | grep -c string
 
+Keep in mind. 
+-------------
+
+It's often the same with any new, revolutionary thing. 
+People get stuck as they get older. Our minds are sort of electrochemical computers. 
+Your thoughts construct patterns like scaffolding in your mind. You are really etching chemical patterns. 
+In most cases, people get stuck in those patterns, just like grooves in a record, and they never get out of them. 
+It's a rare person who etches grooves that are other than a specific way of looking at things, a specific way of questioning things. 
+It's rare that you see an artist in his 30s or 40s able to really contribute something amazing. 
+Of course, there are some people who are innately curious, forever little kids in their awe of life, but they're rare.
+
+Well, my favorite things in life are books, sushi and.... My favorite things in life don't cost any money. 
+It's really clear that the most precious resource we all have is time.
+
+And what computer programming can do is to capture the underlying principles, the underlying essence, and then facilitate thousands of
+experiences based on that perception of the underlying principles. Now, what if we could capture Aristotle's world view the 
+underlying principles of his world view? Then you could actually ask Aristotle a question. 
+
+SJ
+
+Trim in Javascript
+------------------
+
+if (typeof String.prototype.trim !== 'function'){
+  String.prototype.trim = function (){
+    return this.replace(/^\s*(\S*(\s+\S+)*)\s*$/, "$1");
+  };
+}
+
+Supplant in Javascript (templating)
+------------------------------------
+
+if (typeof String.prototype.supplant !== 'function'){
+  String.prototype.supplant = function(o){
+    return this.replace(/{{[^{}]*}})/g, 
+      function(a,b){
+        var r = o[b];
+        return typeof r === 'string' ? r : a;
+      });
+  };
+}
+
 ADASS Presentation Idea
 ------------------------
 

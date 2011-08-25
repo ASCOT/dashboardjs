@@ -11,8 +11,7 @@ body {
   background-color: #b7abc3;
   margin: 0;
 	padding: 0;
-  background-image: url("/images/bgImage.png");
-  background-repeat: repeat-x;
+  background: #a39ac6 url('../images/background.png');
 }
 
 ul {
