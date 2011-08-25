@@ -304,13 +304,12 @@ function handleThumbnail() {
 		// Figure out how much of the larger image is being cut off
 		if (imgY < 0)
 			topClip = Math.abs(imgY);
-		if ((imgY-(FITSthumb.height-FITSthumb.height*scale)) > 0)
-			bottomClip = imgY-(FITSthumb.height-FITSthumb.height*scale);
+		if ((imgY-(canvas.height-FITSthumb.height*scale)) > 0)
+			bottomClip = imgY-(canvas.height-FITSthumb.height*scale);
 		if (imgX < 0)
 			leftClip = Math.abs(imgX);
 		if (imgX > (canvas.width - FITSthumb.width*scale) )
 			rightClip = (imgX + (FITSthumb.width*scale)) - canvas.width;
-			
 		// Scale these amounts down to the size of the map image
 		topClip = topClip/FITSthumb.height/scale*mapHeight;
 		bottomClip = bottomClip/FITSthumb.height/scale*mapHeight;
@@ -453,21 +452,21 @@ function handleThumbnail() {
 		
 		if (tooltipIndex != -1) {
 			overlayContext.fillStyle = '#FFFFDA';
-   		overlayContext.font="15px sans-serif";
+   		   overlayContext.font="15px sans-serif";
    		
-   		overlayContext.save();
-    		overlayContext.beginPath();
-   		overlayContext.rect(objectsToDraw[tooltipIndex].screenX+10, objectsToDraw[tooltipIndex].screenY-10-columnNames.length*15, 200, columnNames.length*15);
-   	 	overlayContext.clip();
-   		overlayContext.fillRect(objectsToDraw[tooltipIndex].screenX+10, objectsToDraw[tooltipIndex].screenY-10-columnNames.length*15, 200, columnNames.length*15);
-   		for (var j = columnNames.length-1; j >= 0; j--) {
-   			overlayContext.beginPath();
-   			overlayContext.rect(objectsToDraw[tooltipIndex].screenX+10, objectsToDraw[tooltipIndex].screenY-10-columnNames.length*15, 200, columnNames.length*15);
-   	 		overlayContext.clip();
-    			overlayContext.fillStyle = '#000000';
-    			overlayContext.fillText(columnNames[j] + ": " + dsData[tooltipIndex][columnNames[j]], objectsToDraw[tooltipIndex].screenX+10+1, objectsToDraw[tooltipIndex].screenY-10-j*15-1);
-    		}
-    		overlayContext.restore();
+   		   overlayContext.save();
+         overlayContext.beginPath();
+   		   overlayContext.rect(objectsToDraw[tooltipIndex].screenX+10, objectsToDraw[tooltipIndex].screenY-10-columnNames.length*15, 200, columnNames.length*15);
+   	 	   overlayContext.clip();
+   		   overlayContext.fillRect(objectsToDraw[tooltipIndex].screenX+10, objectsToDraw[tooltipIndex].screenY-10-columnNames.length*15, 200, columnNames.length*15);
+   		   for (var j = columnNames.length-1; j >= 0; j--) {
+   			   overlayContext.beginPath();
+   			   overlayContext.rect(objectsToDraw[tooltipIndex].screenX+10, objectsToDraw[tooltipIndex].screenY-10-columnNames.length*15, 200, columnNames.length*15);
+   	 		   overlayContext.clip();
+    		   overlayContext.fillStyle = '#000000';
+    		   overlayContext.fillText(columnNames[j] + ": " + dsData[tooltipIndex][columnNames[j]], objectsToDraw[tooltipIndex].screenX+10+1, objectsToDraw[tooltipIndex].screenY-10-j*15-1);
+    	   }
+    	   overlayContext.restore();
 		}
 		
 		// The box that the mouse drags out when zooming and selecting
@@ -504,11 +503,11 @@ function drawThumbnail(fileName) {
 	context = canvas.getContext('2d');
 	
 	FITSthumb = new Image();
-        console.log("Image Filename: "+fileName)
+   console.log("Image Filename: "+fileName);
 	FITSthumb.src = "../images/FITSConverter/"+fileName;
 	FITSthumb.onload = function() {
-		imgX = canvas.width/2-(FITSthumb.width/2);
-		imgY = 0;
+      imgX = canvas.width/2-(FITSthumb.width/2);
+		imgY = -FITSthumb.width/2+canvas.width/2;
 		redrawCanvas();
 		showStatus(ICON_URL_SUCCESS, "Image loaded");
 	}
@@ -617,8 +616,8 @@ function showHeader() {
 function startViewer() {
 	showStatus(ICON_URL_SPINNER, "Converting FITS image..."); 
 	makeFITSrequest("thumb_v"+dsData[0]['visit']+"_R"+dsData[0]['raft']+"_S"+dsData[0]['ccd']+".jpg");
-        var filename = "header_v"+dsData[0]['visit']+"_R"+dsData[0]['raft']+"_S"+dsData[0]['ccd']+".js";
-        console.log("Filename: "+filename)
+   var filename = "header_v"+dsData[0]['visit']+"_R"+dsData[0]['raft']+"_S"+dsData[0]['ccd']+".js"; 
+   document.getElementById('fileName').innerHTML = "Visit:"+dsData[0]['visit']+" Raft:"+dsData[0]['raft']+" CCD:"+dsData[0]['ccd'];
 	loadJsFile("../images/FITSConverter/"+filename);
 }
 
@@ -648,22 +647,22 @@ function overlayObjects() {
 	for (var i=0; i < dsData.length; i++) {
 		// Does the dataset's coordinate system need to be converted?
 		var coords = { ra: parseFloat(dsData[i][getSelectedRA()]), dec: parseFloat(dsData[i][getSelectedDec()]) };
-		if (getSelectedOption("selDataCoordSys") != nativeCoordSystem.label) {
-			if (getSelectedOption("selDataCoordSys") == 'J2000' && nativeCoordSystem.label == 'B1950')
-				coords = UnitsLib.convertFK5toFK4(coords);
-			else if (getSelectedOption("selDataCoordSys") == 'B1950' && nativeCoordSystem.label == 'J2000')
-				coords = UnitsLib.convertFK4toFK5(coords);
-			else if (getSelectedOption("selDataCoordSys") == 'B1950' && nativeCoordSystem.label == 'Galactic')
-				coords = UnitsLib.convertFK4toGAL(coords);
-			else if (getSelectedOption("selDataCoordSys") == 'Galactic' && nativeCoordSystem.label == 'B1950')
-				coords = UnitsLib.convertGALtoFK4(coords);
-			else if (getSelectedOption("selDataCoordSys") == 'J2000' && nativeCoordSystem.label == 'Ecliptic')
-				coords = UnitsLib.convertFK5toECL(coords);
-			else if (getSelectedOption("selDataCoordSys") == 'Ecliptic' && nativeCoordSystem.label == 'J2000')
-				coords = UnitsLib.convertECLtoFK5(coords);
-			else
-				alert('Coordinate system of dataset and native coordinate system not compatible');
-		}
+		//if (getSelectedOption("selDataCoordSys") != nativeCoordSystem.label) {
+		//	if (getSelectedOption("selDataCoordSys") == 'J2000' && nativeCoordSystem.label == 'B1950')
+		//		coords = UnitsLib.convertFK5toFK4(coords);
+		//	else if (getSelectedOption("selDataCoordSys") == 'B1950' && nativeCoordSystem.label == 'J2000')
+		//		coords = UnitsLib.convertFK4toFK5(coords);
+		//	else if (getSelectedOption("selDataCoordSys") == 'B1950' && nativeCoordSystem.label == 'Galactic')
+		//		coords = UnitsLib.convertFK4toGAL(coords);
+		//	else if (getSelectedOption("selDataCoordSys") == 'Galactic' && nativeCoordSystem.label == 'B1950')
+		//		coords = UnitsLib.convertGALtoFK4(coords);
+		//	else if (getSelectedOption("selDataCoordSys") == 'J2000' && nativeCoordSystem.label == 'Ecliptic')
+		//		coords = UnitsLib.convertFK5toECL(coords);
+		//	else if (getSelectedOption("selDataCoordSys") == 'Ecliptic' && nativeCoordSystem.label == 'J2000')
+		//		coords = UnitsLib.convertECLtoFK5(coords);
+		//	else
+		//		alert('Coordinate system of dataset and native coordinate system not compatible');
+		//}
 	
 		// The pixel coordinates of the object on the FITS image
 		//var convert = CCtoPixel({ ra: coords.ra, dec: coords.dec });
@@ -731,7 +730,7 @@ function getSelectionMarkerColor() {
 <option value="cgps.fits">cgps.fits</option>
 <option value="dss_search.fits">dss_search.fits</option>
 <option value="R1_2_S1_1_img.fits">R1_2_S1_1_img.fits</option>
-<option value="Ramp.fits">Ramp.fits</option></select>--->
+<option value="Ramp.fits">Ramp.fits</option></select>-->
 <div id="fileName"> Filename: </div><br>
 </td></tc>
 <tc><td align="right">
@@ -758,14 +757,20 @@ Selection Color: <select id="selColor">
 </td></tc>
 <tc><td align="right">
 Dataset: <select id="selDatasetName" onchange="populateRaDecSelect();"></select>
-RA: <select id="selRA"></select>
-Dec: <select id="selDec"></select> <br>
+X Pixel: <select id="selRA">
+<option value="xPix" selected="selected">xPix</option>
+</select>
+Y Pixel: <select id="selDec">
+<option value="yPix" selected="selected">yPix</option>
+</select> <br>
+<!--
 Coordinate System of Dataset: 
 <select id="selDataCoordSys">
 <option value="J2000" selected="selected">J2000</option>
 <option value="B1950">B1950</option>
 <option value="Galactic">Galactic</option>
 <option value="Ecliptic">Ecliptic</option></select><br>
+-->
 <input type="button" value="Overlay Objects" onclick="overlayObjects();">
 </td></tc>
 </table>
