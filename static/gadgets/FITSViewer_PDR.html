@@ -1,0 +1,779 @@
+<!-- Author: Spencer Wallace (spencerw@email.arizona.edu) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Pragma" content="no-cache">
+<title>FITSViewer</title>
+<!-- ASCOT Basic Style Sheets -->
+<link href="/css/reset.css" rel="stylesheet" type="text/css">
+<link href="/css/text.css" rel="stylesheet" type="text/css"> 
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js" type="text/javascript"></script>
+<script src="/kinetic-v1.0.2.js" type="text/javascript"></script>
+<script src="/unitsLib.js" type="text/javascript"></script>
+<script src="/util.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+
+// Status icons
+var ICON_URL_SELECTED = '/images/targetYellow.png';
+var ICON_URL_DEFAULT = '/images/target.png';
+var ICON_URL_SPINNER = '/images/spinnerGrey.gif';
+var ICON_URL_ERROR = '/images/errorIcon.gif';
+var ICON_URL_SUCCESS = '/images/successIcon.gif';
+
+// Canvas variables
+var canvas = null;
+var context = null;
+var FITSstage = null;
+var scale = 1;
+var FITSthumb = null;
+var imgX = 0;
+var draggingImgOffsetX = 0;
+var imgY = 0;
+var draggingImgOffsetY = 0;
+var mouseDownZoom = false;
+var mouseDownPan = false;
+var mouseDownSelect = false;
+var dragStartX;
+var dragStartY;
+var objectsToDraw = []
+var overlayCircleRad = 8;
+var select = false;
+
+var    DEFAULT_MARKER_COLOR = '#AAAAAA';
+       SELECTED_MARKER_COLOR = '#D21E64'
+    	 MARKER_COLOR = { red: '#FF0000',
+                     green: '#00FF00',
+                     blue: '#0000FF',
+                     yellow: '#DCDC00',
+                     grey: DEFAULT_MARKER_COLOR,
+                     unselect: DEFAULT_MARKER_COLOR
+                    }
+
+// RA and Dec external data
+var columnNames;
+var dsData;
+var visit;
+var ccdName;
+var raftName;
+
+cd1 = { a: -0.0002802052, b: 0.0000015445 };
+cd2 = { a: 0.0000016611, b: 0.0002796522 };
+
+// FITS info variables
+var globals;
+var nativeCoordSystem;
+var coordOptions = { decSex: false,
+					 eqB: true,
+					 eqJ: true,
+					 gal: true,
+					 ecl: true };
+
+// HTML fields on the page
+myFields = {};
+
+gadget.init = function(callback){
+	gadget.onNotification('dataSetChanged', updateDataSetList);
+	callback();
+}
+
+gadget.saveState = function(){
+  return { 
+    // Save all relevant variables
+    // format 'variable': value;
+  }
+};
+
+gadget.loadState = function(state){
+	// Load all relevant variables
+  	// format variable = state.value
+};
+
+$(resizeCanvas);
+
+function resizeCanvas(){
+	var canvas = $("#FITSimage");
+	canvas.get(0).width = canvas.width();
+  var canvas = $("#FITSimage");
+  canvas.get(0).width = canvas.width();
+}
+
+// When the list of public datasets change, rewrite the list of available datasets to plot    
+function updateDataSetList(){
+	updateSelectedPoints();
+	setSelectOptions("selDatasetName", gadget.dashboard.getDataSetList());
+	FITSstage.reset( { clientX: 0, clientY: 0 } );
+}
+
+// Given a list of point ids, change those points in the public dataset to a given color
+function setSelectedColor(obj) {
+	var useColor = obj.color;
+	if (obj.color == 'unselect') {
+		useColor = '';
+	}
+	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+	ds.setRecordsMetaData({'color': useColor}, obj.modifiedPointIds); 
+	gadget.notify('dataSetChanged');
+	return;
+}
+
+// Checks the public dataset to update the selection status of all the points in the chart
+// TODO: set the color according to the ds color
+function updateSelectedPoints() {
+ 	// select or unselect all the points in the chart to change the way they look
+ 	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+ 	if (ds === undefined || ds === null) {
+	 	return;
+	 }
+ 	var colorIndexArray = ds.getIndex('color');
+ 	var colorIndex;
+ 	var point;
+ 	
+ 	for (color in colorIndexArray) {
+ 		colorIndex = colorIndexArray[color];
+ 		for (var i = 0; i < colorIndex.length; i++) {
+ 			point = objectsToDraw[colorIndex[i]];
+ 			colorChartPoint(point,color);
+ 		}
+ 	}
+}
+
+// Colors a selected point on chart by the color name
+ function colorChartPoint(point, colorName) {
+     if (colorName === "") {
+         colorName = "unselect";
+     }
+     point.color = MARKER_COLOR[colorName];
+ }
+
+function getSelectedDataset() {
+	return getSelectedOption("selDatasetName");
+}
+function getSelectedRA() {
+  return getSelectedOption("selRA");
+}
+function getSelectedDec() {
+  return getSelectedOption("selDec");
+}
+
+// Look at the header file to set up some important variables pertaining to the coordinates
+function precalcCoordInfo() {
+	console.log( 'Precalculating coordinates information');
+	// figure out if the fits file has celestial coordinates
+	globals.lonInd = -1;
+	globals.latInd = -1;
+	for( var i = 0; i < globals.naxis ; i ++ ) {
+		var info = UnitsLib.getCoordInfo( globals.coords[i].ctype, globals.equinox);
+		if( info.isCelestialLongitude()) globals.lonInd = i;
+		if( info.isCelestialLatitude()) globals.latInd = i;
+		globals.coords[i].cinfo = info; 
+	}
+	console.log( 'longitude at index ', globals.lonInd);
+	console.log( 'latitude at index ', globals.latInd);
+	// do we have both celestial coordinates?
+	globals.haveCelestialCoordinates = false;
+	if( globals.latInd > -1 || globals.lonInd > -1) globals.haveCelestialCoordinates = true;
+	if( globals.haveCelestialCoordinates)
+		console.log( 'this FITS has celestial coordinates');
+	else
+		console.log( 'this FITS does not have celestial coordinates');
+		
+	// what is the native coordinate system? gal, ecl, fk4, fk5
+	if( globals.haveCelestialCoordinates) {
+		nativeCoordSystem = UnitsLib.getCoordSystem({
+			cinfo1:  globals.coords[globals.lonInd].cinfo,
+			cinfo2:  globals.coords[globals.latInd].cinfo,
+			equinox: globals.equinox
+		});
+		console.log( 'native celestial coordinate system = ', nativeCoordSystem);
+	}
+}
+
+// Convert a pixel value into celestial coordinates
+// Parameters: args.x, args.y
+function pixelToCC(args) {
+
+	// First need to convert mouse coordinates into native pixel value
+	var scaleFactor = (globals.naxis1/(FITSthumb.width*scale));
+	
+	var cursorPosition = [];
+		cursorPosition[0] = args.x;
+		cursorPosition[1] = args.y;
+	for( var i = 2 ; i <= globals.naxis ; i ++ ) {
+		cursorPosition[i] = 1;
+	}
+
+	var allCoordinates = [];
+	if( globals.haveCelestialCoordinates) {
+		// calculate the native coordinates first
+		var crval1 = globals.coords[ globals.lonInd].crval,
+			crpix1 = globals.coords[ globals.lonInd].crpix,
+			cdelt1 = globals.coords[ globals.lonInd].cdelt,
+			crval2 = globals.coords[ globals.latInd].crval,
+			crpix2 = globals.coords[ globals.latInd].crpix,
+			cdelt2 = globals.coords[ globals.latInd].cdelt,
+			alg    = globals.coords[ globals.latInd].cinfo.pctype.alg;
+			
+		var coord = UnitsLib.worldpos(
+				cursorPosition[globals.lonInd], cursorPosition[globals.latInd],
+				crval1, crval2, crpix1, crpix2, cdelt1, cdelt2, cd1, cd2, 0, alg);
+		allCoordinates.push( nativeCoordSystem.label + ' ' +
+				UnitsLib.formatCoordinates( coord, nativeCoordSystem, coordOptions.decSex));
+		// add all alternate coordinates
+		if( coordOptions.eqB && nativeCoordSystem != UnitsLib.FK4) {
+			var c = UnitsLib.convertCoordinates( coord, nativeCoordSystem, UnitsLib.FK4);
+			allCoordinates.push( UnitsLib.FK4.label + ' '
+					+ UnitsLib.formatCoordinates( c, UnitsLib.FK4, coordOptions.decSex));
+		}
+		if( coordOptions.eqJ && nativeCoordSystem != UnitsLib.FK5) {
+			var c = UnitsLib.convertCoordinates( coord, nativeCoordSystem, UnitsLib.FK5);
+			allCoordinates.push( UnitsLib.FK5.label + ' '
+					+ UnitsLib.formatCoordinates( c, UnitsLib.FK5, coordOptions.decSex));
+		}
+		if( coordOptions.gal && nativeCoordSystem != UnitsLib.GAL) {
+			var c = UnitsLib.convertCoordinates( coord, nativeCoordSystem, UnitsLib.GAL);
+			allCoordinates.push( UnitsLib.GAL.label + ' '
+					+ UnitsLib.formatCoordinates( c, UnitsLib.GAL, coordOptions.decSex));
+		}
+		if( coordOptions.ecl && nativeCoordSystem != UnitsLib.ECL) {
+			var c = UnitsLib.convertCoordinates( coord, nativeCoordSystem, UnitsLib.ECL);
+			allCoordinates.push( UnitsLib.ECL.label + ' '
+					+ UnitsLib.formatCoordinates( c, UnitsLib.ECL, coordOptions.decSex));
+		}
+	}
+	return allCoordinates;
+}
+
+// Convert from celestial coordinates to a pixel coordinate on the fits image
+// Parameters: args.ra, args.dec
+function CCtoPixel(args) {
+	if( globals.haveCelestialCoordinates) {
+		// calculate the native coordinates first
+		var crval1 = globals.coords[ globals.lonInd].crval,
+			crpix1 = globals.coords[ globals.lonInd].crpix,
+			cdelt1 = globals.coords[ globals.lonInd].cdelt,
+			crval2 = globals.coords[ globals.latInd].crval,
+			crpix2 = globals.coords[ globals.latInd].crpix,
+			cdelt2 = globals.coords[ globals.latInd].cdelt,
+			alg    = globals.coords[ globals.latInd].cinfo.pctype.alg;
+			npix   = FITSthumb.width;
+			
+		var wcsObj = { xref: crval1, yref: crval2, xrefpix: crpix1, yrefpix: crpix2, xinc: cdelt1, yinc: cdelt2, rot: 0, cd1: cd1, cd2: cd2, prjcode: alg, nxpix: npix };
+		var coord = UnitsLib.worldpix(args.ra, args.dec, wcsObj);
+		
+		return coord;
+	}
+}
+
+// Called after the FITS thumbnail is loaded
+// Set up the kinetic stage and draw on the canvas
+function handleThumbnail() {
+
+	FITSstage.clearCanvas();
+	FITSstage.setDrawStage(function(){
+		var mousePos = FITSstage.getMousePos();
+		
+		// How many pixels should be clipped off of each side of the viewport box?
+		var topClip = 0;
+		var bottomClip = 0;
+		var leftClip = 0;
+		var rightClip = 0;
+		
+		FITSstage.beginRegion();
+		context.clearRect(0,0,this.canvas.width,this.canvas.height);
+		context.drawImage(FITSthumb, imgX, imgY, FITSthumb.width*scale, FITSthumb.height*scale);
+		context.beginPath();
+		context.rect(0, 0, canvas.width, canvas.height);
+		context.rect((canvas.width-mapWidth-10), 10, mapWidth, mapHeight);
+		context.closePath();
+		
+		// Draw the smaller map of the image
+		var mapWidth = 150;
+		var mapHeight = (mapWidth/FITSthumb.width)*FITSthumb.height;
+		var mapContext = canvas.getContext('2d');
+		// The border around the map
+		mapContext.fillStyle = '#777777';
+		mapContext.fillRect((canvas.width-mapWidth-15),5,mapWidth+10,mapHeight+10);
+		// The map
+		mapContext.drawImage(FITSthumb, (canvas.width-mapWidth-10), 10, mapWidth, mapHeight);
+		
+		// The viewport box
+		
+		// Figure out how much of the larger image is being cut off
+		if (imgY < 0)
+			topClip = Math.abs(imgY);
+		if ((imgY-(canvas.height-FITSthumb.height*scale)) > 0)
+			bottomClip = imgY-(canvas.height-FITSthumb.height*scale);
+		if (imgX < 0)
+			leftClip = Math.abs(imgX);
+		if (imgX > (canvas.width - FITSthumb.width*scale) )
+			rightClip = (imgX + (FITSthumb.width*scale)) - canvas.width;
+		// Scale these amounts down to the size of the map image
+		topClip = topClip/FITSthumb.height/scale*mapHeight;
+		bottomClip = bottomClip/FITSthumb.height/scale*mapHeight;
+		leftClip = leftClip/FITSthumb.width/scale*mapWidth;
+		rightClip = rightClip/FITSthumb.width/scale*mapWidth;
+			
+		mapContext.globalAlpha = 0.5;
+		mapContext.fillStyle = '#E3C059';
+		mapContext.fillRect((canvas.width-mapWidth-10)+leftClip,10+topClip,mapWidth-rightClip-leftClip, mapHeight-bottomClip-topClip);
+		mapContext.globalAlpha = 1;
+		mapContext.strokeStyle = '#E3C059';
+		mapContext.lineWidth = 4;
+		mapContext.strokeRect((canvas.width-mapWidth-10)+leftClip,10+topClip, mapWidth-rightClip-leftClip, mapHeight-bottomClip-topClip);
+
+		FITSstage.addRegionEventListener("onmousedown", function(){
+			console.log('mouse down');
+			if (!select){
+				// Check to see if the mouse is inside of the map window
+				if (mousePos.x >= (canvas.width-mapWidth-10) && mousePos.x <= (canvas.width-10) &&
+					mousePos.y >= 10 && mousePos.y <= 10+mapHeight) {
+					// If the mouse is in the viewport, pan
+					if (mousePos.x >= (canvas.width-mapWidth-14)+leftClip && mousePos.x <= (canvas.width-6)-rightClip
+						&& mousePos.y >= 6+topClip && mousePos.y <= 14+mapHeight-bottomClip) {
+						mouseDownPan = true;
+					}
+					// Otherwise, snap the viewport to that location
+					else {
+						imgX -= (mousePos.x-((canvas.width-mapWidth-10)+leftClip+((mapWidth-rightClip-leftClip)/2)))*(FITSthumb.width/mapWidth)*scale;
+						imgY -= (mousePos.y-(10+topClip+((mapHeight-bottomClip-topClip)/2)))*(FITSthumb.height/mapHeight)*scale;
+					}
+				}
+				// Mouse is not in the map window, we must be zooming
+				else {
+					mouseDownZoom = true;
+				}
+			}
+			else {
+		                mouseDownSelect = true;
+			}
+			dragStartX = mousePos.x;
+			dragStartY = mousePos.y;
+		});
+		FITSstage.addRegionEventListener("onmouseup", function(){
+			console.log('mouse up');
+			// Check to see if we are doing a zoom action or a select action
+			if (mouseDownSelect) {
+				var modifiedPointIds = []
+				for (var i = 0; i < objectsToDraw.length; i++) {
+					if (objectsToDraw[i].screenX > dragStartX && objectsToDraw[i].screenX < mousePos.x
+						&& objectsToDraw[i].screenY > dragStartY && objectsToDraw[i].screenY < mousePos.y)
+						modifiedPointIds.push(i);
+				}
+				var selectionObj = {modifiedPointIds: modifiedPointIds, color: getSelectionMarkerColor()};
+				setSelectedColor(selectionObj);
+			}
+			else {
+				if (mouseDownZoom) {
+					// Pan the image based on the distance from dragStart to the viewport center
+					imgX += (canvas.width/2)-dragStartX;
+					imgY += (canvas.height/2)-dragStartY;
+				
+					// scale is changed according to the height of the box
+					var originalScale = scale;
+					scale = (FITSthumb.height*scale)/(Math.abs(mousePos.y - dragStartY));
+					
+					// Scoot the image up and left depending on how many pixels it grew
+					var growthDelta = (FITSthumb.height*scale)-(FITSthumb.height*originalScale);
+					imgX -= growthDelta/2;
+					imgY -= growthDelta/2;
+				}
+		        }
+		        mouseDownZoom = false;
+		        mouseDownPan = false;
+		        mouseDownSelect = false;
+		});
+		FITSstage.addRegionEventListener("onmouseout", function(){
+		    document.body.style.cursor = "default";
+		});
+		FITSstage.addRegionEventListener("onmousemove", function(){
+			// Need to invert y mouse position so origin is in bottom left
+			var transformedMouse = { x: mousePos.x-imgX, y: (FITSthumb.height*scale)-mousePos.y+imgY };
+									 
+			// Convert mouse coordinates into native pixel value
+			//var scaleFactor = (globals.naxis1/(FITSthumb.width*scale));
+			var scaleFactor = (globals.naxis1/(FITSthumb.width*scale));
+			var coordinates = pixelToCC({ x: transformedMouse.x*scaleFactor, y: transformedMouse.y*scaleFactor });
+			document.getElementById('mousePixel').innerHTML = "X: " + Math.floor(transformedMouse.x*scaleFactor) + " Y: " + Math.floor(transformedMouse.y*scaleFactor);
+			
+			// Display coordinates of the mouse
+			var celCoordHTML = "";
+			
+			for (var i = 0; i < coordinates.length; i++) {
+				celCoordHTML += (coordinates[i] + "<br>");
+			}
+			
+			document.getElementById('celCoord').innerHTML = celCoordHTML;
+			
+			// Change the pointer if the mouse is in the map window
+			if (mousePos.x >= (canvas.width-mapWidth-14)+leftClip && mousePos.x <= (canvas.width-6)-rightClip
+				&& mousePos.y >= 6+topClip && mousePos.y <= 14+mapHeight-bottomClip)
+				document.body.style.cursor = "pointer";
+			else {
+				document.body.style.cursor = "default";
+				mouseDownPan = false;
+			}
+			
+			// Check to see if an overlay circle is being moused over
+			for (var i = 0; i < objectsToDraw.length; i++) {
+				var dist = Math.sqrt( (mousePos.x - objectsToDraw[i].screenX)*(mousePos.x - objectsToDraw[i].screenX) + (mousePos.y - objectsToDraw[i].screenY)*(mousePos.y - objectsToDraw[i].screenY) );
+				if (dist < overlayCircleRad+2)
+					objectsToDraw[i].mouseOver = true;
+				else
+					objectsToDraw[i].mouseOver = false;
+			}
+		});
+		FITSstage.closeRegion();
+		
+		// Draw overlaid objects, if there are any
+		var overlayContext = canvas.getContext('2d');
+		var tooltipIndex = -1;
+		for (var i = 0; i < objectsToDraw.length; i++) {
+			// Recalculate the object's position on the screen
+			objectsToDraw[i].screenX = (objectsToDraw[i].x/globals.naxis1*FITSthumb.width)*scale+imgX;
+			objectsToDraw[i].screenY = FITSthumb.height*scale-((objectsToDraw[i].y/globals.naxis2*FITSthumb.height)*scale-imgY);
+			overlayContext.beginPath();
+			overlayContext.arc(objectsToDraw[i].screenX, objectsToDraw[i].screenY, overlayCircleRad, 0, 2 * Math.PI, false);
+   		overlayContext.closePath();
+   		overlayContext.lineWidth = 2;
+   		
+   		// If the object is being moused over, display a tooltip
+   		if (objectsToDraw[i].mouseOver == true) {
+   			tooltipIndex = i;
+    			overlayContext.strokeStyle = "#69FD56";
+    		}
+    		else {
+    			overlayContext.strokeStyle = objectsToDraw[i].color;
+    		}
+    		overlayContext.stroke();
+		}
+		
+		if (tooltipIndex != -1) {
+			overlayContext.fillStyle = '#FFFFDA';
+   		   overlayContext.font="15px sans-serif";
+   		
+   		   overlayContext.save();
+         overlayContext.beginPath();
+   		   overlayContext.rect(objectsToDraw[tooltipIndex].screenX+10, objectsToDraw[tooltipIndex].screenY-10-columnNames.length*15, 200, columnNames.length*15);
+   	 	   overlayContext.clip();
+   		   overlayContext.fillRect(objectsToDraw[tooltipIndex].screenX+10, objectsToDraw[tooltipIndex].screenY-10-columnNames.length*15, 200, columnNames.length*15);
+   		   for (var j = columnNames.length-1; j >= 0; j--) {
+   			   overlayContext.beginPath();
+   			   overlayContext.rect(objectsToDraw[tooltipIndex].screenX+10, objectsToDraw[tooltipIndex].screenY-10-columnNames.length*15, 200, columnNames.length*15);
+   	 		   overlayContext.clip();
+    		   overlayContext.fillStyle = '#000000';
+    		   overlayContext.fillText(columnNames[j] + ": " + dsData[tooltipIndex][columnNames[j]], objectsToDraw[tooltipIndex].screenX+10+1, objectsToDraw[tooltipIndex].screenY-10-j*15-1);
+    	   }
+    	   overlayContext.restore();
+		}
+		
+		// The box that the mouse drags out when zooming and selecting
+		if (mouseDownZoom || mouseDownSelect) {
+			context.globalAlpha = 0.5;
+			context.fillStyle = '#E3C059';
+			context.fillRect(dragStartX, dragStartY, mousePos.x-dragStartX, mousePos.y-dragStartY);
+			context.globalAlpha = 1;
+		}
+		
+		if (mouseDownPan) {
+			imgX -= (mousePos.x-dragStartX)*(FITSthumb.width/mapWidth)*scale;
+			imgY -= (mousePos.y-dragStartY)*(FITSthumb.height/mapHeight)*scale;
+			dragStartX = mousePos.x;
+			dragStartY = mousePos.y;
+		}
+	});
+}
+
+// Send a request to the server to convert the FITS image to a thumbnail
+// Draw the thumbnail when the request is finished
+function makeFITSrequest(fileName) {
+//  $.ajax({
+//   'url': '/convertFITS/' + fileName,
+//    success: drawThumbnail
+//  });
+    drawThumbnail(fileName);
+}
+
+// Callback function for makeFITSrequest
+function drawThumbnail(fileName) {
+	canvas = document.getElementById('FITSimage');
+	FITSstage = new Kinetic.Stage(canvas);
+	context = canvas.getContext('2d');
+	
+	FITSthumb = new Image();
+   console.log("Image Filename: "+fileName);
+	FITSthumb.src = "../images/FITSConverter/"+fileName;
+	FITSthumb.onload = function() {
+      imgX = canvas.width/2-(FITSthumb.width/2);
+		imgY = -FITSthumb.width/2+canvas.width/2;
+		redrawCanvas();
+		showStatus(ICON_URL_SUCCESS, "Image loaded");
+	}
+}
+
+// Display a status icon in divStatusText
+function showStatus(iconUrl, text){
+	var statusDiv = $('#divStatusText')[0];
+	var status = text; 
+	if (iconUrl !== "") {
+		status = '<img id="imgStatus" style="vertical-align:middle;" src="' + iconUrl + '" /> ' + "<span style='vertical-align:middle;'>" + text + "</span>";
+	} 
+	statusDiv.innerHTML = status;
+	statusDiv.style.visibility = 'inline';
+}
+
+// Get the contents of an HTML field
+function getField(field) {
+	if (!(field in myFields) || (myFields[field] === null)) {
+		myFields[field] = document.getElementById(field);
+	}
+	return myFields[field];
+}
+	
+// accepts name of select box
+// returns the value in the select box, or ""
+function getSelectedOption(select) {
+	var selName = getField(select);
+ 	if (selName.length > 0){
+    	return selName.options[selName.selectedIndex].value;
+  	} else {
+    	return "";
+  	}
+}
+
+
+// Dynamically load a js file containing a JSON object
+// Makes an HTTP request then calls JSON.parse on the response
+function loadJsFile(filename) {
+	var HTTPrequest = new XMLHttpRequest();
+	HTTPrequest.open("GET",filename,true);
+	HTTPrequest.onreadystatechange = function() {
+		if (HTTPrequest.readyState === 4) { 
+			if (HTTPrequest.status === 200) {
+				var response = HTTPrequest.responseText;
+				var responseNoNewline = response.replace(/\n/g,"");	// Remove all newline characters
+			 	globals = JSON.parse(responseNoNewline);
+				precalcCoordInfo();
+			}
+		}
+	}
+	HTTPrequest.send(null);
+}
+
+// Switches between decimal and sexagecimal coordinates
+function switchDecSex() {
+	if (coordOptions.decSex)
+		coordOptions.decSex = false;
+	else
+		coordOptions.decSex = true;
+}
+
+// Switches between zooming and selecting with the mouse
+function switchZoomSel() {
+	if (select)
+		select = false;
+	else
+		select = true;
+}
+
+function setCoordType(value) {
+	
+	if (value == "B1950")
+		coordOptions.eqB = !coordOptions.eqB;
+	if (value == "J2000")
+		coordOptions.eqJ = !coordOptions.eqJ;
+	if (value == "Galactic")
+		coordOptions.gal = !coordOptions.gal;
+	else
+		coordOptions.ecl = !coordOptions.ecl;
+}
+
+// Display the contents of the FITS header in a new window
+function showHeader() {
+	var content = "";
+	for (var i = 0; i < globals.hdr.length; i++) {
+		content += globals.hdr[i].content + "<br>";
+	}
+
+	top.consoleRef=window.open('','data',
+	'width=640,height=480'
+	+',menubar=0'
+	+',toolbar=1'
+	+',status=0'
+	+',scrollbars=1'
+	+',resizable=1')
+	top.consoleRef.document.writeln(
+	'<html><head><title>' + "FITS Header" + '</title></head>'
+	+'<body bgcolor=white onLoad="self.focus()">'
+	+content
+	+'</body></html>');
+	top.consoleRef.document.close();
+	}
+
+// Start converting the FITS image and read in the header
+function startViewer() {
+	showStatus(ICON_URL_SPINNER, "Converting FITS image..."); 
+	makeFITSrequest("thumb_v"+dsData[0]['visit']+"_R"+dsData[0]['raft']+"_S"+dsData[0]['ccd']+".jpg");
+   var filename = "header_v"+dsData[0]['visit']+"_R"+dsData[0]['raft']+"_S"+dsData[0]['ccd']+".js"; 
+   document.getElementById('fileName').innerHTML = "Visit:"+dsData[0]['visit']+" Raft:"+dsData[0]['raft']+" CCD:"+dsData[0]['ccd'];
+	loadJsFile("../images/FITSConverter/"+filename);
+}
+
+function resetZoom() {
+	scale = 1;
+	imgX = canvas.width/2-(FITSthumb.width/2);
+	imgY = 0;
+	redrawCanvas();
+}
+
+// Populates the X/Y axis dropdowns with values from the chosen datasets column names
+// If no dataset is chosen, then it blanks them
+function populateRaDecSelect() {
+	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+        console.log(""+gadget);
+    	columnNames = ds.getColumns();
+	dsData = ds.getRecords();
+	setSelectOptions("selRA", columnNames);
+	setSelectOptions("selDec", columnNames);
+        startViewer();
+}
+
+function overlayObjects() {
+	
+	// Read the RA and Dec list in from the dataset
+	
+	for (var i=0; i < dsData.length; i++) {
+		// Does the dataset's coordinate system need to be converted?
+		var coords = { ra: parseFloat(dsData[i][getSelectedRA()]), dec: parseFloat(dsData[i][getSelectedDec()]) };
+		//if (getSelectedOption("selDataCoordSys") != nativeCoordSystem.label) {
+		//	if (getSelectedOption("selDataCoordSys") == 'J2000' && nativeCoordSystem.label == 'B1950')
+		//		coords = UnitsLib.convertFK5toFK4(coords);
+		//	else if (getSelectedOption("selDataCoordSys") == 'B1950' && nativeCoordSystem.label == 'J2000')
+		//		coords = UnitsLib.convertFK4toFK5(coords);
+		//	else if (getSelectedOption("selDataCoordSys") == 'B1950' && nativeCoordSystem.label == 'Galactic')
+		//		coords = UnitsLib.convertFK4toGAL(coords);
+		//	else if (getSelectedOption("selDataCoordSys") == 'Galactic' && nativeCoordSystem.label == 'B1950')
+		//		coords = UnitsLib.convertGALtoFK4(coords);
+		//	else if (getSelectedOption("selDataCoordSys") == 'J2000' && nativeCoordSystem.label == 'Ecliptic')
+		//		coords = UnitsLib.convertFK5toECL(coords);
+		//	else if (getSelectedOption("selDataCoordSys") == 'Ecliptic' && nativeCoordSystem.label == 'J2000')
+		//		coords = UnitsLib.convertECLtoFK5(coords);
+		//	else
+		//		alert('Coordinate system of dataset and native coordinate system not compatible');
+		//}
+	
+		// The pixel coordinates of the object on the FITS image
+		//var convert = CCtoPixel({ ra: coords.ra, dec: coords.dec });
+                var convert = { x: parseFloat(dsData[i][getSelectedRA()]), y: parseFloat(dsData[i][getSelectedDec()]) };
+		
+		// The pixel coordinates of the object on the canvas
+                // n.b. this is recalculated in handleThumbnail so modifications here have no impact on where objects are drawn on the screen.
+                // But may have some impact on how objects are selected.
+		convert.screenX = (convert.x/globals.naxis1*FITSthumb.width)*scale+imgX;
+		convert.screenY = FITSthumb.height*scale-((convert.y/globals.naxis2*FITSthumb.height)*scale-imgY);
+
+		convert.mouseOver = false;
+		convert.color = DEFAULT_MARKER_COLOR;
+		
+		objectsToDraw.push(convert);
+	}
+	redrawCanvas();
+}
+
+function redrawCanvas() {
+	FITSstage = new Kinetic.Stage(canvas);
+	handleThumbnail();
+}
+
+// Accepts the name of a select object, and an array of strings
+// replaces the options with the array of strings
+function setSelectOptions(selectName, options) {
+var select = getField(selectName);
+  if (select === null) {
+   	return;
+  }
+  // save old selected option so maybe it can be reselected
+  var selectedOption = getSelectedOption(selectName);
+  // Default. First option selected
+  if (selectedOption == "")
+ 		 selectedOption == options[0];
+  // clear options
+  select.length = 0;
+  // add options
+  for (var i=0, len=options.length; i<len; i++) {
+  	// if oldOption is in the list, then select it
+     select.add(new Option(options[i], options[i], false, (selectedOption == options[i])), null);
+  }
+  if(select.onchange)
+  	select.onchange();
+}
+
+// returns the color name in the selection color dropdown
+function getSelectionMarkerColor() {
+	return colorText = getSelectedOption("selColor");
+}
+
+</script>
+</head>
+<body>
+
+<table width="100%">
+<tc><td align="left">
+<!-- <input type="button" onclick="startViewer();" value="Go">-->
+<input type="button" onclick="showHeader();" value="View Header">
+<div id="divStatusText" style="display: inline; margin-left: 10px"></div><br>
+<!--
+<select id="selFITSimage">
+<option value="test.fits" selected="selected">test.fits</option>
+<option value="cgps.fits">cgps.fits</option>
+<option value="dss_search.fits">dss_search.fits</option>
+<option value="R1_2_S1_1_img.fits">R1_2_S1_1_img.fits</option>
+<option value="Ramp.fits">Ramp.fits</option></select>-->
+<div id="fileName"> Filename: </div><br>
+</td></tc>
+<tc><td align="right">
+<input type="button" onclick="resetZoom();" value="Reset Zoom"><br>
+<input type="radio" id="radZoomSel" name="radZoomSel" value="Zoom" checked="checked" onclick="switchZoomSel();" /><label>Zoom</label>
+<input type="radio" id="radZoomSel" name="radZoomSel" value="Select" onclick="switchZoomSel();" /><label>Select</label><br>
+Selection Color: <select id="selColor">
+<option value="red" selected="selected">red</option>
+<option value="green">green</option>
+<option value="blue">blue</option>
+<option value="yellow">yellow</option>
+<option value="unselect">unselect</option></select>
+</td></tc>
+</table>
+
+<canvas id="FITSimage" height="500" style="width: 100%; background-color: #DDDDDD;"></canvas>
+
+<table width="100%">
+<tc><td align="left">
+<div id="mousePixel"> X: - Y: - </div>
+<div id="celCoord"> <br><br><br><br> </div>
+<input type="radio" id="radDecSex" name="radDecSex" value="Decimal" checked="checked" onclick="switchDecSex();" /><label>Decimal</label>
+<input type="radio" id="radDecSex" name="radDecSex" value="Sexagecimal" onclick="switchDecSex();" /><label>Sexagecimal</label>
+</td></tc>
+<tc><td align="right">
+Dataset: <select id="selDatasetName" onchange="populateRaDecSelect();"></select>
+X Pixel: <select id="selRA">
+<option value="xPix" selected="selected">xPix</option>
+</select>
+Y Pixel: <select id="selDec">
+<option value="yPix" selected="selected">yPix</option>
+</select> <br>
+<!--
+Coordinate System of Dataset: 
+<select id="selDataCoordSys">
+<option value="J2000" selected="selected">J2000</option>
+<option value="B1950">B1950</option>
+<option value="Galactic">Galactic</option>
+<option value="Ecliptic">Ecliptic</option></select><br>
+-->
+<input type="button" value="Overlay Objects" onclick="overlayObjects();">
+</td></tc>
+</table>
+
+</body>
+</html>
