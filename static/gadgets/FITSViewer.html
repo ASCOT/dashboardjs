@@ -110,7 +110,7 @@ function setSelectedColor(obj) {
 		useColor = '';
 	}
 	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
-	ds.setRecordsMetaData({'color': useColor}, obj.modifiedPointIds); 
+	ds.setRecords({'color': useColor}, obj.modifiedPointIds); 
 	gadget.notify('dataSetChanged');
 	return;
 }
@@ -637,12 +637,11 @@ function overlayObjects() {
 	
 	// Read the RA and Dec list in from the dataset
 	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
-	dsData = ds.getRecords();
 	columnNames = ds.getColumns();
 	
 	for (var i=0; i < dsData.length; i++) {
 		// Does the dataset's coordinate system need to be converted?
-		var coords = { ra: parseFloat(dsData[i][getSelectedRA()]), dec: parseFloat(dsData[i][getSelectedDec()]) };
+		var coords = { ra: parseFloat(ds.getRecord(i)[getSelectedRA()]), dec: parseFloat(ds.getRecord(i)[getSelectedDec()]) };
 		if (getSelectedOption("selDataCoordSys") != nativeCoordSystem.label) {
 			if (getSelectedOption("selDataCoordSys") == 'J2000' && nativeCoordSystem.label == 'B1950')
 				coords = UnitsLib.convertFK5toFK4(coords);

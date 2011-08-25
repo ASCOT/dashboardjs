@@ -142,7 +142,7 @@ function toggleDataSetVisbility(id) {
   
 function toggleDataSetColorVisibility(id, color, visible) {
   var dataSet = gadget.dashboard.getDataSet(id);
-  dataSet.setRecordsMetaData({'visible': visible}, dataSet.getIndexEntries('color', color));
+  dataSet.setRecords({'visible': visible}, dataSet.getIndexEntries('color', color));
 }
       
 </script>

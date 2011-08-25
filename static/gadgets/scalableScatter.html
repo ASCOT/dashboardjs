@@ -76,7 +76,7 @@ function setSelectedColor(obj) {
 		useColor = '';
 	}
 	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
-	ds.setRecordsMetaData({'color': useColor}, obj.modifiedPointIds); 
+	ds.setRecords({'color': useColor}, obj.modifiedPointIds); 
    gadget.notify('dataSetListChanged');
 	return;
 }
@@ -193,12 +193,11 @@ function parseData(args) {
 	var colorIndexArray = ds.getIndex('color');
              
  	var graphData = [];
-	var dsData = ds.getRecords();
 	for (i=0,len=dsData.length; i<len; i++) {
-		var xVal = parseFloat(dsData[i][getSelectedXAxis()]);
-		var yVal = parseFloat(dsData[i][getSelectedYAxis()]);
+		var xVal = parseFloat(ds.getRecord(i)[getSelectedXAxis()]);
+		var yVal = parseFloat(ds.getRecord(i)[getSelectedYAxis()]);
 		// each point has unique id so a pointer to point can be had by chart.get(id)
-   	var id = dsData[i]["id"];
+   	var id = ds.getRecord(i)["id"];
    	if (xVal !== NaN && yVal !== NaN){
    		graphData.push({id: id, x: xVal, y: yVal, color: DEFAULT_MARKER_COLOR });
   		}

@@ -229,7 +229,7 @@ function setSelectedByMinMax(obj) {
   // set dataset points colors in bulk
   if(selectedIds.length > 0){
     color = (selectedMarkerColor === "unselect") ? "grey" : selectedMarkerColor;
-    selectedDataSet.setRecordsMetaData({'color': color}, selectedIds); 
+    selectedDataSet.setRecords({'color': color}, selectedIds); 
     plot.redraw();
   }
    
@@ -249,7 +249,7 @@ function updateSelectedPoints() {
   if (!selectedDataSet) {
     return;
   }
-  colorIndexArray = selectedDataSet.getIndex('color');
+  colorIndexArray = selectedDataSet.getIndexKeys('color');
   // color selected points
   for (color in colorIndexArray){
     colorIndex = colorIndexArray[color];
@@ -277,7 +277,7 @@ function setPointColor(point, colorName) {
     colorName = "";
   }
   colorChartPoint(point, colorName);
-  selectedDataSet.setRecordsMetaData({'color': colorName}, point.id);  
+  selectedDataSet.setRecords({'color': colorName}, point.id);  
 }
 
 // Zooms the viewport to point by writing CelestialCoordinate to public variable
@@ -319,25 +319,23 @@ function drawPlot() {
 function generatePoints(){
   var xValue;
   var yValue;
-  var records;
   var shift;
   var points = [];
   if (!selectedDataSet)
     return points;
-  records = selectedDataSet.getRecords(); 
   
-  for (i=0,len=records.length; i<len; i++) {
-    xValue = records[i][selectedXAxis]; 
+  for (i=0,len=selectedDataSet.length(); i<len; i++) {
+    xValue = selectedDataSet.getRecord(i)[selectedXAxis]; 
     xValue = /\./.test(xValue)? parseFloat(xValue) : xValue;
-    yValue = records[i][selectedYAxis];
+    yValue = selectedDataSet.getRecord(i)[selectedYAxis];
     yValue = /\./.test(yValue)? parseFloat(yValue) : yValue;
     // each point has unique id so a pointer to point can be had by chart.get(id)
     if (xValue !== NaN && yValue !== NaN){
-      points.push({'id': records[i]["id"],
+      points.push({'id': selectedDataSet.getRecord(i)["id"],
                     x: xValue, 
                     y: yValue,
-                    color: DEFAULT_MARKER_COLOR,
-                    marker: { fillColor: DEFAULT_MARKER_COLOR }
+                    color: MARKER_COLOR[selectedDataSet.getRecord(i).color],
+                    marker: MARKER_COLOR[selectedDataSet.getRecord(i).color]
                   });
     }
   }

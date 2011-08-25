@@ -85,10 +85,10 @@ UW.Dashboard = function(container){
   };
 
   this.createDataSet = function(id){
-    var newDataSet = new UW.DataSetModel();
+    var newDataSet = new UW.DataSet();
     newDataSet.id = id;
     dataSets[id] = newDataSet;
-    newDataSet.bind('publish', _.bind(function(data) {
+    newDataSet.bind('changed', _.bind(function(data) {
       this.notify("dataSetChanged", data)}, 
     this));    
     return newDataSet;
@@ -220,7 +220,6 @@ UW.Dashboard = function(container){
           remainingDataSets--;
           newDataSet = this.createDataSet(dataSet.name);
           newDataSet.addRecords(dataSet.records, true);
-          //newDataSet.setAllRecordsMetaData({'color': 'grey'});
           if(remainingDataSets == 0){
             this.notify("dataSetChanged", {});
           }

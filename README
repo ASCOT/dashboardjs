@@ -40,7 +40,7 @@ ADASS Presentation Idea
 
 Exercise of web purism
 
-Building on the root concept of the web.
+Building on the root concept of the web. Resource linking
 
 Every piece of information has its own Url. Cache, bookmark, index and link...
 
@@ -50,3 +50,35 @@ Google Sky View Production Server Key
 --------------------------------------
 
 ABQIAAAAVGHgv2pouycqhAw5tCmtChRUEqzWmCBjYYhr3pAAB1-qbxF2ORS71VNJWPXhtTrP99ACOXUleuYOBg
+
+
+Reasons iframes
+----------------
+
+Sandboxing: No global state leak
+
+ASCOT Data Core Concept
+------------------------
+
+Contributory database: User provides their own data in exchange for receiving a more robust set of aggregated data back that provides insight into the broader domain, or provides a vehicle for expressing a view. Give a little, get a lot back in return
+
+Web based data processing platform: Pull data from a wide array of sources, integrate it into a unified stream, make it consumable via a dashboard or through an API
+
+Lazy data modeling: Instead of trying to guess the future we store data "as-is" and deal with transformation when a necessary use case arises. 
+
+ASCOT Usability Philosophy
+--------------------------
+
+Rule of fifteen minutes: For each new API, language, or format a person of reasonable ability should be able to get from zero to ‘Hello World’ in fifteen minutes
+
+We will provide support with existing XML based systems but we don't support it
+-------------------------------------------------------------------------------
+
+XML = Data bureaucracy. We don't want to spend time formalizing, serializing, parsing and translating data. We want to use data. We want to be flexible and iterate fast. XML is not agile.
+
+XML is verbose. We plan to deal with big data sets. XML introduce an overhead in memory, storage and CPU costs.
+
+XML is ugly and complex for programmers. Reading and writing XML is unpleasant.
+
+
+ 

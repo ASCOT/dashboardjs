@@ -57,7 +57,7 @@ exports.XMLHttpRequest = function() {
 	var setState = function(state) {
 		self.readyState = state;
 		if(self.onreadystatechange){
-		  self.onreadystatechange();
+		self.onreadystatechange();
 	  }
 	};
 

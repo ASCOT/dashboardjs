@@ -138,14 +138,13 @@ function clearKML() {
 // creates a point on ge for each CelestialCoordinate in the dataset    
 function plotDataset(dataSetName) {
   var dataSet = gadget.dashboard.getDataSet(dataSetName);
-  var dataSetRecords = dataSet.getRecords();
   var kmlDataSetRecords = [];
   var parsedKmlRecord;
     
   if (dataSet.isVisible()) {
-    for (var i=0, len=dataSetRecords.length; i<len; i++) {
-      if (dataSetRecords[i].metaData.visible) { // check the visible property of the record
-        kmlDataSetRecords.push(toKML(dataSetRecords[i]));
+    for (var i=0, len=dataSet.length(); i<len; i++) {
+      if (dataSet.getRecord(i).visible) { // check the visible property of the record
+        kmlDataSetRecords.push(toKML(dataSet.getRecord(i)));
       }
     }
     // PLOT the kml objects in toPlot
@@ -184,17 +183,12 @@ function getColorIcon(color){
   return iconUrl
 };
 
-function generateDescription(data, metaData){
+function generateDescription(data){
   var description = [];
-  if(data && metaData){
+  if(data){
     for (var property in data) {
       if (data[property] !== null && data[property] !== undefined) {
         description.push(property + ": " + data[property].toString());
-      }
-    }
-    for (var property in metaData) {
-      if (metaData[property] !== null && metaData[property] !== undefined) {
-        description.push(property + ": " + metaData[property].toString());
       }
     }
     return description.join('\n');
@@ -204,10 +198,10 @@ function generateDescription(data, metaData){
 function toKML(record) {
   var lon = record.ra - 180;
   var lat = record.dec;
-  var iconUrl = getColorIcon(record.metaData.color);
-  var name = record.metaData.name;
+  var iconUrl = getColorIcon(record.color);
+  var name = record.name || "";
   // translate multiline desc into html
-  desc = "<p>" + generateDescription(record, record.metaData).replace(new RegExp('\n', "g"), '<br \>') + '<\p>';
+  desc = "<p>" + generateDescription(record, record).replace(new RegExp('\n', "g"), '<br \>') + '<\p>';
 
   var placemarkText = '<?xml version="1.0" encoding="utf-8"?>' +
     '<kml xmlns="http://www.opengis.net/kml/2.2" hint="target=sky">' +

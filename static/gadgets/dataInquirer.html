@@ -215,9 +215,9 @@ function createDataset(id, rows) {
   }
   // create dataset
   newDataSet = gadget.dashboard.createDataSet(id); 
-  newDataSet.createIndex('color');
-  newDataSet.addRecords(json);
-  newDataSet.setAllRecordsMetaData({'color': 'grey'}, true);
+  newDataSet.addRecords(json, true);
+  newDataSet.setAllRecords({'color': 'grey'}, true);
+  newDataSet.setAllRecords({'visible': true});
   return newDataSet;
 }
 
