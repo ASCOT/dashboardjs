@@ -632,9 +632,8 @@ function resetZoom() {
 // If no dataset is chosen, then it blanks them
 function populateRaDecSelect() {
 	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
-        console.log(""+gadget);
-    	columnNames = ds.getColumns();
-	dsData = ds.getRecords();
+   columnNames = ds.getColumns();
+	dsData = ds.getRecordsJSON();
 	setSelectOptions("selRA", columnNames);
 	setSelectOptions("selDec", columnNames);
         startViewer();

@@ -45,6 +45,10 @@ var selectedColor = "";
 var selectedDataSet = "";
 var selectionObject;
 
+//Load gadget state
+
+
+
 // Gadget intialization
 gadget.init = function(callback){
   
@@ -95,6 +99,31 @@ gadget.init = function(callback){
   populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"]);
   callback();
 }
+
+gadget.saveState = function(){
+  return { 
+    'axisInverted': axisInverted,
+    'verboseTooltip': verboseTooltip,
+    'selectedDataSetName': selectedDataSetName,
+    'selectedXAxis': selectedXAxis,
+    'selectedYAxis': selectedYAxis,
+    'selectedColor': selectedColor,
+    'selectedDataSet': selectedDataSet,
+    'selectionObject': selectionObject
+  }
+};
+
+gadget.loadState = function(state){
+	console.log("Loaded State: "+selectedXAxis);
+	axisInverted = state.axisInverted;
+	verboseTooltip = state.verboseTooltip;
+	selectedDataSetName = state.selectedDataSetName;
+	selectedXAxis = state.selectedXAxis;
+	selectedYAxis = state.selectedYAxis;
+	selectedColor = state.selectedColor;
+	selectedDataSet = state.selectedDataSet;
+	selectionObject = state.selectionObject;
+};
 
 // Highcharts plot options
 var chartOptions = {
