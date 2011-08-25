@@ -34,7 +34,9 @@ UW.Gadget = Backbone.View.extend({
   },
   
   inflateState: function(){
-    this.loadState(this.model.toJSON());
+    if(!isEmpty(this.model.toJSON())){
+      this.loadState(this.model.toJSON());
+    }
   },
   
   bind: function(property, trigger){
