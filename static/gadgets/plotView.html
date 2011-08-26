@@ -88,6 +88,7 @@ gadget.init = function(callback){
       selectedColor = this[this.selectedIndex].value;
     }
   });  
+  populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"],selectedColor);
     
   $('#invertXAxisButton').click(invertX);
   $('#invertYAxisButton').click(invertY);
@@ -145,7 +146,6 @@ gadget.loadState = function(state){
 	  selectionObject.color = selectedColor;
 	  selectionObject.seriesId = 'series1';
    }
-   populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"],selectedColor);
    redrawAll();
    setSelectedByMinMax(selectionObject);
 };
@@ -442,10 +442,9 @@ function syncPlot(plotOptions){
   $('#selectXAxis option[value=' + plotOptions.xAxis + ']').attr('selected', 'selected');
   $('#selectYAxis option[value=' + plotOptions.yAxis + ']').attr('selected', 'selected');
   $('#selectColor option[value=' + plotOptions.color + ']').attr('selected', 'selected');
+  $('#selectColor').change();
   $('#selectXAxis').change();
   $('#selectYAxis').change();
-  $('#selectColor').change();
-  
   drawPlot();
   
 }    
