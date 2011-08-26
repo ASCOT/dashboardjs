@@ -283,10 +283,7 @@ function setSelectedByMinMax(obj) {
   for (i=0, len=data.length; i<len; i++){ 
     point = data[i];
     if (point.x <= obj.xMax && point.x >= obj.xMin && point.y <= obj.yMax && point.y >= obj.yMin) {
-      // point.id looks like: p0 
-      // so we strip the first letter to get the db_id
       selectedIds.push(point.id);             
-      colorChartPoint(point, selectedMarkerColor);
     }
   }
   // update the dataset with the selected points 
@@ -473,7 +470,7 @@ function invertX(){
   } else {
     $('#invertXAxisButton').get(0).value = '>';
   }
-  gadget.notify('axisInverted',"x")
+  gadget.notify('axisInverted',"x", {'private': true})
 }
 
 function invertY(){
@@ -483,7 +480,7 @@ function invertY(){
    } else {
      $('#invertYAxisButton').get(0).value = ('^');
    }
-  gadget.notify('axisInverted',"y")
+  gadget.notify('axisInverted',"y", {'private': true})
 }
       
 </script>

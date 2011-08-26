@@ -132,10 +132,10 @@ function updateSelectedPoints() {
  	var point;
  	
  	for(var j = 0; j < colorIndexArray.length; ++j){
- 		colorIndex = getRecordsIndicesWithAttribute('color', colorIndexArray[j]);
+ 		colorIndex = ds.getRecordsIndicesWithAttribute('color', colorIndexArray[j]);
  		for (var i = 0; i < colorIndex.length; i++) {
  			point = objectsToDraw[colorIndex[i]];
- 			colorChartPoint(point,color);
+ 			colorChartPoint(point, colorIndexArray[j]);
  		}
  	}
 }
