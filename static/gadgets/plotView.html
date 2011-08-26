@@ -279,10 +279,7 @@ function setSelectedByMinMax(obj) {
   for (i=0, len=data.length; i<len; i++){ 
     point = data[i];
     if (point.x <= obj.xMax && point.x >= obj.xMin && point.y <= obj.yMax && point.y >= obj.yMin) {
-      // point.id looks like: p0 
-      // so we strip the first letter to get the db_id
       selectedIds.push(point.id);             
-      colorChartPoint(point, selectedMarkerColor);
     }
   }
   // update the dataset with the selected points 

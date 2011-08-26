@@ -114,7 +114,7 @@ function setSelectedColor(obj) {
 		useColor = '';
 	}
 	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
-	ds.setRecordsMetaData({'color': useColor}, obj.modifiedPointIds); 
+	ds.setRecords({'color': useColor}, obj.modifiedPointIds); 
 	gadget.notify('dataSetChanged');
 	return;
 }
@@ -132,10 +132,10 @@ function updateSelectedPoints() {
  	var point;
  	
  	for(var j = 0; j < colorIndexArray.length; ++j){
- 		colorIndex = getRecordsIndicesWithAttribute('color', colorIndexArray[j]);
+ 		colorIndex = ds.getRecordsIndicesWithAttribute('color', colorIndexArray[j]);
  		for (var i = 0; i < colorIndex.length; i++) {
  			point = objectsToDraw[colorIndex[i]];
- 			colorChartPoint(point,color);
+ 			colorChartPoint(point, colorIndexArray[j]);
  		}
  	}
 }
