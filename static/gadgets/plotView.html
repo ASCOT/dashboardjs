@@ -466,7 +466,7 @@ function invertX(){
   } else {
     $('#invertXAxisButton').get(0).value = '>';
   }
-  gadget.notify('axisInverted',"x")
+  gadget.notify('axisInverted',"x", {'private': true})
 }
 
 function invertY(){
@@ -476,7 +476,7 @@ function invertY(){
    } else {
      $('#invertYAxisButton').get(0).value = ('^');
    }
-  gadget.notify('axisInverted',"y")
+  gadget.notify('axisInverted',"y", {'private': true})
 }
       
 </script>
