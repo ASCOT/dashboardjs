@@ -253,7 +253,7 @@ function plotData(){
   }
   else{
     drawPlot();
-    gadget.notify("plotRendered", { 'dataSetName': selectedDataSetName, 'color': selectedColor, 'xAxis': selectedXAxis, 'yAxis': selectedYAxis }, {'private': true});
+    gadget.notify("plotRendered", { 'dataSetName': selectedDataSetName, 'color': selectedColor, 'xAxis': selectedXAxis, 'yAxis': selectedYAxis });
   }
 }
                                                                         
@@ -434,10 +434,10 @@ function populateSelect(selectName, options, selectedOption) {
 function syncPlot(plotOptions){
   
   $('#selectDatasetName option[value=' + plotOptions.dataSetName + ']').attr('selected', 'selected');
+  $('#selectDatasetName').change();
   $('#selectXAxis option[value=' + plotOptions.xAxis + ']').attr('selected', 'selected');
   $('#selectYAxis option[value=' + plotOptions.yAxis + ']').attr('selected', 'selected');
   $('#selectColor option[value=' + plotOptions.color + ']').attr('selected', 'selected');
-  $('#selectDatasetName').change();
   $('#selectXAxis').change();
   $('#selectYAxis').change();
   $('#selectColor').change();
@@ -476,7 +476,7 @@ function invertY(){
    } else {
      $('#invertYAxisButton').get(0).value = ('^');
    }
-  gadget.notify('axisInverted',"y", {'private': true})
+  gadget.notify('axisInverted',"y",  {'private': true})
 }
       
 </script>

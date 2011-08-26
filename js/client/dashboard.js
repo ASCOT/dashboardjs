@@ -160,7 +160,7 @@ UW.Dashboard = function(container){
        chat.addChat("<span style='font-weight: bold'>Anonymous: </span>" + message);
     }; 
     now.receiveNotification = _.bind(function(clientId, notification){
-        this.trigger(notification.notification, notification.data);
+        this.trigger(notification.notification, notification);
     },this);
     now.addUserToDashboardChannel(id); 
   };
