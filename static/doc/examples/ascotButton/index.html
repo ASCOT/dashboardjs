@@ -40,11 +40,11 @@
            'and modelMag_g > -9999 ORDER BY modelMag_g ASC'
   }]; 
   
-  /* Example using fits viewer
+  /* Example using fits viewer */
   var lsstDashboard = {
   gadgets: {
-  plotView: {number: 1, state: {axisInverted: {x: false, y: false}, selectedColor: 'blue', verboseTooltip: false, selectedXAxis:"psfMag", selectedYAxis:"psf_ap", selectionObject: {'yMin': 0, 'yMax': 1, 'xMin':18, 'xMax':19}}},
-  fitsViewer: {number: 1}
+    plotView: {number: 2, state: {axisInverted: {x: false, y: false}, selectedColor: 'blue', verboseTooltip: false, selectedXAxis:"psfMag", selectedYAxis:"psf_ap", selectionObject: {'yMin': 0, 'yMax': 1, 'xMin':18, 'xMax':19}}},
+    fitsViewer: {number: 1}
   }
   };
   var lsstDataSets = [{
@@ -53,8 +53,8 @@
   dataBase: 'buildbot_PT1_2_u_wp_tags_2011_0817_215234',
   query: 'select sce.visit visit, sce.raftName raft, sce.ccdName ccd,sro.rMag refMag, sro.ra refRa, sro.decl refDec,sro.isStar isStar, s.xAstrom xPix,s.yAstrom yPix,dnToAbMag(s.psfFlux, sce.fluxMag0) as psfMag,dnToAbMag(s.apFlux, sce.fluxMag0) as apMag,dnToAbMag(s.flux_ESG, sce.fluxMag0) as instMag,dnToAbMag(s.flux_Gaussian, sce.fluxMag0) as modelMag,3600.*(s.ra - sro.ra) dRaArcsec,3600.*(s.decl - sro.decl) dDecArcsec,dnToAbMag(s.apFlux, sce.fluxMag0)-sro.rMag ap_cat,dnToAbMag(s.flux_ESG, sce.fluxMag0) -sro.rMag inst_cat,dnToAbMag(s.flux_Gaussian, sce.fluxMag0)-sro.rMag mod_cat,dnToAbMag(s.psfFlux, sce.fluxMag0)-sro.rMag psf_cat,dnToAbMag(s.flux_Gaussian, sce.fluxMag0) - dnToAbMag(s.flux_ESG, sce.fluxMag0) mod_inst,dnToAbMag(s.psfFlux, sce.fluxMag0) - dnToAbMag(s.apFlux, sce.fluxMag0) psf_ap,dnToAbMag(s.psfFlux, sce.fluxMag0) - dnToAbMag(s.flux_ESG, sce.fluxMag0) psf_inst,dnToAbMag(s.psfFlux, sce.fluxMag0) - dnToAbMag(s.flux_Gaussian, sce.fluxMag0) psf_mod from Source as s, Science_Ccd_Exposure as sce, RefSrcMatch as rom,SimRefObject as sro where (s.scienceCcdExposureId = sce.scienceCcdExposureId)and (s.sourceId = rom.sourceId) and (rom.refObjectId = sro.refObjectId)and (sce.visit = 887029093) and (sce.raftName = "1,2") and (sce.ccdName = "1,1") and sro.rMag < 25.;'
   }];
-  */
-  
+ 
+  /*
   var lsstDashboard = {
     gadgets: { 
       tableView: {number: 1}, 
@@ -77,7 +77,7 @@
            'dnToAbMag(s.flux_ESG, sce.fluxMag0) psf_inst,dnToAbMag(s.psfFlux, sce.fluxMag0) - dnToAbMag(s.flux_Gaussian, sce.fluxMag0) psf_mod from Source as s, Science_Ccd_Exposure ' +
            'as sce, RefSrcMatch as rom,SimRefObject as sro where (s.scienceCcdExposureId = sce.scienceCcdExposureId)and (s.sourceId = rom.sourceId) and ' + 
            '(rom.refObjectId = sro.refObjectId)and (sce.visit = 887029093) and (sce.raftName = "2,2") and (sce.ccdName = "1,1") and sro.rMag < 22.5'
-  }];
+  }]; */
     
   var sdssButton = document.getElementById('sdssButton');
   var lsstButton = document.getElementById('lsstButton');
