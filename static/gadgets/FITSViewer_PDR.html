@@ -24,6 +24,7 @@ var ICON_URL_ERROR = '/images/errorIcon.gif';
 var ICON_URL_SUCCESS = '/images/successIcon.gif';
 
 // Canvas variables
+var start = true;
 var canvas = null;
 var context = null;
 var FITSstage = null;
@@ -40,7 +41,7 @@ var dragStartX;
 var dragStartY;
 var objectsToDraw = []
 var overlayCircleRad = 8;
-var select = false;
+var select = true;
 
 var    DEFAULT_MARKER_COLOR = '#AAAAAA';
        SELECTED_MARKER_COLOR = '#D21E64'
@@ -326,26 +327,26 @@ function handleThumbnail() {
 
 		FITSstage.addRegionEventListener("onmousedown", function(){
 			console.log('mouse down');
-			if (!select){
+//			if (!select){
 				// Check to see if the mouse is inside of the map window
-				if (mousePos.x >= (canvas.width-mapWidth-10) && mousePos.x <= (canvas.width-10) &&
-					mousePos.y >= 10 && mousePos.y <= 10+mapHeight) {
-					// If the mouse is in the viewport, pan
-					if (mousePos.x >= (canvas.width-mapWidth-14)+leftClip && mousePos.x <= (canvas.width-6)-rightClip
-						&& mousePos.y >= 6+topClip && mousePos.y <= 14+mapHeight-bottomClip) {
-						mouseDownPan = true;
-					}
-					// Otherwise, snap the viewport to that location
-					else {
-						imgX -= (mousePos.x-((canvas.width-mapWidth-10)+leftClip+((mapWidth-rightClip-leftClip)/2)))*(FITSthumb.width/mapWidth)*scale;
-						imgY -= (mousePos.y-(10+topClip+((mapHeight-bottomClip-topClip)/2)))*(FITSthumb.height/mapHeight)*scale;
-					}
+		   if (mousePos.x >= (canvas.width-mapWidth-10) && mousePos.x <= (canvas.width-10) &&
+				mousePos.y >= 10 && mousePos.y <= 10+mapHeight) {
+	  		   // If the mouse is in the viewport, pan
+				if (mousePos.x >= (canvas.width-mapWidth-14)+leftClip && mousePos.x <= (canvas.width-6)-rightClip
+					&& mousePos.y >= 6+topClip && mousePos.y <= 14+mapHeight-bottomClip) {
+					mouseDownPan = true;
 				}
-				// Mouse is not in the map window, we must be zooming
+									// Otherwise, snap the viewport to that location
 				else {
-					mouseDownZoom = true;
+					imgX -= (mousePos.x-((canvas.width-mapWidth-10)+leftClip+((mapWidth-rightClip-leftClip)/2)))*(FITSthumb.width/mapWidth)*scale;
+					imgY -= (mousePos.y-(10+topClip+((mapHeight-bottomClip-topClip)/2)))*(FITSthumb.height/mapHeight)*scale;
 				}
 			}
+				// Mouse is not in the map window, we must be zooming
+//				else {
+//					mouseDownZoom = true;
+//				}
+//			}
 			else {
 		                mouseDownSelect = true;
 			}
@@ -438,8 +439,10 @@ function handleThumbnail() {
 			overlayContext.arc(objectsToDraw[i].screenX, objectsToDraw[i].screenY, overlayCircleRad, 0, 2 * Math.PI, false);
    		overlayContext.closePath();
    		overlayContext.lineWidth = 2;
-   		
+   		overlayContext.strokeStyle = objectsToDraw[i].color;
+   		overlayContext.stroke();
    		// If the object is being moused over, display a tooltip
+   		/*
    		if (objectsToDraw[i].mouseOver == true) {
    			tooltipIndex = i;
     			overlayContext.strokeStyle = "#69FD56";
@@ -448,8 +451,9 @@ function handleThumbnail() {
     			overlayContext.strokeStyle = objectsToDraw[i].color;
     		}
     		overlayContext.stroke();
+    		*/
 		}
-		
+/*	
 		if (tooltipIndex != -1) {
 			overlayContext.fillStyle = '#FFFFDA';
    		   overlayContext.font="15px sans-serif";
@@ -468,6 +472,8 @@ function handleThumbnail() {
     	   }
     	   overlayContext.restore();
 		}
+*/
+		
 		
 		// The box that the mouse drags out when zooming and selecting
 		if (mouseDownZoom || mouseDownSelect) {
@@ -636,7 +642,10 @@ function populateRaDecSelect() {
 	dsData = ds.getRecordsJSON();
 	setSelectOptions("selRA", columnNames);
 	setSelectOptions("selDec", columnNames);
-        startViewer();
+	if(start){
+	  startViewer();
+     start = false;	
+	}
 }
 
 function overlayObjects() {
@@ -733,9 +742,9 @@ function getSelectionMarkerColor() {
 <div id="fileName"> Filename: </div><br>
 </td></tc>
 <tc><td align="right">
-<input type="button" onclick="resetZoom();" value="Reset Zoom"><br>
+<!--<input type="button" onclick="resetZoom();" value="Reset Zoom"><br>
 <input type="radio" id="radZoomSel" name="radZoomSel" value="Zoom" checked="checked" onclick="switchZoomSel();" /><label>Zoom</label>
-<input type="radio" id="radZoomSel" name="radZoomSel" value="Select" onclick="switchZoomSel();" /><label>Select</label><br>
+<input type="radio" id="radZoomSel" name="radZoomSel" value="Select" onclick="switchZoomSel();" /><label>Select</label><br>-->
 Selection Color: <select id="selColor">
 <option value="red" selected="selected">red</option>
 <option value="green">green</option>
@@ -755,7 +764,7 @@ Selection Color: <select id="selColor">
 <input type="radio" id="radDecSex" name="radDecSex" value="Sexagecimal" onclick="switchDecSex();" /><label>Sexagecimal</label>
 </td></tc>
 <tc><td align="right">
-Dataset: <select id="selDatasetName" onchange="populateRaDecSelect();"></select>
+Dataset: <select id="selDatasetName" onchange="populateRaDecSelect()"></select>
 X Pixel: <select id="selRA">
 <option value="xPix" selected="selected">xPix</option>
 </select>

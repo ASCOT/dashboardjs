@@ -41,7 +41,7 @@ var verboseTooltip = false;
 var selectedDataSetName = "";
 var selectedXAxis = "";
 var selectedYAxis = "";
-var selectedColor = "";
+var selectedColor = "unselected";
 var selectedDataSet = "";
 var selectionObject;
 
@@ -53,7 +53,6 @@ gadget.init = function(callback){
   gadget.onNotification('plotRendered', syncPlot);
   gadget.onNotification('pointsSelected', setSelectedByMinMax);
   gadget.onNotification('axisInverted', invertAxis);
-  callback();
   
   $("#checkVerboseInfo").change( function(){
     verboseTooltip = $("#checkVerboseInfo").get(0).checked;
@@ -94,15 +93,7 @@ gadget.init = function(callback){
   $('#invertYAxisButton').click(invertY);
   $('#plotButton').click(plotData);
   plot = new Highcharts.Chart(chartOptions);     
-  populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"],selectedColor);
-  if(axisInverted.x){
-    axisInverted.x = false;
-    invertX();
-  }
-  if(axisInverted.y){
-    axisInverted.y = false;
-    invertY();
-  }
+  callback();
 }
 
 gadget.saveState = function(){
@@ -121,6 +112,14 @@ gadget.saveState = function(){
 gadget.loadState = function(state){
    if(isDef(state.axisInverted)){
 	  axisInverted = state.axisInverted;
+	  if(axisInverted.x){
+       axisInverted.x = false;
+       invertX();
+     }
+     if(axisInverted.y){
+       axisInverted.y = false;
+       invertY();
+     }
 	}
 	if(isDef(state.verboseTooltip)){
 	  verboseTooltip = state.verboseTooltip;
@@ -143,7 +142,12 @@ gadget.loadState = function(state){
    }
    if(isDef(state.selectionObject)){
 	  selectionObject = state.selectionObject;
+	  selectionObject.color = selectedColor;
+	  selectionObject.seriesId = 'series1';
    }
+   populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"],selectedColor);
+   redrawAll();
+   setSelectedByMinMax(selectionObject);
 };
 
 // Check definedness
