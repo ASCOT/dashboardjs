@@ -146,7 +146,9 @@ function updateSelectedPoints() {
      if (colorName === "") {
          colorName = "unselect";
      }
-     point.color = MARKER_COLOR[colorName];
+     if(point){
+       point.color = MARKER_COLOR[colorName];
+    }
  }
 
 function getSelectedDataset() {
