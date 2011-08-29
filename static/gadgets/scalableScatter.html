@@ -91,18 +91,17 @@ function updateSelectedPoints() {
  	if (ds === undefined || ds === null) {
 	 	return;
 	 }
- 	var colorIndexArray = ds.getIndex('color');
- 	var colorIndex;
+ 	var colorIndexArray = ds.getAttributeValues('color');
+ 	var recordsColor;
  	var point;
  	
- 	for (color in colorIndexArray) {
- 		colorIndex = colorIndexArray[color];
- 		for (var i = 0; i < colorIndex.length; i++) {
- 			point = dataToPlot[colorIndex[i]];
- 			colorChartPoint(point,color);
+ 	for (var j=0; j < colorIndexArray.length; ++j) {
+ 		recordsColor = ds.getRecordsIndicesWithAttribute('color',colorIndexArray[j]);
+ 		for (var i = 0; i < recordsColor.length; i++) {
+ 			point = dataToPlot[recordsColor[i]];
+ 			colorChartPoint(point,colorIndexArray[j]);
  		}
  	}
- 	
  	chart1.redraw();
 }
 	
@@ -111,7 +110,9 @@ function updateSelectedPoints() {
      if (colorName === "") {
          colorName = "unselect";
      }
-     point.color = MARKER_COLOR[colorName];
+     if(point){
+       point.color = MARKER_COLOR[colorName];
+     }
  }
 	
 // Functions that deal with the HTML controls on the page    
@@ -190,10 +191,10 @@ function parseData(args) {
 	var yCol = args.yAxis;
      
 	var ds = gadget.dashboard.getDataSet(args.dataSetName);
-	var colorIndexArray = ds.getIndex('color');
+	var colorIndexArray = ds.getAttributeValues('color');
              
  	var graphData = [];
-	for (i=0,len=dsData.length; i<len; i++) {
+	for (i=0,len=ds.length(); i<len; i++) {
 		var xVal = parseFloat(ds.getRecord(i)[getSelectedXAxis()]);
 		var yVal = parseFloat(ds.getRecord(i)[getSelectedYAxis()]);
 		// each point has unique id so a pointer to point can be had by chart.get(id)
