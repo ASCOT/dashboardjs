@@ -33,15 +33,16 @@ UW.ChatView = Backbone.View.extend({
       _.bindAll(this, 'sendMessage');
       //this.model.chats.bind('add', this.addChat);
       this.dashboard = options.dashboard;
+      this.dashboard.bind("chatMessage", this.addChat);
   },
   
   events: {
       "submit #chatMessageForm" : "sendMessage",
   },
   
-  addChat: function(chat) {
+  addChat: function(message) {
       //var view = new ChatView({model: chat});
-      $('#chatList').append("<div class='chatMessage'>" + chat + "</div>");
+      $('#chatList').append("<div class='chatMessage'>" + message.data.text + "</div>");
   },
   
   msgReceived: function(message){

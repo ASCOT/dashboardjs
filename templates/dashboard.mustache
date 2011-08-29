@@ -17,8 +17,7 @@
 <script src="/underscore.js" type="text/javascript"></script>
 <script src="/backbone.js" type="text/javascript"></script>
 <script src="/chat.js" type="text/javascript"></script>
-<script src="/socket.io/socket.io.js"></script> 
-<script src="/nowjs/now.js"></script> 
+<script src="/faye/faye.js" type="text/javascript"></script>
 <script src="/logs.js" type="text/javascript"></script>
 <script src="/util.js" type="text/javascript"></script>
 <script src="/gadget.js" type="text/javascript"></script>
@@ -35,23 +34,21 @@ var ASCOT = ASCOT || {};
 var dashboardId = {{id}};
 var resourceUrl = {{resourceUrl}};
 
-var initDashboard = function(){
-  loadState();  
-  initGUI();
-}
-
 $(function(){
   initDashboard();
 });
 
-function loadState() {
-  ASCOT.dashboard = new UW.Dashboard($("#" + 'dashboard').get(0));
-  ASCOT.dashboard.loadState(resourceUrl + '/' + dashboardId + '/state');
+var initDashboard = function() {
+  ASCOT.dashboard = new UW.Dashboard();
+  ASCOT.dashboard.setContainer($("#" + 'dashboard').get(0));
+  ASCOT.dashboard.setUrl(resourceUrl + '/' + dashboardId);
+  ASCOT.dashboard.init();
+  initGUI();
   return ASCOT.dashboard;
 };
 
 function saveDashboard() {
-  ASCOT.dashboard.saveState('/dashboard/' + dashboardId);
+  ASCOT.dashboard.save();
 }
 
 function initGUI() {
@@ -60,7 +57,7 @@ function initGUI() {
 
   var resizeToolBox = function (){
     $('#toolBox').css({'height':  $(window).height() - 100});
-    $('#chatList').css({'height':  $(window).height() - 220});
+    $('#chatList').css({'height':  $(window).height() - 230});
     if(!toolBoxOpened){
       $('#toolBoxClickableArea').css({'height':  $(window).height() - 100});
     }

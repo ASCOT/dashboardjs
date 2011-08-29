@@ -40,7 +40,7 @@ UW.DashboardModel = Backbone.Model.extend({
 });
 
 // The constructor takes the DOM element where the dashboard will be rendered
-UW.Dashboard = function(container){
+UW.Dashboard = function(container, dashboardUrl){
   
   var id;  
   // Renders the gadgets
@@ -56,6 +56,11 @@ UW.Dashboard = function(container){
   // Chat
   var chatModel; 
   var chat;
+  
+  var bayeuxClient;
+  
+  var domContainer = container;
+  var url = dashboardUrl;
 
   function debugMessage(msg){
     UW.debugMessage("MANAGER: " + msg);
@@ -64,6 +69,36 @@ UW.Dashboard = function(container){
   _.extend(this, Backbone.Events);
 
   this.loadedGadgets = 0;
+  
+  this.init = function() {
+     var stateLoaded = _.bind(function(state) { this.inflateState(state); },this)
+     var gadgetsLoaded = _.bind(function(gadgets) { gadgetsInfo = gadgets; this.loadState(stateLoaded); },this);
+     this.loadGadgets(gadgetsLoaded);
+   };
+
+  this.loadGadgets = function(callback){
+     $.ajax({
+       url: /gadgets/,
+       type: 'GET',
+       success: callback
+     });
+  };
+
+  this.loadState = function(callback){
+    $.ajax({
+       url: url + '/state',
+       type: 'GET',
+       success: callback
+     });
+   };
+
+   this.setContainer = function(container){
+     domContainer = container;
+   };
+
+   this.setUrl = function(dashboardUrl){
+     url = dashboardUrl;
+   };
 
   this.addGadget = function(gadgetState){
     
@@ -105,7 +140,7 @@ UW.Dashboard = function(container){
     return modelsNames;
   };
 
-  this.saveState = function(stateUrl){
+  this.save = function(stateUrl){
    
     // dashboardModel.setUrl(stateUrl);
     //         
@@ -125,7 +160,7 @@ UW.Dashboard = function(container){
   };
   
   this.sendChatMessage = function(message){
-    now.sendMessageToDashboard(message, id);
+    this.notify("chatMessage", {'text': message});
   };
   
   this.notify = function(notification, data, options){
@@ -143,27 +178,17 @@ UW.Dashboard = function(container){
     }
     this.trigger(notification, notificationObject);
     if(!optionsArgument.self){
-      now.notifyToDashboard(id, notificationObject);
+      bayeuxClient.publish('/dashboard/' + id, notificationObject);
     }
   };
   
-  this.init = function(state){
-    var callback = _.bind(function(state) { var that = this; return function() { that.inflateState(state); }}, this); 
-    now.ready(callback(state));
-  };
-  
-  this.initConnection = function(){
-    now.userAddedToDashboardChannel = _.bind(function(clientId){
-      this.clientId = clientId;
-    }, this);    
-    now.receiveMessage = function(message){
-       chat.addChat("<span style='font-weight: bold'>Anonymous: </span>" + message);
-    }; 
-    now.receiveNotification = _.bind(function(clientId, notification){
-        this.trigger(notification.notification, notification);
+  this.initCommunications = function(channelId){
+    var processNotification = _.bind(function(message){
+        this.trigger(message.notification, message);
     },this);
-    now.addUserToDashboardChannel(id); 
-  };
+    bayeuxClient = new Faye.Client('/faye', { timeout: 120 });
+    bayeuxClient.subscribe('/dashboard/' + channelId, processNotification);
+  }
   
   this.inflateState = function(dashboardStateJSON) {  
     var newGadget;
@@ -180,15 +205,15 @@ UW.Dashboard = function(container){
       return;
     
     if(id){
-      this.initConnection();
+      this.initCommunications(id);
     }
     else{
     
       dashboardState = JSON.parse(dashboardStateJSON);
-      //console.log("State: " + state);
-      renderer = new UW.Renderer(container, dashboardState.numberOfColumns);
+      renderer = new UW.Renderer(domContainer, dashboardState.numberOfColumns);
+      
       id = dashboardState.id;
-      this.initConnection();  
+      this.initCommunications(id);
       
       for(var i=0; i < dashboardState.gadgets.length; ++i){
         gadgetInstanceInfo = dashboardState.gadgets[i];
@@ -231,29 +256,8 @@ UW.Dashboard = function(container){
   this.gadgetLoaded = function(callback) { 
     this.loadedGadgets--; 
     if(this.loadedGadgets == 0){ 
-      // We need a timeout due to a now.js bug that makes initialization asyncronous when syncronous behavior is expected
-      //setTimeout(_.bind(function() { this.notify("dataSetChanged"); }, this), 1000);
       callback(); 
     } 
-  };
-  
-  this.loadGadgets = function(gadgets){
-    gadgetsInfo = gadgets;
-    $.ajax({
-      url: stateUrl,
-      type: 'GET',
-      success: _.bind(function(state) { this.init(state); },this)
-    });
-  }
-      
-  this.loadState = function(url){
-    stateUrl = url;
-     $.ajax({
-       url: /gadgets/,
-       type: 'GET',
-       success: _.bind(function(gadgets) { this.loadGadgets(gadgets); },this)
-    }); 
-   
   };
   
 };
