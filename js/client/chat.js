@@ -42,7 +42,7 @@ UW.ChatView = Backbone.View.extend({
   
   addChat: function(message) {
       //var view = new ChatView({model: chat});
-      $('#chatList').append("<div class='chatMessage'>" + message.data.text + "</div>");
+      $('#chatList').append("<div class='chatMessage'>" + message.data. text + "</div>");
   },
   
   msgReceived: function(message){

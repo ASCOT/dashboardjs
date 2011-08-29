@@ -58,6 +58,7 @@ UW.Dashboard = function(container, dashboardUrl){
   var chat;
   
   var bayeuxClient;
+  var bayeuxClientId;
   
   var domContainer = container;
   var url = dashboardUrl;
@@ -182,13 +183,38 @@ UW.Dashboard = function(container, dashboardUrl){
     }
   };
   
+  
   this.initCommunications = function(channelId){
     var processNotification = _.bind(function(message){
         this.trigger(message.notification, message);
     },this);
+    
+    var processHandshake = function(message){
+     console.log("Client connected: " + message.clientId);  
+    };
+    
     bayeuxClient = new Faye.Client('/faye', { timeout: 120 });
-    bayeuxClient.subscribe('/dashboard/' + channelId, processNotification);
-  }
+    bayeuxClient.addExtension({ 
+      incoming: function(message, callback) { 
+        if (message.channel === '/meta/handshake' && message.successful) { 
+          bayeuxClientId = message.clientId; 
+        } 
+        else if (message.data !== undefined) { 
+          if (message.clientId === bayeuxClientId) 
+          message.data.selfPublished = true; 
+        } 
+        callback(message); 
+      } 
+    });
+      
+    //bayeuxClient.subscribe('/handshake', processHandshake);
+    //bayeuxClient.publish('/handshake', {message: "Connect request"});
+
+    bayeuxClient.subscribe('/dashboard/' + channelId, function(message) { 
+        if (message.selfPublished) return; 
+        processNotification(message); 
+      });  
+  };
   
   this.inflateState = function(dashboardStateJSON) {  
     var newGadget;
