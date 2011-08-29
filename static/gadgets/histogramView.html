@@ -16,6 +16,7 @@
 
 gadget.init = function(callback){	
   gadget.onNotification('dataSetChanged', updateDataSetList);
+  gadget.onNotification('pointsSelected', setSelectedColor);
   callback();
 }
 
@@ -60,7 +61,7 @@ function setSelectedColor(obj) {
 	}
 	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
 	ds.setRecords({'color': useColor}, obj.modifiedPointIds);
-   gadget.notify('dataSetListChanged');
+  gadget.notify('dataSetListChanged');
 	return;
 }
 	
@@ -305,6 +306,7 @@ function handleSelectEvent(chart,event) {
    // Change the color of the points in the public database
    var selectionObj = {modifiedPointIds: modifiedPointIds, color: getSelectionMarkerColor() };
 	setSelectedColor(selectionObj);
+	setTimeout(function() { gadget.notify('pointsSelected', selectionObj, {'private': true}) },1);
 }
 	
 // Populates the X axis dropdown with values from the chosen datasets column names
