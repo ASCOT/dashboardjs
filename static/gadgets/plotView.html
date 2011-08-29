@@ -175,7 +175,7 @@ var chartOptions = {
           selectionObject = {'seriesId': 'series1', 'xMin': selectionEvent.xAxis[0].min, 'xMax':  selectionEvent.xAxis[0].max, 
                               'yMin': selectionEvent.yAxis[0].min, 'yMax':  selectionEvent.yAxis[0].max, color: selectedColor};
           // We make this call ashyncronous and the plot gives the impression of being more responsive
-          setTimeout("gadget.dashboard.notify('pointsSelected', selectionObject)",1);                                 
+          setTimeout(function() { gadget.notify('pointsSelected', selectionObject, {'private': true}) },1);
         }
       }
     }
@@ -257,7 +257,7 @@ function plotData(){
   }
   else{
     drawPlot();
-    gadget.notify("plotRendered", { 'dataSetName': selectedDataSetName, 'color': selectedColor, 'xAxis': selectedXAxis, 'yAxis': selectedYAxis });
+    gadget.notify("plotRendered", { 'dataSetName': selectedDataSetName, 'color': selectedColor, 'xAxis': selectedXAxis, 'yAxis': selectedYAxis }, {'private': true});
   }
 }
                                                                         
