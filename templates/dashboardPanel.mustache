@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/css/dashboardPanel.css"> 
     
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.js" type="text/javascript"></script>
+    <script src="/modernizr.custom.80028.js"></script>
     <script src="/underscore.js" type="text/javascript"></script>
     <script src="/backbone.js" type="text/javascript"></script>
     <script src="/chat.js" type="text/javascript"></script>
@@ -46,12 +47,20 @@
     }
 
     function initGUI() {
+      var closeNote = document.getElementById("closeNote");
+      closeNote.addEventListener('click', function() {
+        var note = document.getElementById("note");
+        note.style.display = 'none';
+      }, false);
     }
 
     </script>
     
   </head>
   <body>
+    <div id="note">
+        Test Note. <a id="closeNote">[close]</a>
+    </div>
     <table class="content" width="100%">
       <tr>
         <td colspan="2" class="header">
