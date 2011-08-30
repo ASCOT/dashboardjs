@@ -2,7 +2,7 @@ body {
   background-color: #a39ac6; 
   background-attachment: scroll, scroll;
   background-clip: border-box, border-box;
-  background-image: url(/images/color1.png), none;
+  background-image: url(/images/pattern.png), none;
   background-origin: padding-box, padding-box;  font-size: 16px;
   line-height: 24px;
   color: #662d91;
