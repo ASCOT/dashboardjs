@@ -8,10 +8,18 @@ html{
 
 body {
   min-width: 960px;
-  background-color: #b7abc3;
   margin: 0;
 	padding: 0;
-  background: #a39ac6 url('../images/background.png');
+	
+	background-color: #8d83b4; 
+  -webkit-transition-delay: 0s;
+  -webkit-transition-duration: 1.2000000476837158s;
+  -webkit-transition-property: background;
+  -webkit-transition-timing-function: cubic-bezier(0.42, 0, 0.58, 1);
+  background-attachment: scroll, scroll;
+  background-clip: border-box, border-box;
+  background-image: url(http://www.tabsicons.com/img/color1.png), none;
+  background-origin: padding-box, padding-box;
 }
 
 ul {

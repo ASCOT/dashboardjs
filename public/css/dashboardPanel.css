@@ -13,10 +13,13 @@ html{
 }
 
 body {
-  background-color: #b7abc3;
   margin: 0;
 	padding: 0;
-  background: #a39ac6 url('../images/background.png');
+  background-color: #a39ac6; 
+  background-attachment: scroll, scroll;
+  background-clip: border-box, border-box;
+  background-image: url(/images/color1.png), none;
+  background-origin: padding-box, padding-box;
 }
 
 ul {
@@ -62,9 +65,31 @@ header {
   width: 100%;
 }
 
-.content{
-  height:100%; /* IE6: treaded as min-height*/
-  min-height:100%; /* real browsers */
+.uwLogo{
+  background: url('/images/uwLogo.png') no-repeat;
+  display: inline-block;
+  width: 18px;
+  height: 12px;
+  background-size: 100%;
+}
+
+footer a {
+  padding: 5px 5px 0px 20px;
+  font-size: 12px;
+  text-decoration: none;
+  color: #662d91;
+  text-shadow: none;
+}
+
+footer a:hover {
+  text-decoration: none;
+  color: #662d91;
+  cursor: pointer;
+}
+
+footer a:visited {
+  text-decoration: none;
+  color: #662d91;
 }
 
 .content td{
@@ -82,20 +107,15 @@ header {
 
 div.dashboard{
   width: 100%;
-  height: 2000px;
   float: right;   
-  border: 1px solid rgba(0, 0, 0, 0.5);
-     
-  // Background
-  background: rgba(255, 255, 255, 1);
-  background-color: white;
-
-  // Border bottom light
+  border: 1px solid rgba(102, 45, 145, 0.7);
+  padding: 5px 0px 0px 15px;
+  background-color: #ece9e9;  
+  
   -moz-box-shadow:inset 0 0 2px rgba(0, 0, 0, 1);
   -webkit-box-shadow:inset 0 0 2px rgba(0, 0, 0, 1);
   box-shadow:inset 0 0 2px rgba(0, 0, 0, 1);
  
-  // Round corners
   border-radius: 5px;
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
@@ -231,6 +251,10 @@ header nav a:hover{
 input:focus {
   -webkit-box-shadow: 0 0 5px rgba(102, 45, 145, 1); 
   -moz-box-shadow: 0 0 5px rgba(102, 45, 145, 1); 
+}
+
+footer {
+ height: 30px 
 }
 
 .toolBox{

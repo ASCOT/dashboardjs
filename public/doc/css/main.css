@@ -1,6 +1,9 @@
 body {
-  background: #a39ac6 url('../images/background.png');
-  font-size: 16px;
+  background-color: #a39ac6; 
+  background-attachment: scroll, scroll;
+  background-clip: border-box, border-box;
+  background-image: url(/images/color1.png), none;
+  background-origin: padding-box, padding-box;  font-size: 16px;
   line-height: 24px;
   color: #662d91;
   font-family: Helvetica;
@@ -107,7 +110,7 @@ header {
 }
 
 .uwLogo{
-  background: url('../images/uwLogo.png') no-repeat;
+  background: url('/images/uwLogo.png') no-repeat;
   display: inline-block;
   width: 18px;
   height: 12px;

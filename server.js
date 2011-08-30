@@ -12,7 +12,7 @@ var faye = require('faye');
 // Local Modules
 var dashboardsManager = require('./js/server/dashboardsManager');
 var dataSetsManager = require('./js/server/dataSetsManager');
-var gadgets = require('./static/gadgets/gadgetsInfo');
+var gadgets = require('./public/gadgets/gadgetsInfo');
 var xhr = require("./js/shared/xhr");
   
 var app = express.createServer();
@@ -29,7 +29,7 @@ app.configure(function(){
   app.set('view options', {layout: false });
   app.use(express.static(__dirname + '/js/client'));
   app.use(express.static(__dirname + '/js/shared'));  
-  app.use(express.static(__dirname + '/static')); 
+  app.use(express.static(__dirname + '/public')); 
 });
 
 app.configure('development', function(){
@@ -46,9 +46,9 @@ app.get('/convertFITS/:file', function(req, res){
 	var libc = new FFI.Library(null, { "system": ["int32", ["string"]] });
 	var run = libc.system;
 	// Remove all previous files created by the converter
-	run("cd ./static/images/FITSConverter; rm header.js; rm tile*.js; rm thumb.jpg;");
+	run("cd ./public/images/FITSConverter; rm header.js; rm tile*.js; rm thumb.jpg;");
 	// Convert the next fits image
-	run("cd ./static/images/FITSConverter; ./extractFitsFrame ../"+req.params.file+" 0 512;");
+	run("cd ./public/images/FITSConverter; ./extractFitsFrame ../"+req.params.file+" 0 512;");
 	console.log('shell script done');
 	res.send('done');
 });
@@ -71,7 +71,7 @@ app.get('/gadgets/', function(req, res){
 });
 
 app.get('/dashboard/:id', function(req, res){
-  res.render("dashboard", {
+  res.render("dashboardPanel", {
     locals: {
       id: req.params.id,
       resourceUrl: '"/dashboard"'
