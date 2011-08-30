@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="/css/reset.css"> 
+    <link rel="stylesheet" href="/css/dashboardPanel.css"> 
+    
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.js" type="text/javascript"></script>
+    <script src="/underscore.js" type="text/javascript"></script>
+    <script src="/backbone.js" type="text/javascript"></script>
+    <script src="/chat.js" type="text/javascript"></script>
+    <script src="/faye/faye.js" type="text/javascript"></script>
+    <script src="/logs.js" type="text/javascript"></script>
+    <script src="/util.js" type="text/javascript"></script>
+    <script src="/gadget.js" type="text/javascript"></script>
+    <script src="/layoutManager.js" type="text/javascript"></script>
+    <script src="/dataSetModifier.js" type="text/javascript"></script> 
+    <script src="/dataSet.js" type="text/javascript"></script> 
+    <script src="/renderer.js" type="text/javascript"></script>
+    <script src="/dashboard.js" type="text/javascript"></script>
+    
+    <script type="text/javascript">
+
+    var ASCOT = ASCOT || {};
+
+    var dashboardId = {{id}};
+    var resourceUrl = {{resourceUrl}};
+
+    $(function(){
+      initDashboard();
+    });
+
+    var initDashboard = function() {
+      ASCOT.dashboard = new UW.Dashboard();
+      ASCOT.dashboard.setContainer($("#" + 'dashboard').get(0));
+      ASCOT.dashboard.setUrl(resourceUrl + '/' + dashboardId);
+      ASCOT.dashboard.init();
+      initGUI();
+      return ASCOT.dashboard;
+    };
+
+    function saveDashboard() {
+      ASCOT.dashboard.save();
+    }
+
+    function initGUI() {
+    }
+
+    </script>
+    
+  </head>
+  <body>
+    <table class="content" width="100%">
+      <tr>
+        <td colspan="2" class="header">
+          <header>
+              <div class="logo">
+                <a href="/" title="Astronomical Collaborative Toolkit">Astronomical Collaborative Toolkit</a>
+              </div>
+              <nav class="header">
+                <ul>
+                  <li>
+                    <a href="#" title="saveDashboard" onClick="saveDashboard()">Save</a>
+                  </li>
+                </ul>
+              </nav>
+            </div>  
+          </header>
+        </td> 
+      </tr>
+      <tr>  
+        <td style="width: 200px">
+        </td>
+        <td>
+          <div class="dashboard"></div>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2" class="footer"><footer></footer></td> 
+      </tr>
+    </table>
+  </body>
+</html>

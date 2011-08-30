@@ -1,0 +1,70 @@
+<!DOCTYPE HTML> 
+<html lang="en"> 
+<head> 
+  <meta charset="utf-8">
+  <meta name="author" content="Diego Marcos" />
+  <title>ASCOT Documentation</title> 
+  <link rel="stylesheet" href="./css/reset.css">
+  <link rel="stylesheet" href="./css/main.css">
+  <style type="text/css">
+    body{
+    	background-color: #a39ac6;
+    }
+  </style>
+</head> 
+
+<body> 
+
+<a href="https://github.com/dmarcos/dashboardjs"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://a248.e.akamai.net/assets.github.com/img/71eeaab9d563c2b3c590319b398dd35683265e85/687474703a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67" alt="Fork me on GitHub"></a>  <div class="container"> 
+  
+  <div class="wrapper"> 
+        
+    <header>
+      <div class="logo"></div>
+       <div id="mainNavigation" class="navigation">
+          <ul>
+            <li><a href="documentation.html">Documentation</a></li>
+            <li><a href="installation.html" class="selected">Installation</a></li>
+            <li><a href="#" class="disabledLink">About</a></li>
+            <li><a href="#" class="disabledLink">Blog</a></li>
+          <lu>
+      </div>
+      <div style="clear:both;"></div>
+    </header>
+    
+    <div id="content">
+       <section>
+        <h2>Installation</h2> 
+        <ol> 
+          <li> 
+            Install <a href="http://github.com/joyent/node/wiki/Installation">node.js</a><br/> 
+            <tt>(On Ubuntu I had to do: sudo apt-get install libssl-dev)</tt>
+          </li> 
+          <li> 
+            Install <a href="http://npmjs.org/">Node Package Manager</a>
+          </li>  
+          <li> 
+            Install the necessary node modules<br/>
+          <tt>npm install express stache now node-ffi</tt><br/>
+          <tt>Check that the NODE_PATH variable properly points to the directory where you installed the modules</tt>
+        </li> 
+        <li> 
+          Checkout dashboardjs code<br/>
+          <tt>git clone git://github.com/dmarcos/dashboardjs.git</tt>
+        </li>
+        <li>
+          Run the node server <br/>
+          <tt>cd dashboardjs</tt> <br/>
+          <tt>sudo node server.js</tt>
+        </li> 
+        <li>
+          Test the server. Visit in your browser:<br/>
+          <tt><a href="http://localhost/dashboard/">http://localhost/dashboard/</a></tt>
+        </li> 
+      </ol> 
+    </section>
+  </div> 
+  <footer><a href="http://uw.edu" style="float: right"><span class="uwLogo"></span> University of Washington</a></footer>
+  
+</body>
+</htmt>  

@@ -1,0 +1,181 @@
+body {
+  background: #a39ac6 url('../images/background.png');
+  font-size: 16px;
+  line-height: 24px;
+  color: #662d91;
+  font-family: Helvetica;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+div.wrapper {
+  width: 960px;
+  margin: auto;
+}
+
+.logo{
+  background: url('/images/ascotLogo.png');
+  float: left;
+  height: 43px;
+  width: 140px;
+  background-size: 100%;
+}
+
+header {
+  border-top: 0px;
+  font-size: 24px;
+  padding-left: 15px;
+  padding-top: 10px;
+  padding-right: 15px;
+  padding-bottom: 10px;
+}
+ 
+.navigation ul li {
+  margin: 0px 0px 10px 0px;
+}
+
+.navigation {
+  float: right;
+  font-size: 24px;
+  line-height: 43px;
+}
+
+.secondaryNavigation {
+  width: 120px;
+  float: left;
+  margin-top: 20px;
+  padding: 10px 10px 10px 10px;
+  margin-left: -160px;
+}
+
+.navigation ul {
+  list-style-type: none;
+  margin: 0px;
+  padding: 0px; 
+}
+ 
+.navigation ul li {
+  margin: 0px 0px 10px 0px;
+  line-height: 24px;
+  display: inline;
+}
+
+.secondaryNavigation ul li {
+  margin: 0px 0px 10px 0px;      
+  display: block;
+}
+
+.navigation ul li a{
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 200; 
+  background: none;
+  color: #662d91;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.navigation ul li a.disabledLink{
+  pointer-events: none;
+  cursor: default;
+  opacity: 0.5;
+}
+
+.navigation ul li a.selected{
+  background: transparent;
+  color: rgba(255,255,255,0.8);
+  text-shadow: none;
+  pointer-events: none;
+  cursor: default;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.navigation ul li a:hover{
+  color: #ffffff;
+  text-shadow: none;
+}
+
+#content{
+  padding-left: 40px;
+  border: 2px solid rgba(255,255,255,0.1);
+  padding-top: 40px;
+  padding-right: 10px;
+  padding-bottom: 40px;
+  border-radius: 5px;
+  background-color: rgba(255,255,255,0.2);
+  shadow: 1px 1px 6px rgba(0, 0, 0, 0.5);
+}
+
+.uwLogo{
+  background: url('../images/uwLogo.png') no-repeat;
+  display: inline-block;
+  width: 18px;
+  height: 12px;
+  background-size: 100%;
+}
+
+footer a {
+  padding: 5px 5px 0px 20px;
+  font-size: 12px;
+  text-decoration: none;
+  color: #662d91;
+  text-shadow: none;
+}
+
+footer a:hover {
+  text-decoration: none;
+  color: #662d91;
+  cursor: pointer;
+}
+
+footer a:visited {
+  text-decoration: none;
+  color: #662d91;
+}
+
+ol{
+  list-style-type: decimal;
+}
+
+p, li {
+  margin: 20px 0 20px 40px;
+  width: 550px;
+}
+
+p {
+  margin-left: 20px;
+}
+
+a, a:visited {
+  color: #363737;
+  text-shadow: 0 1px 0 #c0b9ce;
+  text-decoration: underline;
+}
+
+a:active, a:hover {
+  color: white;
+  text-shadow: none;
+}
+h1, h2, h3, h4, h5, h6 {
+  width: 700px;
+  margin: 0px 0px 10px 0px;
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 0 1px 0 #c0b9ce;
+}
+code, pre, tt {
+  font-family: Monaco, Consolas, "Lucida Console", monospace;
+  font-size: 14px;
+  line-height: 18px;
+  color: #363737;
+  text-shadow: 0 1px 0 #c0b9ce;
+}
+code {
+  margin-left: 20px;
+}
+pre {
+  font-size: 14px;
+  padding: 2px 0 2px 12px;
+  border-left: 6px solid #99aabb;
+  margin: 0px 0 30px;
+}

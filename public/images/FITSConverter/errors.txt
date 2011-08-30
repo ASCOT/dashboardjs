@@ -1,0 +1,2 @@
+Exception occured: 
+Found EQUINOX='J2000             ' in fits file but expected a double.

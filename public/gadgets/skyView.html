@@ -1,0 +1,252 @@
+<!-- Author: Ian Smith (imsmith@uw.edu) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Pragma" content="no-cache">
+<title>SkyView</title>
+<!-- ASCOT Basic Style Sheets -->
+<link href="/css/reset.css" rel="stylesheet" type="text/css">
+<link href="/css/text.css" rel="stylesheet" type="text/css"> 
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js"></script>
+<script src="http://google.com/jsapi?key=ABQIAAAAVGHgv2pouycqhAw5tCmtChR1aol8vC9LmxJ_-IIqPo0vb4nybRTh6avLgiFPsdQwzEmpcYDE1DLlcA" type="text/javascript"></script>
+<script> 
+   
+var googleEarthInstance;
+var dataSetList;
+var tidsViewchangeend = [];   // array of timer IDs for googleEarthInstance viewchangeend event
+
+// Gadget State
+var viewportBounds;
+var flySpeed = 1.0;
+var longitude = 0;
+var latitude = 0;
+
+google.load("earth", "1");
+google.setOnLoadCallback();
+
+gadget.init = function(callback){	
+  gadget.onNotification('centerOfCoordinatesChanged', moveMap);
+  gadget.onNotification('dataSetChanged', redrawAll);
+  google.earth.createInstance('content', success, failure);
+  callback();
+}
+
+gadget.saveState = function(){
+  return { 
+    'longitude': longitude,
+    'latitude': latitude,
+    'flySpeed': flySpeed,
+    'viewportBounds': viewportBounds
+  }
+};
+
+gadget.loadState = function(state){
+  longitude = state.longitude;
+  latitude = state.latitude;
+  flySpeed = state.flySpeed;
+};
+
+// callback on successful creation of ge plugin instance
+function success(instance) {
+  googleEarthInstance = instance;
+  googleEarthInstance.getWindow().setVisibility(true);
+  googleEarthInstance.getOptions().setMapType(googleEarthInstance.MAP_TYPE_SKY);
+  googleEarthInstance.getNavigationControl().setVisibility(googleEarthInstance.VISIBILITY_AUTO);
+  googleEarthInstance.getOptions().setStatusBarVisibility(true);
+  gadget.inflateState();
+  // Add event listeners
+  google.earth.addEventListener(googleEarthInstance.getView(), "viewchangebegin", initCenterOfCoordinates);
+}  
+
+function failure(errorCode) {
+  alert("*** Error initializing google earth plugin ***");
+}
+
+function initCenterOfCoordinates(){ 
+  moveMap();
+  google.earth.removeEventListener(googleEarthInstance.getView(), "viewchangebegin", initCenterOfCoordinates); 
+  // write the new VP bounds to the public variable
+  // TODO: This will need a timer, because the viewchangeend event fires so often when dragging slowly.
+  // We need to make sure that we arent writing the current bounds more often than once every 250ms or so
+  google.earth.addEventListener(googleEarthInstance.getView(), "viewchangeend", writeCurrentBounds);
+} 
+
+// accepts a list of dataset names and replots all points from the datasets
+function redrawAll() {
+  clearKML();
+  var list = gadget.dashboard.getDataSetList();
+  for (var i = 0; i < list.length; i++){
+    plotDataset(list[i]);
+  }
+}
+
+// Slews map to point (center) at new coordinate
+// TODO: with range? or bounding box?
+function moveMap(coords){
+  if(coords){
+    longitude = coords.longitude;
+    latitude = coords.latitude;
+  }
+  // check that ra and dec are numbers
+  if (!isNaN(longitude) && !isNaN(latitude)){
+    var lookAt = googleEarthInstance.createLookAt('');
+    lookAt.setLatitude(latitude);
+    lookAt.setLongitude(longitude);
+    lookAt.setAltitude(0);
+    lookAt.setHeading(0);
+    lookAt.setRange(7000.0);      
+    googleEarthInstance.getView().setAbstractView(lookAt);
+  }   
+} 
+
+// Uses a timer to prevent too many updates per second
+// This function is called everytime viewport is moved (by attaching to the ge move event)
+function writeCurrentBounds(){
+  // we need to wait a few ms so we don't trigger this event too often
+  if (tidsViewchangeend.length !== 0){
+    // if the timer was already set, then clear them to reset them.
+    clearTimerArray(tidsViewchangeend);    
+  }
+  // now there is no timer set
+  // so make one
+  var tid = setTimeout(function(){
+    boxBounds = googleEarthInstance.getView().getViewportGlobeBounds();
+    var lookAt = googleEarthInstance.getView().copyAsLookAt(googleEarthInstance.ALTITUDE_RELATIVE_TO_GROUND);
+    latitude = lookAt.getLatitude();
+    longitude = lookAt.getLongitude();
+    curBounds = { topLeft: {ra: boxBounds.getWest() + 180, dec: boxBounds.getNorth() },
+                  bottomRight: {ra: boxBounds.getEast() + 180, dec: boxBounds.getSouth()} };     
+    gadget.notify('viewBoundsChanged', curBounds); 
+  }, 200);
+  // add the new timer id to the array
+  tidsViewchangeend.push(tid);
+}
+
+// KML
+// Clears all the KML from ge by removing every child.
+function clearKML() {
+  if (googleEarthInstance !== null){
+    var features = googleEarthInstance.getFeatures();
+    while (features.getFirstChild()) {
+      features.removeChild(features.getFirstChild());
+    }
+  }
+}
+
+// creates a point on ge for each CelestialCoordinate in the dataset    
+function plotDataset(dataSetName) {
+  var dataSet = gadget.dashboard.getDataSet(dataSetName);
+  var kmlDataSetRecords = [];
+  var parsedKmlRecord;
+    
+  if (dataSet.isVisible()) {
+    for (var i=0, len=dataSet.length(); i<len; i++) {
+      if (dataSet.getRecord(i).visible) { // check the visible property of the record
+        kmlDataSetRecords.push(toKML(dataSet.getRecord(i)));
+      }
+    }
+    // PLOT the kml objects in toPlot
+    if (googleEarthInstance){ 
+      var googleEarthFeatures = googleEarthInstance.getFeatures();  // speed up the getFeatures methods
+      for (var i=0,len=kmlDataSetRecords.length; i<len; i++){
+        parsedKmlRecord = googleEarthInstance.parseKml(kmlDataSetRecords[i]);
+        googleEarthFeatures.appendChild(parsedKmlRecord);
+        // THIS WORKS - It's possible to modify a KML object after it's been appended
+        //parsed.setDescription("MODIFIED");
+      }
+    }
+  }
+}
+
+function getColorIcon(color){
+  // change the color and the iconUrl
+  var iconUrl;     	
+  switch(color){
+    case "red":
+  	  iconUrl = "http://127.0.0.1/images/targetRed.png";
+  		break;
+  	case "green":
+  		iconUrl = "http://127.0.0.1/images/targetGreen.png";
+  		break;
+  	case "yellow":
+  		iconUrl = "http://127.0.0.1/images/targetYellow.png";
+  		break;
+  	case "blue":
+  		iconUrl = "http://127.0.0.1/images/targetBlue.png";
+  		break;
+  	default:
+  		iconUrl = "http://127.0.0.1/images/targetGrey.png";
+  		break;
+  }
+  return iconUrl
+};
+
+function generateDescription(data){
+  var description = [];
+  if(data){
+    for (var property in data) {
+      if (data[property] !== null && data[property] !== undefined) {
+        description.push(property + ": " + data[property].toString());
+      }
+    }
+    return description.join('\n');
+  }
+}
+
+function toKML(record) {
+  var lon = record.ra - 180;
+  var lat = record.dec;
+  var iconUrl = getColorIcon(record.color);
+  var name = record.name || "";
+  // translate multiline desc into html
+  desc = "<p>" + generateDescription(record, record).replace(new RegExp('\n', "g"), '<br \>') + '<\p>';
+
+  var placemarkText = '<?xml version="1.0" encoding="utf-8"?>' +
+    '<kml xmlns="http://www.opengis.net/kml/2.2" hint="target=sky">' +
+    '<Placemark ID="' + name + '">' +
+    '<name>' + name + '</name>' + 
+    '<description>' +
+    '<![CDATA[' +
+      desc +
+    ']]>' +
+    '</description>' +
+    '<LookAt>' +
+    '<longitude>' + lon + '</longitude>' +
+    '<latitude>' + lat + '</latitude>' +
+    '<altitude>0</altitude>' +
+    '<heading>-3</heading>' +
+    '<tilt>0</tilt>' +
+    '<range>3768</range>' +
+    '</LookAt>' +
+    '<Style>' +
+    '<IconStyle>' +
+    '<Icon>' +
+    '<href>' + iconUrl + '</href>' +
+    '</Icon>' +
+    '</IconStyle>' +
+    '</Style>' +
+    '<Point>' +
+    '<coordinates>' + lon + ',' + lat + ',0</coordinates>' +
+    '</Point>' +
+    '</Placemark>' +
+    '</kml>';
+  return placemarkText;  
+}
+
+// HELPER
+function clearTimerArray(timers){
+  if (timers instanceof Array){
+    for (var i=0, len=timers.length; i<len; i++){
+      clearTimeout(timers.splice(i,1));    // splice returns the removed element
+    }
+  }
+}
+
+</script>
+</head>
+<body>
+	<div id="content" style="width: 100%; height: 600px"></div>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!-- Author: Ian Smith (imsmith@uw.edu) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Pragma" content="no-cache">
+<title>Data Inquirer</title>
+
+<!-- ASCOT Basic Style Sheets -->
+<link href="/css/reset.css" rel="stylesheet" type="text/css">
+<link href="/css/text.css" rel="stylesheet" type="text/css"> 
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js" type="text/javascript"></script>
+<script src="/util.js" type="text/javascript"></script> 
+
+<script type="text/javascript">
+// Text in {{ }} such as " {{ra.lower}}" are substituted in setQueryText() method
+var QUERY_BUTTONS =  
+  [{ buttonNum: 0,
+     name: "SDSS Stars",
+     desc: "Get star magnitudes in U, G, R, I, Z from SDSS",
+     catalog: "SDSS",
+     query:  "SELECT TOP 500 objid, ra, dec, modelMag_u, modelMag_g, modelMag_r, modelMag_i, modelMag_z, (modelMag_u - modelMag_g) as u_g, (modelMag_g - modelMag_r) as g_r, (modelMag_r - modelMag_i) as r_i, (modelMag_i - modelMag_z) as i_z from Star where ra between {{ra.lower}} and {{ra.upper}} and dec between {{dec.lower}} and {{dec.upper}} and modelMag_g > -9999 ORDER BY modelMag_g ASC"
+   },
+   { buttonNum: 1,
+     name: "SDSS Galaxies",
+     desc: "Get galaxy magnitudes in U, G, R, I, Z from SDSS",
+     catalog: "SDSS",
+     query: "SELECT TOP 500 g.objid, g.ra, g.dec, s.z, g.modelMag_u, g.modelMag_g, g.modelMag_r, g.modelMag_i, g.modelMag_z, (g.modelMag_u - g.modelMag_g) as u_g, (g.modelMag_g - g.modelMag_r) as g_r, (g.modelMag_r - g.modelMag_i) as r_i, (g.modelMag_i - g.modelMag_z) as i_z from Galaxy as g left outer join SpecObjAll as s on g.specobjID = s.specobjID where g.ra between {{ra.lower}} and {{ra.upper}} and g.dec between {{dec.lower}} and {{dec.upper}} and g.modelMag_g > -9999 ORDER BY g.modelMag_g ASC"
+  }];
+  
+// Status Icons
+var ICON_URL_SELECTED = '/images/targetYellow.png';
+var ICON_URL_DEFAULT = '/images/target.png';
+var ICON_URL_SPINNER = '/images/spinnerGrey.gif';
+var ICON_URL_ERROR = '/images/errorIcon.gif';
+var ICON_URL_SUCCESS = '/images/successIcon.gif';
+
+var myFields = {}
+var catalogs =  [ { name: "SDSS", url: "http://skyserver.sdss3.org/public/en/tools/search/x_sql.asp"  } ]; // contains info for catalogs and thier urls
+
+// Gadget State Variables
+var viewportBounds;
+var currentQuery = {};
+
+// create HR object
+gadget.init = function(finishedLoading){
+  gadget.onNotification('viewBoundsChanged', setViewPortBounds);
+  gadget.onNotification('dataRequested', launchQuery);
+  setFields();
+  finishedLoading();
+}
+
+gadget.saveState = function(){
+  return { 
+    'currentQueryText': currentQuery.query,
+    'selectedCatalog': $("#selectCatalog option:selected").text()
+  }
+};
+
+gadget.loadState = function(state){
+  currentQuery.query = state.currentQueryText;
+  $('textarea#txtQueryString').val(state.currentQueryText);
+  $('#selectCatalog').val(state.selectedCatalog).attr('selected',true);  
+};
+    
+var setFields = function() {
+  // set the catalog options
+  var  options = [];
+  for (var i=0, len=catalogs.length; i<len; i++) {
+    options.push(catalogs[i].name);
+  }
+  populateSelect("selectCatalog", options);
+  // create the buttons
+  for (var i=0, len=QUERY_BUTTONS.length; i<len; i++) {
+    createQueryButton(QUERY_BUTTONS[i]);
+  }
+}
+
+function createQueryButton(buttonObj) {
+  var divButtons = $('#divQueryButtons')[0];
+  var button = document.createElement('input');
+  button.setAttribute('type', 'button');
+  button.setAttribute('name', buttonObj.name);
+  button.setAttribute('value', buttonObj.name);
+  button.setAttribute('title', buttonObj.desc);
+  button.onclick = function(){ setQueryText(buttonObj.buttonNum); };
+  divButtons.appendChild(button);
+}
+
+var getData = function() {
+  var dataSetName = $("#txtDatasetName").val()
+  var query = $("#txtQueryString").val(); 
+  var selectedCatalog = $("#selectCatalog option:selected").text();
+  var url;
+  if (dataSetName.length < 1) {
+    showStatus(ICON_URL_ERROR, "Enter dataset name");
+    return;
+  }
+  if (query === "") {
+    showStatus(ICON_URL_ERROR, 'Enter query string');
+    return;
+  }
+    
+  // find catalog in the catalogs object to get the url
+  for (var i=0, len=catalogs.length; i<len; i++) {
+    if (catalogs[i].name === selectedCatalog) {
+      url = catalogs[i].url;
+    }
+  }
+
+  if (url === null) {
+    showStatus(ICON_URL_ERROR, 'Select a catalog');
+    return;
+  }
+    
+  var queryObj = {'dataSet': dataSetName, 'query': query, 'url': url};
+  gadget.notify("dataRequested", queryObj);
+
+}
+
+var setQueryText = function(buttonNumber) {
+  var buttonObject;
+  var queryString;
+  if (QUERY_BUTTONS.length <= buttonNumber) {
+    return;
+  }
+  buttonObject = QUERY_BUTTONS[buttonNumber];
+  queryString = buttonObject.query;
+  
+  $('#selectCatalog').val(buttonObject.catalog).attr('selected',true);  
+        
+  // replace bounds    
+  if (viewportBounds && viewportBounds.topLeft && viewportBounds.bottomRight) {
+    queryString = queryString.replace("{{ra.lower}}", viewportBounds.topLeft.ra.toFixed(6));
+    queryString = queryString.replace("{{ra.upper}}", viewportBounds.bottomRight.ra.toFixed(6));
+    queryString = queryString.replace("{{dec.lower}}", viewportBounds.bottomRight.dec.toFixed(6));
+    queryString = queryString.replace("{{dec.upper}}", viewportBounds.topLeft.dec.toFixed(6));
+  }
+  $("#txtQueryString").val(queryString);        
+}
+
+function makeGETRequest(url, query, callback) {
+  var params = {};
+  //console.log(encodeURIComponent(url + '?format=xml&cmd=' + encodeURIComponent(query)));
+  $.ajax({
+   'url': '/XMLHttpRequest/' + encodeURIComponent(url + '?format=xml&cmd=' + encodeURIComponent(query)),
+    success: callback 
+  });
+}
+
+function makeSQLRequest() {
+	var user = prompt("Username for LSST mySQL database: ", "");
+	var pass = prompt("Password for LSST mySQL database: ", "");
+	var login = user + " " + pass;
+	showStatus(ICON_URL_SPINNER, "Querying LSST database");
+	$.ajax({
+   'url': '/SQLQuery/' + login,
+    success: parseSQLQueryResponse
+  });
+}
+
+function parseSQLQueryResponse(data) {
+	if (data == "access denied") {
+		showStatus(ICON_URL_ERROR, "Access denied");
+		return;
+	}
+	console.log(data);
+	showStatus(ICON_URL_SUCCESS, "Returned " + data.length + " records.");
+}
+
+function parseQueryResponse(data) {
+  // parse the XML
+  var rows;
+  var xmlDoc;
+  if (data === ""){
+    showStatus(ICON_URL_ERROR, 'Service returned empty string');
+    return;
+  }
+    
+  xmlDoc = $.parseXML(data);
+  // walk XML to create points and write to objectData
+  rows = xmlDoc.getElementsByTagName('Row');
+  if ((rows.length === 0) || ((rows.length === 1) && (rows[0].textContent.indexOf('No rows returned') !== -1))){
+    // the special case answer is that no rows were returned
+    showStatus(ICON_URL_ERROR, 'No objects from ' + $("#selectCatalog option:selected").text() + ' catalog');
+    return;
+  }
+    
+  // indicate status to user
+  showStatus(ICON_URL_SUCCESS, "Returned " + rows.length + " records.");
+    
+  // We probably have valid data at this point, so parse it and display it
+  // create and write Dataset from the row data
+  createDataset(currentQuery.dataSet, rows);   
+	gadget.resize();
+}
+
+// Accepts "rows" as an ObjectHTML collection
+// and creates a Dataset from it and returns it
+function createDataset(id, rows) {
+  var json = [];
+  var newDataSet;
+  for (var i=0,len=rows.length; i<len; i++){
+    var row = rows[i];
+    var elem = {};
+    // loop through attributes
+    for (var k=0, kLen=row.attributes.length; k<kLen; k++){
+      // k is the attribute index
+      var attName = row.attributes[k].nodeName;
+      var attValue = row.attributes[k].nodeValue;
+      elem[attName] = attValue;
+    }
+    json.push(elem);
+  }
+  // create dataset
+  newDataSet = gadget.dashboard.createDataSet(id); 
+  newDataSet.addRecords(json, true);
+  newDataSet.setAllRecords({'color': 'grey'}, true);
+  newDataSet.setAllRecords({'visible': true});
+  return newDataSet;
+}
+
+function showStatus(iconUrl, text){
+  var statusDiv = $('#divStatusText')[0];
+  var status = text; 
+  if (iconUrl !== "") {
+    status = '<img id="imgStatus" style="vertical-align:middle;" src="' + iconUrl + '" /> ' + "<span style='vertical-align:middle;'>" + text + "</span>";
+  } 
+  statusDiv.innerHTML = status;
+  statusDiv.style.visibility = 'inline';
+}
+
+function setViewPortBounds(newBounds) {
+  var boundsText;
+  if(!newBounds){
+    return;
+  }
+  viewportBounds = newBounds;
+  boundsText =  "ra between " + newBounds.topLeft.ra.toFixed(4) + " and " + newBounds.bottomRight.ra.toFixed(4) +    
+                "<br/> dec between " + newBounds.topLeft.dec.toFixed(4) + " and " + newBounds.bottomRight.dec.toFixed(4)
+  $("#divViewPortBounds").html(boundsText);
+}
+
+function launchQuery(newQuery){
+  showStatus(ICON_URL_SPINNER, "Getting objects..."); 
+  currentQuery = newQuery;
+  $('textarea#txtQueryString').val(newQuery.query);
+  $('input[name=dataSetName]').val(newQuery.dataSet);
+  makeGETRequest(newQuery.url, newQuery.query, parseQueryResponse);
+}
+
+function populateSelect(selectName, options) { 
+  var html = '';
+  var currentSelection = $("#" + selectName + " option:selected").text();
+  var len = options.length;
+  for (var i = 0; i< len; i++) {
+    html += '<option value="' + options[i] + '">' + options[i] + '</option>';
+  }
+  $("#" + selectName).html(html);
+  $("#" + selectName + "option[value=" + currentSelection + "]").attr("selected", true);  
+}
+
+</script>
+</head>
+<body>
+<div id="content" class="extraPadding">
+	<div id="divViewPortBounds" style="float: right">
+	    <div><b>Viewport Bounds</b></div>
+	    <div id="spViewportBounds" class="info"></div>
+	</div>
+	<div id="divQuery">
+	    Dataset Name: <input id="txtDatasetName" type="text" name="dataSetName" />
+	</div>
+	<div id="divQueryButtons" style="margin-top: 10px; margin-bottom: 10px;"></div>
+	<div id="divCatalog">
+		Catalog:  <select id="selectCatalog"></select>
+	</div>
+	<div id="divQueryBox" style="width:100%; margin-top: 10px;">
+		Query String: 
+		<br/> 
+		<textarea id="txtQueryString" rows="5" style="width:99%;"></textarea>
+		<br/>
+		<input id="btGetData" onclick="getData();" type="button" value="Submit"/>  
+		<div id="divStatusText" style="display: inline; margin-left: 10px"></div> 
+	</div>
+</div>
+
+<input type="button" value="LSST Query" onclick="makeSQLRequest();">
+</body>
+</html>

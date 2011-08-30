@@ -1,0 +1,31 @@
+/* Author: Diego Marcos (dmarcos@uw.edu) */
+body {
+    background-color: transparent;
+    margin: 0;
+		padding: 0;
+}
+
+.gadgetFrame {
+  border-radius: 5px;
+  padding: 0px;
+  background-color: rgba(255, 255, 255, 1);
+  margin-right: 10px;
+  margin-top: 10px;
+  -webkit-box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.2);
+}
+
+.gadgetCanvas {
+  background-color: rgba(255, 255, 255, 1);
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.extraPadding{
+  padding: 5px;
+}
+
+td {
+	padding: 5;
+}
