@@ -1,0 +1,51 @@
+<!DOCTYPE html>  <html> <head>   <title>gadget.js</title>   <meta http-equiv="content-type" content="text/html; charset=UTF-8">   <link rel="stylesheet" media="all" href="docco.css" /> </head> <body>   <div id="container">     <div id="background"></div>          <table cellpadding="0" cellspacing="0">       <thead>         <tr>           <th class="docs">             <h1>               gadget.js             </h1>           </th>           <th class="code">           </th>         </tr>       </thead>       <tbody>                               <tr id="section-1">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-1">&#182;</a>               </div>               <pre><code>Date: 4/11
+Author: Diego Marcos (diego.marcos@gmail.com)
+</code></pre>
+
+<h2>    Gadget</h2>
+
+<pre><code>Defines the communication and state persistence for gadgets
+</code></pre>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-2">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-2">&#182;</a>               </div>               <p>Framework global variable</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="kd">var</span> <span class="nx">UW</span> <span class="o">=</span> <span class="nx">UW</span> <span class="o">||</span> <span class="p">{};</span>
+
+<span class="nx">UW</span><span class="p">.</span><span class="nx">Gadget</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">initState</span><span class="p">){</span></pre></div>             </td>           </tr>                               <tr id="section-3">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-3">&#182;</a>               </div>               <p>Private Variables</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="kd">var</span> <span class="nx">state</span> <span class="o">=</span> <span class="nx">initState</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">id</span> <span class="o">=</span> <span class="nx">state</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">state</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;url&#39;</span><span class="p">);</span>
+    
+  <span class="k">this</span><span class="p">.</span><span class="nx">getId</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(){</span>
+    <span class="k">return</span> <span class="nx">id</span><span class="p">;</span>	
+  <span class="p">};</span>
+  
+  <span class="k">this</span><span class="p">.</span><span class="nx">getURL</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(){</span>
+    <span class="k">return</span> <span class="nx">url</span><span class="p">;</span>
+  <span class="p">};</span>
+  </pre></div>             </td>           </tr>                               <tr id="section-4">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-4">&#182;</a>               </div>               <p>Default load/save state methods. 
+The user must define these functions.</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="k">this</span><span class="p">.</span><span class="nx">loadState</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">state</span><span class="p">)</span> <span class="p">{};</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">saveState</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{};</span>
+  
+  <span class="k">this</span><span class="p">.</span><span class="nx">inflateState</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(){</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">loadState</span><span class="p">(</span><span class="nx">state</span><span class="p">.</span><span class="nx">toJSON</span><span class="p">());</span>
+  <span class="p">}</span>
+  
+  <span class="k">this</span><span class="p">.</span><span class="nx">setState</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">stateObject</span><span class="p">){</span>
+    <span class="nx">state</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="nx">stateObject</span><span class="p">);</span>
+  <span class="p">};</span>
+  
+  <span class="k">this</span><span class="p">.</span><span class="nx">getState</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(){</span>
+    <span class="k">return</span> <span class="nx">state</span><span class="p">;</span>
+  <span class="p">};</span>
+  
+  <span class="k">this</span><span class="p">.</span><span class="nx">bind</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">property</span><span class="p">,</span> <span class="nx">trigger</span><span class="p">){</span>
+    <span class="nx">state</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="s1">&#39;change:&#39;</span> <span class="o">+</span> <span class="nx">property</span><span class="p">,</span> <span class="nx">trigger</span><span class="p">);</span>
+  <span class="p">}</span>
+  
+  <span class="k">this</span><span class="p">.</span><span class="nx">setProperty</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">property</span><span class="p">,</span> <span class="nx">value</span><span class="p">){</span>
+    <span class="nx">state</span><span class="p">.</span><span class="nx">set</span><span class="p">({</span><span class="nx">property</span><span class="o">:</span> <span class="nx">value</span> <span class="p">});</span>
+  <span class="p">}</span>
+
+<span class="p">}</span>
+
+<span class="nx">UW</span><span class="p">.</span><span class="nx">Gadget</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">debugMessage</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">){</span>
+  <span class="nx">UW</span><span class="p">.</span><span class="nx">debugMessage</span><span class="p">(</span><span class="s2">&quot;GADGET &quot;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">getId</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;: &quot;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">);</span>
+<span class="p">}</span>
+
+</pre></div>             </td>           </tr>                </tbody>     </table>   </div> </body> </html> 

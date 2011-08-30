@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta name="author" content="Diego Marcos" />
+	<title>ASCOTT Button Example</title>
+	<!-- <script language="javascript" src="http://ascot.astro.washington.edu/ascotButton.js"></script> -->
+	<script language="javascript" src="http://localhost/ascotButton.js"></script>
+	<!-- <script language="javascript" src="http://localhost/xhr.js"></script> -->
+	<style type="text/css">
+    html{
+      font: 20px 'Lucida Grande', 'Helvetica Neue', Arial, sans-serif;
+      color: #663091;
+      font-weight: normal;
+    }
+  </style>
+</head>
+<body>
+<div style="width: 800px; height: 480px; margin: auto; margin-top: 250px">
+  Buttons to embed ASCOT services in third party web applications: 
+  <ascot id="sdssButton"></ascot>
+  <ascot id="lsstButton"></ascot>
+</div>
+<script language="javascript">
+
+  var sdssDashboard = {
+    gadgets: { 
+      skyView: {number: 1, state: {longitude:-47.17500000000001, latitude:11.8, flySpeed:1} }, 
+      plotView: {number: 1}
+    }
+  };
+  
+  var sdssDataSets = [{ 
+    name: 'stars', 
+    source: 'sdss', 
+    query: 'SELECT TOP 500 objid, ra, dec, modelMag_u, modelMag_g, modelMag_r, modelMag_i, ' +
+           'modelMag_z, (modelMag_u - modelMag_g) as u_g, (modelMag_g - modelMag_r) as g_r, ' +
+           '(modelMag_r - modelMag_i) as r_i, (modelMag_i - modelMag_z) as i_z from Star ' + 
+           'where ra between 132.765732 and 132.884267 and dec between 11.756152 and 11.843848 ' +
+           'and modelMag_g > -9999 ORDER BY modelMag_g ASC'
+  }]; 
+  
+  /* Example using fits viewer */
+  var lsstDashboard = {
+  numberOfColumns: 3,
+  gadgets: {
+    plotView: {number: 2, state: {axisInverted: {x: false, y: false}, selectedColor: 'blue', verboseTooltip: false, selectedXAxis:"psfMag", selectedYAxis:"psf_ap", selectionObject: {'yMin': 0, 'yMax': 1, 'xMin':18, 'xMax':19}}},
+    fitsViewer: {number: 1}
+  }
+  };
+  var lsstDataSets = [{
+  name: 'testData',
+  source: 'lsst',
+  dataBase: 'buildbot_PT1_2_u_wp_tags_2011_0817_215234',
+  query: 'select sce.visit visit, sce.raftName raft, sce.ccdName ccd,sro.rMag refMag, sro.ra refRa, sro.decl refDec,sro.isStar isStar, s.xAstrom xPix,s.yAstrom yPix,dnToAbMag(s.psfFlux, sce.fluxMag0) as psfMag,dnToAbMag(s.apFlux, sce.fluxMag0) as apMag,dnToAbMag(s.flux_ESG, sce.fluxMag0) as instMag,dnToAbMag(s.flux_Gaussian, sce.fluxMag0) as modelMag,3600.*(s.ra - sro.ra) dRaArcsec,3600.*(s.decl - sro.decl) dDecArcsec,dnToAbMag(s.apFlux, sce.fluxMag0)-sro.rMag ap_cat,dnToAbMag(s.flux_ESG, sce.fluxMag0) -sro.rMag inst_cat,dnToAbMag(s.flux_Gaussian, sce.fluxMag0)-sro.rMag mod_cat,dnToAbMag(s.psfFlux, sce.fluxMag0)-sro.rMag psf_cat,dnToAbMag(s.flux_Gaussian, sce.fluxMag0) - dnToAbMag(s.flux_ESG, sce.fluxMag0) mod_inst,dnToAbMag(s.psfFlux, sce.fluxMag0) - dnToAbMag(s.apFlux, sce.fluxMag0) psf_ap,dnToAbMag(s.psfFlux, sce.fluxMag0) - dnToAbMag(s.flux_ESG, sce.fluxMag0) psf_inst,dnToAbMag(s.psfFlux, sce.fluxMag0) - dnToAbMag(s.flux_Gaussian, sce.fluxMag0) psf_mod from Source as s, Science_Ccd_Exposure as sce, RefSrcMatch as rom,SimRefObject as sro where (s.scienceCcdExposureId = sce.scienceCcdExposureId)and (s.sourceId = rom.sourceId) and (rom.refObjectId = sro.refObjectId)and (sce.visit = 887029093) and (sce.raftName = "1,2") and (sce.ccdName = "1,1") and sro.rMag < 25.;'
+  }];
+ 
+  /*
+  var lsstDashboard = {
+    gadgets: { 
+      tableView: {number: 1}, 
+      plotView: {number: 1}
+    }
+  };
+  
+  var lsstDataSets = [{ 
+    name: 'stars2', 
+    source: 'lsst', 
+    query: 'select sce.visit visit, sce.raftName raft, sce.ccdName ccd,sro.rMag refMag, sro.ra refRa, sro.decl refDec,sro.isStar isStar, ' +
+           'sro.refObjectId refId,rom.nSrcMatches nMatch,s.sourceId sourceId,s.ra sourceRa,s.decl sourceDec,s.xAstrom xPix,s.yAstrom yPix,dnToAbMag(s.psfFlux, sce.fluxMag0) ' +
+           'as psfMag,dnToAbMagSigma(s.psfFlux, s.psfFluxSigma, sce.fluxMag0, sce.fluxMag0Sigma) as psfMagErr,s.psfFlux psfFlux,s.psfFluxSigma psfFluxSigma,dnToAbMag(s.apFlux, sce.fluxMag0) ' +
+           'as apMag,dnToAbMagSigma(s.apFlux, s.apFluxSigma, sce.fluxMag0, sce.fluxMag0Sigma) as apMagErr,s.apFlux apFlux,s.apFluxSigma apFlux,dnToAbMag(s.flux_ESG, sce.fluxMag0) ' +
+           'as instMag,dnToAbMagSigma(s.flux_ESG, s.flux_ESG_Sigma, sce.fluxMag0, sce.fluxMag0Sigma) as instMagErr,s.flux_ESG instFlux,s.flux_ESG_Sigma instFluxSigma,dnToAbMag(s.flux_Gaussian, sce.fluxMag0) ' +
+           'as modelMag,dnToAbMagSigma(s.flux_Gaussian, s.flux_Gaussian_Sigma, sce.fluxMag0, sce.fluxMag0Sigma) as modelMagErr,s.flux_Gaussian modelFlux,s.flux_Gaussian_Sigma ' + 
+           'modelFluxSigma,s.flagForDetection flags, s.ra - sro.ra dRa,s.decl - sro.decl dDec,dnToAbMag(s.apFlux, sce.fluxMag0)-sro.rMag ap_cat,dnToAbMag(s.flux_ESG, sce.fluxMag0)' +
+           ' -sro.rMag inst_cat,dnToAbMag(s.flux_Gaussian, sce.fluxMag0)-sro.rMag mod_cat,dnToAbMag(s.psfFlux, sce.fluxMag0)-sro.rMag psf_cat,dnToAbMag(s.flux_Gaussian, sce.fluxMag0) - ' +
+           'dnToAbMag(s.flux_ESG, sce.fluxMag0) mod_inst,dnToAbMag(s.psfFlux, sce.fluxMag0) - dnToAbMag(s.apFlux, sce.fluxMag0) psf_ap,dnToAbMag(s.psfFlux, sce.fluxMag0) - ' +
+           'dnToAbMag(s.flux_ESG, sce.fluxMag0) psf_inst,dnToAbMag(s.psfFlux, sce.fluxMag0) - dnToAbMag(s.flux_Gaussian, sce.fluxMag0) psf_mod from Source as s, Science_Ccd_Exposure ' +
+           'as sce, RefSrcMatch as rom,SimRefObject as sro where (s.scienceCcdExposureId = sce.scienceCcdExposureId)and (s.sourceId = rom.sourceId) and ' + 
+           '(rom.refObjectId = sro.refObjectId)and (sce.visit = 887029093) and (sce.raftName = "2,2") and (sce.ccdName = "1,1") and sro.rMag < 22.5'
+  }]; */
+    
+  var sdssButton = document.getElementById('sdssButton');
+  var lsstButton = document.getElementById('lsstButton');
+  
+  sdssButton.setAttribute("dashboard", JSON.stringify(sdssDashboard));
+  sdssButton.setAttribute("dataSets", JSON.stringify(sdssDataSets));
+  lsstButton.setAttribute("dashboard", JSON.stringify(lsstDashboard));
+  lsstButton.setAttribute("dataSets", JSON.stringify(lsstDataSets));
+  
+</script>
+</body>
+</html>
