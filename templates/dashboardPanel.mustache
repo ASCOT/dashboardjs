@@ -32,12 +32,16 @@
     $(function(){
       initDashboard();
     });
+    
+    var finishedLoading = function(){
+      $('#loadingBar').toggle();
+    }
 
     var initDashboard = function() {
       ASCOT.dashboard = new UW.Dashboard();
       ASCOT.dashboard.setContainer($("#" + 'dashboard').get(0));
       ASCOT.dashboard.setUrl(resourceUrl + '/' + dashboardId);
-      ASCOT.dashboard.init();
+      ASCOT.dashboard.init(finishedLoading);
       initGUI();
       return ASCOT.dashboard;
     };
@@ -93,8 +97,8 @@
   <body>
     <div id="popUpMask" style="display: none"></div>
     <div id="popUp" style="display: none"><a href="#" onClick="hidePopUp('popUp')">Close Me</a></div>
-    
     <div id="note" class="openNote" style="visibility: hidden"><a id="closeNote"></a></div>
+    
     <table class="content" width="100%">
       <tr>
         <td colspan="2" class="header">
@@ -117,7 +121,9 @@
         <td style="width: 200px">
         </td>
         <td>
-          <div id="dashboard" class="dashboard"></div>
+          <div id="dashboard" class="dashboard">
+            <div id="loadingBar" style="width: 107px; margin: auto; margin-top: 210px"><img style="height: 19px; width: 107px" alt="dashboard loading" src='/images/loadingBar.gif'></div>
+          </div>
         </td>
       </tr>
       <tr>

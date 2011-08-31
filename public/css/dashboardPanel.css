@@ -108,6 +108,7 @@ footer a:visited {
 div.dashboard{
   width: 100%;
   float: right;   
+  min-height: 500px;
   border: 1px solid rgba(102, 45, 145, 0.7);
   padding: 5px 0px 0px 15px;
   background-color: #ece9e9;  

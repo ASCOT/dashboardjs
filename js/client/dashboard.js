@@ -71,8 +71,8 @@ UW.Dashboard = function(container, dashboardUrl){
 
   this.loadedGadgets = 0;
   
-  this.init = function() {
-     var stateLoaded = _.bind(function(state) { this.inflateState(state); },this)
+  this.init = function(callback) {
+     var stateLoaded = _.bind(function(state) { this.inflateState(state); callback(); },this)
      var gadgetsLoaded = _.bind(function(gadgets) { gadgetsInfo = gadgets; this.loadState(stateLoaded); },this);
      this.loadGadgets(gadgetsLoaded);
    };
@@ -206,9 +206,6 @@ UW.Dashboard = function(container, dashboardUrl){
         callback(message); 
       } 
     });
-      
-    //bayeuxClient.subscribe('/handshake', processHandshake);
-    //bayeuxClient.publish('/handshake', {message: "Connect request"});
 
     bayeuxClient.subscribe('/dashboard/' + channelId, function(message) { 
         if (message.selfPublished) return; 
