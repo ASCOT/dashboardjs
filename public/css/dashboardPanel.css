@@ -283,6 +283,16 @@ header li {
 float: left;
 }
 
+#closeNote{
+  display: inline-block;
+  background: url("/images/closeAlertButton.png");
+  height: 16px;
+  width: 16px;
+  margin: 0px 0px 0px 2px;
+  background-size: 100%;
+  vertical-align: text-top;
+}
+
 #note {
   position: absolute;
   z-index: 101;
@@ -291,8 +301,9 @@ float: left;
   right: 0;
   background: #fde073;
   text-align: center;
-  line-height: 2.5;
+  line-height: 36px;
   overflow: hidden;
+  color: #413f3f;
   -webkit-box-shadow: 0 0 5px black;
   -moz-box-shadow:    0 0 5px black;
   box-shadow:         0 0 5px black;
@@ -307,7 +318,7 @@ float: left;
     10%, 90% { -moz-transform: translateY(0px); }
 }
 
-.cssanimations.csstransforms #note {
+.cssanimations.csstransforms .openNote {
     -webkit-transform: translateY(-50px);
     -webkit-animation: slideDown 2.5s 1.0s 1 ease forwards;
     -moz-transform:    translateY(-50px);
@@ -316,4 +327,27 @@ float: left;
 
 .cssanimations.csstransforms #close {
   display: none;
+}
+
+#popUpMask {
+  background-color:#111;
+  opacity: 0.65;
+  filter:alpha(opacity=65);
+  position:absolute;
+  z-index: 9001;
+  top:0px;
+  left:0px;
+  width:100%;
+}
+
+#popUp {
+  position:absolute;
+  background-color:#eeeeee;
+  width:300px;
+  height:300px;
+  z-index: 9002; 
+  border-radius: 5px;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px; 
+  padding: 5px;
 }

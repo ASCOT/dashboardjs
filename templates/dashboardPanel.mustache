@@ -43,24 +43,58 @@
     };
 
     function saveDashboard() {
-      ASCOT.dashboard.save();
+      //displayNote('ALERT');
+      showPopUp('popUp');
+      //ASCOT.dashboard.save();
     }
 
     function initGUI() {
       var closeNote = document.getElementById("closeNote");
       closeNote.addEventListener('click', function() {
         var note = document.getElementById("note");
-        note.style.display = 'none';
+        note.style.visibility = 'hidden';
       }, false);
+    }
+    
+    var displayNote = function(message){
+      var note = $('#note');
+      var newNote = note.clone(true);
+      var closeButton = $('#closeNote');
+      newNote.html('');
+      newNote.append(message + " ");
+      newNote.append(closeButton);
+      note.before(newNote);
+      newNote.css('visibility','visible');
+      $("." + note.attr('class') + ':last').remove();
+    }
+    
+    function showPopUp(popUpId) {
+      var viewPortHeight = $(window).height();
+      var viewPortWidth = $(window).width();
+      var popUpMask = $('#popUpMask');
+      var popUp = $('#' + popUpId);
+      var popUpTop = viewPortHeight/2 - popUp.height();
+      var popUpLeft = viewPortWidth/2 - popUp.height();
+      popUp.css('top', popUpTop + 'px');
+      popUp.css('left', popUpLeft + 'px');
+      popUpMask.css('height', viewPortHeight + 'px'); 
+      $('#popUpMask').toggle();     
+      $('#' + popUpId).toggle();     
+    }
+    
+    function hidePopUp(popUpId) {
+      $('#popUpMask').toggle();     
+      $('#' + popUpId).toggle(); 
     }
 
     </script>
     
   </head>
   <body>
-    <div id="note">
-        Test Note. <a id="closeNote">[close]</a>
-    </div>
+    <div id="popUpMask" style="display: none"></div>
+    <div id="popUp" style="display: none"><a href="#" onClick="hidePopUp('popUp')">Close Me</a></div>
+    
+    <div id="note" class="openNote" style="visibility: hidden"><a id="closeNote"></a></div>
     <table class="content" width="100%">
       <tr>
         <td colspan="2" class="header">
