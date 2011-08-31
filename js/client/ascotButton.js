@@ -75,10 +75,12 @@ ASCOT.button.xslt;
     var dashboard = dashboardJSON? JSON.parse(dashboardJSON) : {};
     var dataSets = dataSetsJSON? JSON.parse(dataSetsJSON) : {};
     var requestData = {};
-    // Show loading spinner if webkit browser
-    if ((/(.)*WebKit(.)*/).test(navigator.userAgent)){
-      button.childNodes[0].style.display = "block";
+    // if not webkit browser
+    if (!(/(.)*WebKit(.)*/).test(navigator.userAgent)){
+      button.childNodes[0].style.margin = '-2px';
+      button.childNodes[0].style.marginTop = '-5px';
     }
+    button.childNodes[0].style.display = "block";
     requestData.gadgets = dashboard.gadgets;
     requestData.dataSets = dataSets;
     if(typeof dashboard == 'number'){
