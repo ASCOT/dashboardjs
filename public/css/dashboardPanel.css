@@ -1,5 +1,4 @@
 /* Author: Diego Marcos (dmarcos@uw.edu) */
-
 html, body {
   width: 100%;
   height: 100%;
@@ -74,7 +73,7 @@ header {
 }
 
 footer a {
-  padding: 5px 5px 0px 20px;
+  padding: 0px 0px 0px 20px;
   font-size: 12px;
   text-decoration: none;
   color: #662d91;
@@ -93,11 +92,22 @@ footer a:visited {
 }
 
 .content td{
-  padding: 5px 10px 0px 10px
+  vertical-align: top;
+  padding: 0px 20px 10px 10px;
 }
 
 .content td.header{
   height: 20px
+}
+
+.content td.dashboard{
+  padding-left: 25px
+}
+
+.content td#toolBox{
+ width: 200px;
+ padding-left: 20px;
+ padding-right: 15px;
 }
 
 .content td.footer{
@@ -111,12 +121,11 @@ div.dashboard{
   min-height: 500px;
   border: 1px solid rgba(102, 45, 145, 0.7);
   padding: 5px 0px 0px 15px;
-  margin-right: 10px;
   background-color: #ece9e9;  
   
-  -moz-box-shadow:inset 0 0 2px rgba(0, 0, 0, 1);
-  -webkit-box-shadow:inset 0 0 2px rgba(0, 0, 0, 1);
-  box-shadow:inset 0 0 2px rgba(0, 0, 0, 1);
+  -moz-box-shadow:rgba(255,255,255,.60) 0 0 6px,inset 0 0 2px rgba(0, 0, 0, 1);
+  -webkit-box-shadow:rgba(255,255,255,.60) 0 0 6px, inset 0 0 2px rgba(0, 0, 0, 1);
+  box-shadow:rgba(255,255,255,.60) 0 0 6px, inset 0 0 2px rgba(0, 0, 0, 1);
  
   border-radius: 5px;
   -webkit-border-radius: 5px;
@@ -125,56 +134,73 @@ div.dashboard{
 
 header div.logo {
  float: left;
- margin: 5px 0px 0px 25px;
+ margin: 0px 0px 0px 45px;
 }
 
 header div.logo a {
-background: url("/images/ascotLogo.png");
-float: left;
-height: 43px;
-width: 140px;
-background-size: 100%;
-overflow: hidden;
-text-indent: -900px;
+  background: url("/images/ascotLogo.png");
+  float: left;
+  height: 43px;
+  width: 140px;
+  margin-top: 5px;
+  background-size: 100%;
+  overflow: hidden;
+  text-indent: -900px;
 }
 
 header nav {
- margin: 0px;
- padding: 10px 10px 0px 0px;
- float: right;
+  margin-top: 15px;
+  float: right;
  width: 294px;
 }
 
-header nav a{
+header nav div.buttonGroup{
+ display: inline-block;
+ padding: 0px;
+ margin: 0px 20px 0px 0px;
+ 
+ /* -moz-box-shadow:rgba(255,255,255,.6) 0 0 6px;
+ -webkit-box-shadow:rgba(255,255,255,.6) 0 0 6px;
+ box-shadow:rgba(255,255,255,.6) 0 0 6px; */
+ 
+ -webkit-border-radius: 5px;
+ -moz-border-radius: 5px;
+ border-radius: 5px;
+}
+
+header nav a{  
   height: 25px;
   line-height: 27px;
+  margin: 0px
   font-size: 15px;
   color: #555555;
   text-shadow: 0 -1px 1px rgba(255, 255, 255, .28);
   background: -webkit-linear-gradient(top, #ece9e9 0%, #d8d7da 100%);
-  background: -moz-linear-gradient(top, #d8d7da 0%, #d8d7da 100%);
+  background: -moz-linear-gradient(top, #ece9e9 0%, #d8d7da 100%);
   opacity: .9;
   padding: 5px 10px;
-  border: 1px solid rgba(0, 0, 0, 0.3);
-  -moz-border-radius: 6px;
-  -webkit-border-radius: 6px;
-  border-radius: 6px;
-  -moz-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4),0 1px 0 rgba(255, 255, 255, 0.4) inset;
-  -webkit-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4),0 1px 0 rgba(255, 255, 255, 0.4) inset;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4),0 1px 0 rgba(255, 255, 255, 0.4) inset;
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  border-radius: 4px;
+  -moz-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) inset;
+  -webkit-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) inset;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) inset;
   cursor: pointer;
+  -webkit-transition: border-color .218s;
 }
 
 header nav a:hover{
   text-decoration: none;
   color: #252525;
+  border: 1px solid rgba(0, 0, 0, 0.7);
 }
 
 header nav a:active{
   background: -webkit-linear-gradient(top, #d8d7da 0%, #ece9e9 100%);
   background: -moz-linear-gradient(top, #d8d7da 0%, #ece9e9 100%);
-  -moz-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4),0 1px 0px rgba(0, 0, 0, 0.5) inset;
-  -webkit-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4),0 1px 0px rgba(0, 0, 0, 0.5) inset;
+  -moz-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.6) inset;
+  -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.6) inset;
   text-decoration: none;
 }
 
@@ -187,38 +213,42 @@ header nav li.left{
 }
 
 header nav li.right a{
-  -moz-border-radius: 0px 6px 6px 0px;
-  -webkit-border-radius: 0px 6px 6px 0px;
-  border-radius: 0px 6px 6px 0px;
+  -moz-border-radius: 0px 5px 5px 0px;
+  -webkit-border-radius: 0px 5px 5px 0px;
+  border-radius: 0px 5px 5px 0px;
 }
 
 header nav li.left  a{
-  -moz-border-radius: 6px 0px 0px 6px;
-  -webkit-border-radius: 6px 0px 0px 6px;
-  border-radius: 6px 0px 0px 6px;
+  -moz-border-radius: 5px 0px 0px 5px;
+  -webkit-border-radius: 5px 0px 0px 5px;
+  border-radius: 5px 0px 0px 5px;
   margin-right: 0px;
 }
 
 header nav > ul > li {
-  float: left;
-  margin-right: 20px;
+  margin-left: 20px;
 }
 
 nav ul, nav li {
   margin: 0px;
+  float: left;
   list-style: none none;
   list-style-image: none;
 }
 
+nav ul{
+  margin-right: 0px;
+}
+
 footer {
  height: 30px;
- padding: 5px 10px 0px 0px; 
+ padding: 5px 20px 0px 0px; 
 }
 
 .toolBox{
   position: fixed; 
   text-align: center;
-  background-color: #b7abc3;
+  background-color: #ece9e9;  
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
   -moz-box-shadow: 0 -1px 0 rgba(0, 0, 0, .1), 0 1px 0 rgba(255, 255, 255, .3);
@@ -304,4 +334,39 @@ a:hover {text-decoration: underline; color: white;}
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px; 
   padding: 5px;
+}
+
+#tabsBar{
+ width: 100%;
+ margin: auto;
+ text-shadow: rgba(255, 255, 255, .65) 0 1px 0;
+ -webkit-border-radius: 5px;
+ -moz-border-radius: 5px;
+ border-radius: 5px;
+ background-color: #ece9e9;
+ border: 1px solid rgba(102, 45, 145, 0.7);
+ -moz-box-shadow:rgba(255,255,255,.60) 0 0 6px,inset 0 0 2px rgba(0, 0, 0, 1);
+ -webkit-box-shadow:rgba(255,255,255,.60) 0 0 6px, inset 0 0 2px rgba(0, 0, 0, 1);
+ box-shadow:rgba(255,255,255,.60) 0 0 6px, inset 0 0 2px rgba(0, 0, 0, 1);
+}
+
+#tabsBar div.tab{
+  width: 99%;
+  height: 60px;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  margin: auto; 
+  background: -webkit-linear-gradient(top, #ece9e9 0%, #d8d7da 100%);
+  background: -moz-linear-gradient(top, #d8d7da 0%, #d8d7da 100%);
+}
+
+#tabsBar div:first-child.tab{
+  -webkit-border-radius: 5px 5px 0px 0px;
+  -moz-border-radius: 5px 5px 0px 0px;
+  border-radius: 5px 5px 0px 0px;
+}
+
+#tabsBar div:last-child.tab{
+  -webkit-border-radius: 0px 0px 5px 5px;
+  -moz-border-radius: 0px 0px 5px 5px;
+  border-radius: 0px 0px 5px 5px;
 }

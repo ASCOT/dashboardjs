@@ -487,24 +487,10 @@ function invertY(){
 </head>
 <body>
 <div id="content">
-  <div id="divSelectDataset" style="display: inline">  
-    <table style="margin: 0px"><tbody>
-      <tr>
-        <td> Dataset: <select id="selectDatasetName"></select>
-        </td>
-        <td>    
-          X Axis: <input id="invertXAxisButton" type="button" title="Invert X Axis" value=">"></input> <select id="selectXAxis"></select>
-        </td>
-        <td>
-          Y Axis: <input id="invertYAxisButton" type="button" title="Invert Y Axis" value="^"></input> <select id="selectYAxis"></select>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <input id="plotButton" type="button" value="Plot"/>
-        </td> 
-      </tr> 
-    </tbody></table>
+  <div id="divSelectDataset" style="display: inline"> 
+    X Axis: <input id="invertXAxisButton" type="button" title="Invert X Axis" value=">"></input> <select id="selectXAxis"></select>
+     Y Axis: <input id="invertYAxisButton" type="button" title="Invert Y Axis" value="^"></input> <select id="selectYAxis"></select>
+     <input id="plotButton" type="button" value="Plot"/>
   </div>
   <div id="divPlotToolbar" style="display: inline">
     <form name="formSelectZoom">

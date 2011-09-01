@@ -107,27 +107,36 @@
                 <a href="/" title="Astronomical Collaborative Toolkit">Astronomical Collaborative Toolkit</a>
               </div>
               <nav class="header">
-                <ul>
-                  <li class="left" ><a href="#" title="undo" onClick="">Undo</a></li>
-                </ul>
-                <ul>
-                  <li class="right"><a href="#" title="redo" onClick="">Redo</a></li>
-                </ul>
-                <ul>
-                  <li><a href="#" title="saveDashboard" onClick="saveDashboard()">Save</a></li>
-                </ul>
-                <ul>
-                  <li><a href="#" title="cloneDashboard" onClick="">Clone</a></li>
-                </ul>
+                <div class="buttonGroup">
+                  <ul>
+                    <li class="left" ><a href="#" title="undo" onClick="">Undo</a></li>
+                    <li class="right"><a href="#" title="redo" onClick="">Redo</a></li>
+                  </ul>
+                </div>
+                <div class="buttonGroup">
+                  <ul>
+                    <li><a href="#" title="saveDashboard" onClick="saveDashboard()">Save</a></li>
+                  </ul>
+                </div>
+                <div class="buttonGroup">
+                  <ul>
+                    <li><a href="#" title="cloneDashboard" onClick="">Clone</a></li>
+                  </ul>
+                </div>
               </nav>
             </div>  
           </header>
         </td> 
       </tr>
       <tr>  
-        <td style="width: 200px">
-        </td>
-        <td>
+        <td id="toolBox">
+          <div id="tabsBar">
+            <div class="tab" style="background: white;" ></div> 
+            <div class="tab"></div> 
+            <div class="tab"></div> 
+          </div>
+        </td> 
+        <td class="dashboard">
           <div id="dashboard" class="dashboard">
             <div id="loadingBar" style="width: 107px; margin: auto; margin-top: 210px"><img style="height: 19px; width: 107px" alt="dashboard loading" src='/images/loadingBar.gif'></div>
           </div>
