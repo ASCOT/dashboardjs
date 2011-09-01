@@ -1,3 +1,7 @@
+html{
+ color: #555555; 
+}
+
 a {
   color: #71829E;
   cursor: pointer;
@@ -7,51 +11,86 @@ label {
   font-size: 13px;
 }
 
+input, textarea {
+  margin: 10px 10px 0px 0px; 
+  padding: 5px 10px 5px 10px;
+  font-size: 12px;
+  border: 1px solid #DDD;
+  border-top-color: #CCC;
+  border-bottom-color: #EAEAEA;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  color: #000;
+  font-weight: normal;
+}
+
 input[type="checkbox"] {
   -khtml-appearance: none;
-  background: url(/images/checkBox.png) no-repeat;
+  background: url(/images/checkBoxGrey.png) no-repeat;
   width: 17px;
   height: 18px;
   top: 6px;
+  border: 0px solid #DDD;
   position: relative;
   margin-right: 10px;      
 }
 
 input[type="checkbox"]:checked {
-  background: url(/images/checkBoxSelected.png) no-repeat;
+  background: url(../images/checkBoxSelectedGrey.png) no-repeat;
 }
 
 input[type="radio"] {
   -khtml-appearance: none;
-  background: url(/images/radio.png) no-repeat;
+  background: url(../images/radioGrey.png) no-repeat;
+  border: none;
   width: 17px;
   height: 18px;
+  padding: 0px;
+  margin: 0px 5px 0px 5px;
 }
 
 input[type="radio"]:checked {
-  border: none;
-  background: url(/images/radioSelected.png) no-repeat;
+  background: url(../images/radioSelectedGrey.png) no-repeat;
 }
 
 input[type="range"] {
   -khtml-appearance: none; 
-  -webkit-border-image: url(/images/slider-horizontal-track.png) 2 4 2 4 / 2px 4px 2px 4px repeat repeat;
+  -webkit-border-image: url(../images/slider-horizontal-track.png) 2 4 2 4 / 2px 4px 2px 4px repeat repeat;
   height: 5px;
   padding: 0;
 }
 
-input, textarea {
-  font-size: 12px;
-  color: #000;
-  font-weight: normal;
-  padding: 4px;
+input[type="button"],[type="submit"] {
+ font-size: 12px;
+ color: #555555;
+ background: #f1f1f1;
+ white-space: nowrap;
+ overflow: visible;
+ cursor: pointer;
+ border: 1px solid #CACACA;
+ -webkit-border-radius: 5px;
+ -moz-border-radius: 5px;
+ border-radius: 5px;
+ -webkit-transition: border-color .218s;
+ background: -webkit-gradient(linear, 0% 40%, 0% 70%, from(rgb(245, 245, 245)), to(rgb(241, 241, 241)));
+ background: -moz-linear-gradient(linear, 0% 40%, 0% 70%, from(rgb(245, 245, 245)), to(rgb(241, 241, 241)));
+ 
+}
+
+input[type="button"]:hover,[type="submit"]:hover {
+  border-color: #737373;
+}
+
+input[type="button"]:active,[type="submit"]:active {
+  background: -webkit-gradient(linear, 0% 40%, 0% 70%, from(rgb(241, 241, 241)), to(rgb(245, 245, 245)));
+  background: -moz-linear-gradient(linear, 0% 40%, 0% 70%, from(rgb(241, 241, 241)), to(rgb(245, 245, 245)));
 }
 
 textarea {
   /* To give the same inset shadows as input[type='text'] */
-  -webkit-appearance: textfield;
   resize: none;
-  padding: 4px;
+  padding: 5px;
   /* 
     Hack to make the same size as text inputs,
     since their native border isn't taken into
@@ -62,9 +101,22 @@ textarea {
 
 select {
   -khtml-appearance: none;
-  background: url(../images/select-updown.png) center right no-repeat, 
-              -webkit-gradient(linear, left top, left bottom, from(#F5F5F5), to(#CCCCCC));
   min-height: 24px;
+  padding: 5px;
+  margin: 5px 10px 5px 5px;
+  font-size: 12px;
+  color: #555555;
+  background: #f1f1f1;
+  white-space: nowrap;
+  overflow: visible;
+  cursor: pointer;
+  border: 1px solid #CACACA;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  -webkit-transition: border-color .218s;
+  background: url(../images/selectUpDownGrey.png) center right no-repeat, -webkit-gradient(linear, 0% 40%, 0% 70%, from(rgb(245, 245, 245)), to(rgb(241, 241, 241)));
+  background: url(../images/selectUpDownGrey.png) center right no-repeat, -moz-linear-gradient(linear, 0% 40%, 0% 70%, from(rgb(245, 245, 245)), to(rgb(241, 241, 241)));
   border: 1px solid #BDBDBD;
   border-bottom-color: #949494;
   padding: 0 35px 0 5px;
