@@ -100,7 +100,7 @@ footer a:visited {
   height: 20px
 }
 
-.content td.dashboard{
+.content td.content{
   padding-left: 25px
 }
 
@@ -115,13 +115,16 @@ footer a:visited {
   padding: 0px 10px 0px 10px
 }
 
-div.dashboard{
+div.content{
   width: 100%;
   float: right;   
   min-height: 500px;
   border: 1px solid rgba(102, 45, 145, 0.7);
   padding: 5px 0px 0px 15px;
   background-color: #ece9e9;  
+  color: #464547;
+  text-shadow: none;
+  font-size: 16px;
   
   -moz-box-shadow:rgba(255,255,255,.60) 0 0 6px,inset 0 0 2px rgba(0, 0, 0, 1);
   -webkit-box-shadow:rgba(255,255,255,.60) 0 0 6px, inset 0 0 2px rgba(0, 0, 0, 1);
@@ -134,7 +137,7 @@ div.dashboard{
 
 header div.logo {
  float: left;
- margin: 0px 0px 0px 45px;
+ margin: 0px 0px 0px 40px;
 }
 
 header div.logo a {
@@ -151,13 +154,13 @@ header div.logo a {
 header nav {
   margin-top: 15px;
   float: right;
- width: 294px;
+  width: 294px;
 }
 
 header nav div.buttonGroup{
  display: inline-block;
  padding: 0px;
- margin: 0px 20px 0px 0px;
+ margin: 0px 23px 0px 0px;
  
  /* -moz-box-shadow:rgba(255,255,255,.6) 0 0 6px;
  -webkit-box-shadow:rgba(255,255,255,.6) 0 0 6px;
@@ -171,14 +174,15 @@ header nav div.buttonGroup{
 header nav a{  
   height: 25px;
   line-height: 27px;
-  margin: 0px
-  font-size: 15px;
-  color: #555555;
+  margin: 0px;
+  font-size: 14px;
+  color: #464547;  
   text-shadow: 0 -1px 1px rgba(255, 255, 255, .28);
   background: -webkit-linear-gradient(top, #ece9e9 0%, #d8d7da 100%);
   background: -moz-linear-gradient(top, #ece9e9 0%, #d8d7da 100%);
   opacity: .9;
   padding: 5px 10px;
+  text-shadow: rgba(255, 255, 255, .65) 0 1px 0;
   border: 1px solid rgba(0, 0, 0, 0.5);
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
@@ -192,7 +196,7 @@ header nav a{
 
 header nav a:hover{
   text-decoration: none;
-  color: #252525;
+  color: black;
   border: 1px solid rgba(0, 0, 0, 0.7);
 }
 
@@ -242,7 +246,7 @@ nav ul{
 
 footer {
  height: 30px;
- padding: 5px 20px 0px 0px; 
+ padding: 0px 35px 0px 0px; 
 }
 
 .toolBox{
@@ -355,8 +359,25 @@ a:hover {text-decoration: underline; color: white;}
   height: 60px;
   border: 1px solid rgba(0, 0, 0, 0.4);
   margin: auto; 
+  text-align: center;
   background: -webkit-linear-gradient(top, #ece9e9 0%, #d8d7da 100%);
   background: -moz-linear-gradient(top, #d8d7da 0%, #d8d7da 100%);
+}
+
+#tabsBar div.tab div.label{
+  position: relative;
+  color: #464547;
+  top: 20px;
+}
+
+#tabsBar div.opened{
+  height: 240px;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  margin: auto; 
+  background: rgba(163, 154, 198, 0.4);
+  -moz-box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.4);
+  -webkit-box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.4);
 }
 
 #tabsBar div:first-child.tab{

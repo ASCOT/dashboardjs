@@ -8,7 +8,7 @@ a {
 }
 
 label {
-  font-size: 13px;
+  vertical-align: middle;
 }
 
 input, textarea {
@@ -33,7 +33,7 @@ input[type="checkbox"] {
   top: 6px;
   border: 0px solid #DDD;
   position: relative;
-  margin-right: 10px;      
+  margin: 0px 5px 0px 10px; 
 }
 
 input[type="checkbox"]:checked {
@@ -47,7 +47,8 @@ input[type="radio"] {
   width: 17px;
   height: 18px;
   padding: 0px;
-  margin: 0px 5px 0px 5px;
+  margin: 0px 5px 0px 10px;
+  vertical-align: middle; 
 }
 
 input[type="radio"]:checked {
@@ -65,6 +66,7 @@ input[type="button"],[type="submit"] {
  font-size: 12px;
  color: #555555;
  background: #f1f1f1;
+ margin: 0px 10px 0px 5px; 
  white-space: nowrap;
  overflow: visible;
  cursor: pointer;
@@ -103,7 +105,7 @@ select {
   -khtml-appearance: none;
   min-height: 24px;
   padding: 5px;
-  margin: 5px 10px 5px 5px;
+  margin: 10px 10px 0px 5px;
   font-size: 12px;
   color: #555555;
   background: #f1f1f1;
@@ -270,7 +272,6 @@ button:disabled, button:hover:disabled {
 ::-webkit-scrollbar-track-piece:horizontal:start {
   background: #8382a2;
 }
-
 
 /* Turn on single button up on top, and down on bottom */
 ::-webkit-scrollbar-button:start:decrement,

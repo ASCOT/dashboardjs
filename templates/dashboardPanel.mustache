@@ -39,7 +39,7 @@
 
     var initDashboard = function() {
       ASCOT.dashboard = new UW.Dashboard();
-      ASCOT.dashboard.setContainer($("#" + 'dashboard').get(0));
+      ASCOT.dashboard.setContainer($("#" + 'dashboardPanel').get(0));
       ASCOT.dashboard.setUrl(resourceUrl + '/' + dashboardId);
       ASCOT.dashboard.init(finishedLoading);
       initGUI();
@@ -51,13 +51,52 @@
       showPopUp('popUp');
       //ASCOT.dashboard.save();
     }
+    
+    function tabClicked(){
+      if($(this).hasClass('opened')){
+        return;
+      }
+      $('#tabsBar').children().removeClass('opened');
+      $('#tabsBar').children().css('cursor','pointer');
+      $('#tabsBar').children().hover(tabHoverIn, tabHoverOut);
+      $(this).addClass('opened');
+      $(this).unbind('mouseenter').unbind('mouseleave');
+      $(this).css('border','1px solid rgba(0, 0, 0, 0.4)');
+      $(this).css('cursor','auto');
+      $(this).children().css('color','#464547');  
+      
+      $('#content').children().hide();
+      switch($(this).attr('id')){
+        case 'dashboardTab':
+          $('#dashboardPanel').show();
+          break;
+        case 'dataSetsTab':
+          $('#dataSetsPanel').show();
+          break;
+        case 'discussionTab':
+          $('#discussionPanel').show();
+          break;  
+      }
+      
+    }
+    
+    function tabHoverIn(){
+      $(this).css('border','1px solid rgba(0, 0, 0, 1)'); 
+      $(this).children().css('color','black');           
+    }
+    
+    function tabHoverOut(){
+      $(this).css('border','1px solid rgba(0, 0, 0, 0.4)');
+      $(this).children().css('color','#464547');  
+    }
 
     function initGUI() {
-      var closeNote = document.getElementById("closeNote");
-      closeNote.addEventListener('click', function() {
-        var note = document.getElementById("note");
-        note.style.visibility = 'hidden';
-      }, false);
+      $('#closeNote').click($('#note').toggle);
+      $('.tab').click(tabClicked);
+      $('.tab').hover(tabHoverIn, tabHoverOut);
+      $('#tabsBar').children().css('cursor','pointer');
+      $('#dashboardTab').css('cursor','auto'); 
+      $('#dashboardTab').unbind('mouseenter').unbind('mouseleave');
     }
     
     var displayNote = function(message){
@@ -120,7 +159,7 @@
                 </div>
                 <div class="buttonGroup">
                   <ul>
-                    <li><a href="#" title="cloneDashboard" onClick="">Clone</a></li>
+                    <li><a href="#" title="forkDashboard" onClick="">Fork</a></li>
                   </ul>
                 </div>
               </nav>
@@ -131,14 +170,20 @@
       <tr>  
         <td id="toolBox">
           <div id="tabsBar">
-            <div class="tab" style="background: white;" ></div> 
-            <div class="tab"></div> 
-            <div class="tab"></div> 
+            <div id="dashboardTab" class="tab opened"><div class="label">Dashboard</div></div> 
+            <div id="dataSetsTab" class="tab"><div class="label">Data Sets</div></div> 
+            <div id="discussionTab" class="tab"><div class="label">Discussion</div></div>  
           </div>
         </td> 
-        <td class="dashboard">
-          <div id="dashboard" class="dashboard">
+        <td id="content" class="content">
+          <div id="dashboardPanel" class="content">
             <div id="loadingBar" style="width: 107px; margin: auto; margin-top: 210px"><img style="height: 19px; width: 107px" alt="dashboard loading" src='/images/loadingBar.gif'></div>
+          </div>
+          <div id="dataSetsPanel" class="content" style="display: none">
+            DataSets Panel
+          </div>
+          <div id="discussionPanel" class="content" style="display: none">
+            Discussion Panel
           </div>
         </td>
       </tr>
