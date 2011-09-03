@@ -93,10 +93,12 @@
     function initGUI() {
       $('#closeNote').click($('#note').toggle);
       $('.tab').click(tabClicked);
+      $('.closePopUp').click(function() { hidePopUp('popUp') });
       $('.tab').hover(tabHoverIn, tabHoverOut);
       $('#tabsBar').children().css('cursor','pointer');
       $('#dashboardTab').css('cursor','auto'); 
       $('#dashboardTab').unbind('mouseenter').unbind('mouseleave');
+      $(window).resize(function() { placePopUp('popUp') }); 
     }
     
     var displayNote = function(message){
@@ -111,16 +113,20 @@
       $("." + note.attr('class') + ':last').remove();
     }
     
-    function showPopUp(popUpId) {
-      var viewPortHeight = $(window).height();
-      var viewPortWidth = $(window).width();
-      var popUpMask = $('#popUpMask');
+    function placePopUp(popUpId){
       var popUp = $('#' + popUpId);
-      var popUpTop = viewPortHeight/2 - popUp.height();
-      var popUpLeft = viewPortWidth/2 - popUp.height();
+      var viewPortHeight = $(window).height();
+      var viewPortWidth = $(window).width();      
+      var popUpTop = (viewPortHeight - popUp.height())/2 - 200;
+      var popUpLeft = (viewPortWidth - popUp.width())/2;
+      var popUpMask = $('#popUpMask');
       popUp.css('top', popUpTop + 'px');
       popUp.css('left', popUpLeft + 'px');
-      popUpMask.css('height', viewPortHeight + 'px'); 
+      popUpMask.css('height', viewPortHeight + 'px');
+    }
+    
+    function showPopUp(popUpId) {
+      placePopUp(popUpId);      
       $('#popUpMask').toggle();     
       $('#' + popUpId).toggle();     
     }
@@ -135,7 +141,7 @@
   </head>
   <body>
     <div id="popUpMask" style="display: none"></div>
-    <div id="popUp" style="display: none"><a href="#" onClick="hidePopUp('popUp')">Close Me</a></div>
+    <div id="popUp" style="display: none"><div class="closePopUp"></div></div>
     <div id="note" class="openNote" style="visibility: hidden"><a id="closeNote"></a></div>
     
     <table class="content" width="100%">
