@@ -18,11 +18,13 @@ input, textarea {
   border: 1px solid #DDD;
   border-top-color: #CCC;
   border-bottom-color: #EAEAEA;
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
-  border-radius: 3px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
   color: #000;
   font-weight: normal;
+  background-color: white;  
+  border: 1px solid #CACACA;
 }
 
 input[type="checkbox"] {
@@ -70,14 +72,12 @@ input[type="button"],[type="submit"] {
  white-space: nowrap;
  overflow: visible;
  cursor: pointer;
- border: 1px solid #CACACA;
- -webkit-border-radius: 5px;
- -moz-border-radius: 5px;
- border-radius: 5px;
  -webkit-transition: border-color .218s;
  background: -webkit-gradient(linear, 0% 40%, 0% 70%, from(rgb(245, 245, 245)), to(rgb(241, 241, 241)));
  background: -moz-linear-gradient(linear, 0% 40%, 0% 70%, from(rgb(245, 245, 245)), to(rgb(241, 241, 241)));
- 
+ -moz-box-shadow: none;
+ -webkit-box-shadow: none;
+ box-shadow: none;
 }
 
 input[type="button"]:hover,[type="submit"]:hover {
@@ -91,14 +91,12 @@ input[type="button"]:active,[type="submit"]:active {
 
 textarea {
   /* To give the same inset shadows as input[type='text'] */
-  resize: none;
   padding: 5px;
   /* 
     Hack to make the same size as text inputs,
     since their native border isn't taken into
     account when calculating width.
   */
-  padding-right: 6px;
 }
 
 select {

@@ -25,9 +25,9 @@
     <script type="text/javascript">
 
     var ASCOT = ASCOT || {};
-
     var dashboardId = {{id}};
     var resourceUrl = {{resourceUrl}};
+    var closeAlertTimeout;
 
     $(function(){
       initDashboard();
@@ -76,8 +76,7 @@
         case 'discussionTab':
           $('#discussionPanel').show();
           break;  
-      }
-      
+      } 
     }
     
     function tabHoverIn(){
@@ -89,11 +88,20 @@
       $(this).css('border','1px solid rgba(0, 0, 0, 0.4)');
       $(this).children().css('color','#464547');  
     }
+    
+    function closePopUpHoverIn(){
+      $(this).css('background','url("/images/closePopUpHover.png")');      
+    }
+    
+    function closePopUpHoverOut(){
+      $(this).css('background','url("/images/closePopUp.png")');
+    }
 
     function initGUI() {
-      $('#closeNote').click($('#note').toggle);
+      $('#closeNote').click(hideNote);
       $('.tab').click(tabClicked);
       $('.closePopUp').click(function() { hidePopUp('popUp') });
+      $('.closePopUp').hover(closePopUpHoverIn, closePopUpHoverOut);
       $('.tab').hover(tabHoverIn, tabHoverOut);
       $('#tabsBar').children().css('cursor','pointer');
       $('#dashboardTab').css('cursor','auto'); 
@@ -101,7 +109,12 @@
       $(window).resize(function() { placePopUp('popUp') }); 
     }
     
-    var displayNote = function(message){
+    function hideNote(){
+      $('#note').css('display','none');
+      clearTimeout(closeAlertTimeout);
+    }
+    
+    var displayNote = function(message, persistent){
       var note = $('#note');
       var newNote = note.clone(true);
       var closeButton = $('#closeNote');
@@ -109,8 +122,11 @@
       newNote.append(message + " ");
       newNote.append(closeButton);
       note.before(newNote);
-      newNote.css('visibility','visible');
+      newNote.toggle();
       $("." + note.attr('class') + ':last').remove();
+      if(!persistent){
+        closeAlertTimeout = setTimeout('hideNote()',2000);
+      }
     }
     
     function placePopUp(popUpId){
@@ -135,14 +151,12 @@
       $('#popUpMask').toggle();     
       $('#' + popUpId).toggle(); 
     }
-
     </script>
-    
   </head>
   <body>
     <div id="popUpMask" style="display: none"></div>
     <div id="popUp" style="display: none"><div class="closePopUp"></div></div>
-    <div id="note" class="openNote" style="visibility: hidden"><a id="closeNote"></a></div>
+    <div id="note" class="openNote" style="display: none"><a id="closeNote"></a></div>
     
     <table class="content" width="100%">
       <tr>
@@ -165,7 +179,7 @@
                 </div>
                 <div class="buttonGroup">
                   <ul>
-                    <li><a href="#" title="forkDashboard" onClick="">Fork</a></li>
+                    <li><a href="#" title="forkDashboard" onClick="displayNote('The dashboard has been forked')">Fork</a></li>
                   </ul>
                 </div>
               </nav>

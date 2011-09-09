@@ -126,7 +126,7 @@ exports.XMLHttpRequest = function() {
 	 *
 	 * @param string data Optional data to send as request body.
 	 */
-    this.send = function(data) {
+  this.send = function(data) {
     
       var host;
       var port;
@@ -217,7 +217,6 @@ exports.XMLHttpRequest = function() {
       	request.write(data);
       }
       request.end();	  
-      
   };
   
   this.handleError = function(error) {

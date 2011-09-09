@@ -16,39 +16,49 @@ if (!UW) var UW = {};
 	var XMLHttpRequest;
   var xhr;
   var nativeCrossDomainAvailable = false; // Native CORS method available
-  
+  var proxyIframe; // Iframe use for the postMessage method fallback in the browser
+  var sourceWindow;
   var options;
-  
-  if (typeof exports !== 'undefined') {
-     server = true;
-     module = exports;
-     XMLHttpRequest = require("./xhrNode").XMLHttpRequest;
-     xhr = new XMLHttpRequest();
-     nativeCORSAvailable = true;
-  }
-  else{
-    server = false;
-    module = UW;
-    if (window.ActiveXObject){ // IE
-      xhr = new window.XMLHttpRequest() || new window.ActiveXObject( "Microsoft.XMLHTTP" );
-    }
-    else{ // All other browsers standar XMLHttpRequest object
-      xhr = new window.XMLHttpRequest();
-    }
-    nativeCrossDomainAvailable = ("withCredentials" in xhr);
+  var idCounter = 0;
+  var urlRegularExpression = /^([\w\+\.\-]+:)(?:\/\/([^\/?#:]*)(?::(\d+))?)?/;
+    
+  function getUniqueId(prefix){
+    var id = idCounter++;
+    return prefix ? prefix + id : id;
+  };
+    
+  var iframeProxyRequestHandler = function(event){
+    var request = JSON.parse(event.data);
+    var serviceDomain = urlRegularExpression.exec(request.url.toLowerCase())[2];
+    sourceWindow = event.source;
+    launchRequest(request.url, request.type, request.headers, request.data, true);
   }
   
-  var launchRequest = function(xhr, url, type, headers, data, success, error, user, password){
+  var launchRequest = function(url, type, headers, data, iframeProxy, success, error, user, password){ 
+    
+    var iframeProxySuccesHandler = function(){
+      
+    };
+    
+    var iframeProxyErrorHAandler = function(){
+      
+    };
+    
+    var successHandler = iframeProxy? iframeProxySuccesHandler : success;
+    var errorHandler = iframeProxy? iframeProxyErrorHAandler : error;
+    
     xhr.onreadystatechange = function (){
       if (this.readyState == 3) {
     	}
       if (this.readyState == 4){
-        if(success && this.status == 200){
-          success(this.responseText);
+        if(successHandler && this.status == 200){
+          successHandler(this.responseText);
         }
       }
     };
+    
     xhr.open(type, url, true, user, password);
+    
     // Default content-type
     if (type == "GET" || type == "HEAD") {
       xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -62,20 +72,67 @@ if (!UW) var UW = {};
     xhr.send(data || null); 
   }
   
+  if (typeof exports !== 'undefined') {
+      server = true;
+      module = exports;
+      XMLHttpRequest = require("./xhrNode").XMLHttpRequest;
+      xhr = new XMLHttpRequest();
+      nativeCORSAvailable = true;
+   }
+   else{
+     server = false;
+     module = UW;
+     if (window.ActiveXObject){ // IE
+       xhr = new window.XMLHttpRequest() || new window.ActiveXObject( "Microsoft.XMLHTTP" );
+     }
+     else{ // All other browsers standar XMLHttpRequest object
+       xhr = new window.XMLHttpRequest();
+     }
+     nativeCrossDomainAvailable = ("withCredentials" in xhr);
+
+     if (window.addEventListener){ // normal browsers
+       window.addEventListener("message", iframeProxyRequestHandler, false);
+     } 
+     else if (window.attachEvent){ // IE 
+       window.attachEvent("onmessage", iframeProxyRequestHandler); 
+     }
+  }
+    
   module.ajax = function(options){
     
     var statusCodeCallbacks = options.statusCode || {};
     var type = options.type? options.type.toUpperCase() : "GET";
     var response = "";
-    var urlRegularExpression = /^([\w\+\.\-]+:)(?:\/\/([^\/?#:]*)(?::(\d+))?)?/;
     var documentUrl;
     var documentDomainParts;
     var requestDomainParts;
     var crossDomainRequest;
-    var newProxyIframe;
+    var onloadHandler = function() {
+      proxyIframe.contentWindow.postMessage(JSON.stringify({
+        	url : options.url,
+        	method  : type,
+        	headers : options.headers,
+        	data  : options.data,
+        	id :  getUniqueId()
+      }), '*');
+    };
+    
+    var iframeProxyResponseHandler = function(event){
+      console.log("PENE");
+      var response = JSON.parse(event.data);
+      if (response.iframeProxy){
+        if(response.succes){
+          options.success(response.data);
+        }
+        if(response.error){
+          options.error(response.data);
+        }
+        return;
+      }
+    };
       
     if(server){
-      launchRequest(xhr, options.url, type, options.headers, options.data, options.success, options.error)
+      launchRequest(options.url, type, options.headers, options.data, false, options.success, options.error)
     } 
     else{ 
       // #8138, IE may throw an exception when accessing
@@ -98,21 +155,34 @@ if (!UW) var UW = {};
     					(documentDomainParts[3] || (documentDomainParts[1] === "http:" ? 80 : 443))));
     
       if(!crossDomainRequest){
-        launchRequest(xhr, options.url, type, options.headers, options.data, options.success, options.error)
+        launchRequest(options.url, type, options.headers, options.data, false, options.success, options.error)
       }
       else{ // Cross-domain fallbacks
-        newProxyIframe = document.createElement("iframe");
-        newProxyIframe.id = 'proxyFrame';
-        newProxyIframe.name = newProxyIframe.id;
-        newProxyIframe.src = requestDomainParts[2];
-        newProxyIframe.style.display = 'none';
-        newProxyIframe.style.position = 'absolute';
-        newProxyIframe.style.left = '-2000px';
-        newProxyIframe.style.top = '-2000px';
-        newProxyIframe.onload = function() {
-          launchRequest(xhr, options.url, type, options.headers, options.data, options.success, options.error)
-        } 
-        document.body.appendChild(newProxyIframe);
+        // For the moment we only use the proxy fallback
+        launchRequest('/xhrProxy/' + encodeURIComponent(options.url), type, options.headers, options.data, false, options.success, options.error)
+        // Attempt of implementing cross domain iframe proxy. Not a good solution since we have no control over the data sources.
+        /* proxyIframe = document.createElement("iframe");
+        proxyIframe.id = 'proxyRequestFrame';
+        proxyIframe.name = proxyIframe.id;
+        proxyIframe.src = '/xhr/'; //requestDomainParts[2];
+        proxyIframe.style.display = 'none';
+        proxyIframe.style.position = 'absolute';
+        proxyIframe.style.left = '-2000px';
+        proxyIframe.style.top = '-2000px';
+        if (proxyIframe.addEventListener){
+        	proxyIframe.addEventListener("load", onloadHandler, false);
+        }
+        else if (instance.iFrame.attachEvent){
+        	proxyIframe.attachEvent("onload", onloadHandler);
+      	}
+      	
+      	if (window.addEventListener) {
+      	  window.addEventListener("message", iframeProxyResponseHandler, false);
+    	  }
+        else if (window.attachEvent) {
+          window.attachEvent("onmessage", iframeProxyResponseHandler);
+        }
+        document.body.appendChild(proxyIframe);*/
       }
    } 
  }

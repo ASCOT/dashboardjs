@@ -53,7 +53,7 @@ app.get('/convertFITS/:file', function(req, res){
 	res.send('done');
 });
 
-app.get('/XmlHttpRequest/:request', function(req, res){
+app.get('/xhrProxy/:request', function(req, res){
   var options = {
     url: req.params.request,
     type: "GET",

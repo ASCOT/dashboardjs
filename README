@@ -140,4 +140,17 @@ pubsub.io - No channels. Subscribers provide queries and receive data satisfying
 
 I would like to get hard numbers to compare performance of the different solutions.
 
- 
+Post Message Support
+--------------------
+
+FF3+, IE8+, Chrome, Safari 4+, Opera10+ 
+
+Cross domain techniques
+-----------------------
+
+Proxy server - Works fine but introduces latency + All data goes through our server using our resources. ASCOT queries can be big. Several MB.
+postMessage iframe - No control of the source.
+iframe URL fragments - 
+JSONP - No control of the source. Only GET requests. URL size limited (2083 characters in IE)
+Flash - No control of the source.
+

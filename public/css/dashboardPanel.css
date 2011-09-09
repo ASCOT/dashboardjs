@@ -178,6 +178,7 @@ header nav a{
   font-size: 14px;
   color: #464547;  
   text-shadow: 0 -1px 1px rgba(255, 255, 255, .28);
+  background-color: #ece9e9;
   background: -webkit-linear-gradient(top, #ece9e9 0%, #d8d7da 100%);
   background: -moz-linear-gradient(top, #ece9e9 0%, #d8d7da 100%);
   opacity: .9;
@@ -187,9 +188,9 @@ header nav a{
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   border-radius: 4px;
-  -moz-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) inset;
-  -webkit-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) inset;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) inset;
+  -moz-box-shadow: 0 1px 0 rgba(255, 255, 255, 1) inset;
+  -webkit-box-shadow: 0 1px 0 rgba(255, 255, 255, 1) inset;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 1) inset;
   cursor: pointer;
   -webkit-transition: border-color .218s;
 }
@@ -203,8 +204,9 @@ header nav a:hover{
 header nav a:active{
   background: -webkit-linear-gradient(top, #d8d7da 0%, #ece9e9 100%);
   background: -moz-linear-gradient(top, #d8d7da 0%, #ece9e9 100%);
-  -moz-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.6) inset;
-  -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.6) inset;
+  -moz-box-shadow: 0 1px 0 rgba(255, 255, 255, .4), 0 1px 1px rgba(0, 0, 0, 0.6) inset;
+  -webkit-box-shadow: 0 1px 0 rgba(255, 255, 255, .4), 0 1px 1px rgba(0, 0, 0, 0.6) inset;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .4), 0 1px 1px rgba(0, 0, 0, 0.6) inset;
   text-decoration: none;
 }
 
@@ -272,17 +274,21 @@ a:active {text-decoration: none}
 a:hover {text-decoration: underline; color: white;}
 
 #closeNote{
-  display: inline-block;
+  float: right;
   background: url("/images/closeAlertButton.png");
-  height: 16px;
-  width: 16px;
-  margin: 0px 0px 0px 2px;
+  height: 24px;
+  width: 24px;
   background-size: 100%;
+  margin: 5px 25px 0px 0px;
   vertical-align: text-top;
 }
 
+#closeNote:hover{
+  background: url("/images/closeAlertButtonHover.png");
+  cursor: pointer;
+}
+
 #note {
-  position: absolute;
   z-index: 101;
   top: 0;
   left: 0;
@@ -291,30 +297,11 @@ a:hover {text-decoration: underline; color: white;}
   text-align: center;
   line-height: 36px;
   overflow: hidden;
-  color: #413f3f;
+  color: #464547;  
+  text-shadow: rgba(255, 255, 255, .65) 0 1px 0;
   -webkit-box-shadow: 0 0 5px black;
   -moz-box-shadow:    0 0 5px black;
   box-shadow:         0 0 5px black;
-}
-
-@-webkit-keyframes slideDown {
-    0%, 100% { -webkit-transform: translateY(-50px); }
-    10%, 90% { -webkit-transform: translateY(0px); }
-}
-@-moz-keyframes slideDown {
-    0%, 100% { -moz-transform: translateY(-50px); }
-    10%, 90% { -moz-transform: translateY(0px); }
-}
-
-.cssanimations.csstransforms .openNote {
-    -webkit-transform: translateY(-50px);
-    -webkit-animation: slideDown 2.5s 1.0s 1 ease forwards;
-    -moz-transform:    translateY(-50px);
-    -moz-animation:    slideDown 2.5s 1.0s 1 ease forwards;
-}
-
-.cssanimations.csstransforms #close {
-  display: none;
 }
 
 #popUpMask {
@@ -360,7 +347,7 @@ div.closePopUp{
  border-radius: 5px;
  background-color: #ece9e9;
  border: 1px solid rgba(102, 45, 145, 0.7);
- -moz-box-shadow:rgba(255,255,255,.60) 0 0 6px,inset 0 0 2px rgba(0, 0, 0, 1);
+ -moz-box-shadow:rgba(255,255,255,.60) 0 0 6px, inset 0 0 2px rgba(0, 0, 0, 1);
  -webkit-box-shadow:rgba(255,255,255,.60) 0 0 6px, inset 0 0 2px rgba(0, 0, 0, 1);
  box-shadow:rgba(255,255,255,.60) 0 0 6px, inset 0 0 2px rgba(0, 0, 0, 1);
 }
