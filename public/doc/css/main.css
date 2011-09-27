@@ -147,6 +147,7 @@ p, li {
 
 p {
   margin-left: 20px;
+  color: #363737;
 }
 
 a, a:visited {
@@ -166,6 +167,11 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: bold;
   text-shadow: 0 1px 0 #c0b9ce;
 }
+
+h3{
+  margin-left: 20px;
+}
+
 code, pre, tt {
   font-family: Monaco, Consolas, "Lucida Console", monospace;
   font-size: 14px;
