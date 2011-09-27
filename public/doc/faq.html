@@ -1,0 +1,77 @@
+<!DOCTYPE HTML> 
+<html lang="en"> 
+<head> 
+  <meta charset="utf-8">
+  <meta name="author" content="Diego Marcos" />
+  <title>ASCOT Documentation</title> 
+  <link rel="stylesheet" href="./css/reset.css">
+  <link rel="stylesheet" href="./css/main.css">
+  <style type="text/css">
+    body{
+    	background-color: #a39ac6;
+    }
+  </style>
+</head> 
+
+<body> 
+
+<a href="https://github.com/dmarcos/dashboardjs"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://a248.e.akamai.net/assets.github.com/img/71eeaab9d563c2b3c590319b398dd35683265e85/687474703a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67" alt="Fork me on GitHub"></a>  <div class="container"> 
+  
+  <div class="wrapper"> 
+        
+    <header>
+      <div class="logo"></div>
+      <div id="mainNavigation" class="navigation">
+        <ul>
+          <li><a href="index.html" class="selected">Documentation</a></li>
+          <li><a href="#" class="disabledLink">About</a></li>
+          <li><a href="#" class="disabledLink">Blog</a></li>
+        <lu>
+      </div>
+      <div style="clear:both;"></div>
+    </header>
+    
+    <div id="secondaryNavigation" class="navigation secondaryNavigation">
+       <ul>
+         <li><a href="installation.html">Installation</a></li>
+         <li><a href="#" class="disabledLink">Source Code</a></li>
+         <li><a href="api.html">API</a></li>
+         <li><a href="#">Ascot Button</a></li>
+         <li><a href="faq.html" class="selected">FAQ</a></li>
+       <lu>
+    </div>
+    
+    <div id="content">
+        <section>
+          <h2>How to edit documentation</h2> 
+          <ol> 
+            <li> 
+              Install the github pages import node module<br/>
+              <tt>npm install -g ghp-import</tt>
+            </li> 
+            <li> 
+              Checkout dashboardjs code<br/>
+              <tt>git clone git://github.com/dmarcos/dashboardjs.git</tt>
+            </li>
+            <li>
+              The documentation is contained in the public/doc directory<br/>
+              Make the necessary modifications<br/>
+            </li>
+            <li>
+              Run the import command on the doc directory<br/>
+              <tt>ghp-import ./public/doc</tt>
+            </li> 
+            <li>
+              Now you can push the doc into the repository.<br/>
+              <tt>git push</tt>
+            </li> 
+          </ol> 
+        </section>
+    </div>
+    
+    <footer><a href="http://uw.edu" style="float: right"><span class="uwLogo"></span> University of Washington</a></footer>
+  
+  </div> 
+  
+</body>
+</htmt>  
