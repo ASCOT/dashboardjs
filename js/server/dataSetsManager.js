@@ -99,61 +99,69 @@ var addDataSet = function(dataSet){
   return dataSets.length-1;
 }
 
-module.exports.find = function(id) {
+module.exports.find = function(id, callback) {
   id = parseInt(id, 10);
-  return dataSets[id] || {};
+  var dataSet = dataSets[id];
+  var dataInquirer;
+  var queryResultParser;
+  var processQueryResult = function(queryResult){
+    records = queryResultParser(queryResult) || [];
+    callback({'id': dataSet.id, 'name': dataSet.name, 'records': records});
+  }
+
+  if (!dataSet) {
+    callback({});
+    return;
+  }
+
+  if (dataSet.records) {
+    return dataSet;
+  } else {
+    dataInquirer = dataSources[dataSet.source].dataInquirer;
+    if (!dataInquirer) {
+      console.error("ASCOT doesn't know how to query the data source: " + sourceId + " No default method and no function provided");
+      callback({});
+      return;
+    }
+    queryResultParser = dataSources[dataSet.source].queryResultParser;
+    if (!queryResultParser) {
+      console.error('Parser not available for ' + sourceId);
+      callback({});
+      return;
+    }
+    dataInquirer(dataSet.query, processQueryResult);  
+  }
+
 }
 
 // dataSetName, dataSourceId, query, dataParser
-module.exports.loadDataSet = function(dataSetInfo, callback) {
-  
+module.exports.createDataSet = function(dataSetInfo, callback) {
   var id = dataSetInfo.id || dataSets.length;
   var name = dataSetInfo.name;
   var sourceId = dataSetInfo.source;
-  var queryResultParser = dataSetInfo.queryResultParser;
   var query = dataSetInfo.query;
   var records = dataSetInfo.records;
-  var dataInquirer = dataSetInfo.dataInquirer;
-  var processQueryResult = function(queryResult){
-    records = queryResultParser(queryResult) || [];
-    callback(addDataSet({'id': id, 'name': name, 'records': records}));
-  }
-  
+
   if(id && dataSets[id]){
     id = id;
   }
   else{
     if(records){
-      callback(addDataSet({'id': id, 'name': name, 'records': records}));
+      callback(addDataSet({'id' : id, 'name' : name, 'records' : records}));
     }
     else{
-      if(!query){
+      if (!query) {
          console.error('Data query not available')
          callback(-1);
+         return;
        }
-       else{
-         if(!dataSources[sourceId]){
-            console.error('Unknown data source: ' + sourceId);
-            callback(-1);
-         }
-         else{
-         dataInquirer = dataInquirer || dataSources[sourceId].dataInquirer;
-         if(!dataInquirer){
-            console.error("ASCOT doesn't know how to query the data source: " + sourceId + " No default method and no function provided");
-            callback(-1);
-         }
-         else{
-           queryResultParser = queryResultParser || dataSources[sourceId].queryResultParser;
-           if(!queryResultParser){
-             console.error('Parser not available for ' + sourceId);
-             callback(-1);
-            }
-            else{   
-              dataInquirer(query, processQueryResult);  
-           } 
-          }
-        } 
+      if (!dataSources[sourceId]) {
+        console.error('Unknown data source: ' + sourceId);
+        callback(-1);
+        return;
       }
+      id = addDataSet({'id': id, 'name': name, 'source': sourceId, 'query': query});
+      module.exports.find(id, callback);
     }
   }
 }

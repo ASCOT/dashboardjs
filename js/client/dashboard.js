@@ -48,8 +48,8 @@ UW.Dashboard = function(container, dashboardUrl){
   // List of gadgets
   var gadgets = {}; 
   // Represents the state of the dashboard that will be saved to and load from the server
-  //var dashboardState;
-  var dataSets = {};
+  var dashboardState;
+  var loadedDataSets = {};
   
   var gadgetsInfo;
    
@@ -120,29 +120,69 @@ UW.Dashboard = function(container, dashboardUrl){
       );  			
   };
 
-  this.createDataSet = function(id){
-    var newDataSet = new UW.DataSet();
-    newDataSet.id = id;
-    dataSets[id] = newDataSet;
-    newDataSet.bind('changed', _.bind(function(data) {
-      this.notify("dataSetChanged", data)}, 
-    this));    
-    return newDataSet;
+  this.createDataSet = function(name, source, query, successCallback, errorCallback){
+    var newDataSet;
+    var createDataSetSuccess = function(response){
+      var dataSetJSON = JSON.parse(response);
+      newDataSet = new UW.DataSet(dataSetJSON);      
+      loadedDataSets[newDataSet.id] = newDataSet;
+      newDataSet.bind('changed', _.bind(function(data) {
+        this.notify("dataSetChanged", data)}, 
+      this));
+      successCallback(newDataSet);
+    }
+    var queryData = { 
+      "name" : name,
+      "source" : source,
+      "query" : query,
+      "returnRecords" : true
+    };
+
+    UW.ajax({
+      "url" : "/dataSet/",
+      "type" : "post",
+      "data" : JSON.stringify(queryData),
+      "success" : _.bind(createDataSetSuccess, this)
+    });    
+    
   };
 
   this.getDataSet = function(id){
-      return dataSets[id];
-   };
+    return loadedDataSets[id];
+  };
   
   this.getDataSetList = function(){
-    var modelsNames = [];
-    for(var dataSetName in dataSets)
-      modelsNames.push(dataSets[dataSetName].id);
-    return modelsNames;
+    var dataSetsIds = [];
+    for (var id in loadedDataSets) {
+      dataSetsIds.push({"id" : id, "text" : loadedDataSets[id].name});
+    }
+    return dataSetsIds;
   };
 
   this.save = function(stateUrl){
    
+    var currentDataSet;
+    var successSaveState = function() {
+      console.log("State Saved");
+    }
+
+    dashboardState.dataSets = [];
+    for (var id in loadedDataSets) {
+      if(loadedDataSets.hasOwnProperty(id)){
+        currentDataSet = loadedDataSets[id];
+        dashboardState.dataSets.push({ 
+          "id" : id,
+          "modifiers" : currentDataSet.getModifiers()
+        });
+      }
+    }
+    UW.ajax({
+      "url" : "/dashboard/" + dashboardState.id,
+      "type" : "post",
+      "data" : JSON.stringify(dashboardState),
+      "success" : _.bind(successSaveState, this)
+    }); 
+    //console.log(JSON.stringify(dashboardState));
     // dashboardModel.setUrl(stateUrl);
     //         
     //          $.ajax({
@@ -216,7 +256,6 @@ UW.Dashboard = function(container, dashboardUrl){
   this.inflateState = function(dashboardStateJSON) {  
     var newGadget;
     var newGadgetModel;
-    var dashboardState;
     var gadgetInstanceInfo;
     var loadDataSets = _.bind(function(){
         if(dashboardState.dataSets){
@@ -260,19 +299,19 @@ UW.Dashboard = function(container, dashboardUrl){
   this.loadDataSets = function(dataSets){
     var remainingDataSets = dataSets.length;
     for(var i = 0; i < dataSets.length; ++i){
-      $.ajax({
-        'url': '/dataSet/' + dataSets[i],
-        success: _.bind(function(data) {
-          var dataSet = JSON.parse(data);
-          var newDataSet;
+      UW.ajax({
+        "url" : "/dataSet/" + dataSets[i].id,
+        "type" : "get",
+        "success" : _.bind(function(data) {
+          var dataSetJSON = JSON.parse(data);
+          var newDataSet = new UW.DataSet(dataSetJSON);
+          loadedDataSets[newDataSet.id] = newDataSet;
           remainingDataSets--;
-          newDataSet = this.createDataSet(dataSet.name);
-          newDataSet.addRecords(dataSet.records, true);
           if(remainingDataSets == 0){
             this.notify("dataSetChanged", {});
           }
         },this)
-      });
+      });    
     }
   };
   

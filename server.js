@@ -84,21 +84,33 @@ app.post('/dashboard/', function(req, res){
   var dashboardCreated = function(dashboardId){
     res.send(dashboardId.toString());
   }
-  var newDashboardId = dashboardsManager.new(configuration, dashboardCreated);
+  dashboardsManager.createDashboard(configuration, dashboardCreated);
+});
+
+app.post('/dashboard/:id', function(req, res){
+  var state = req.rawBody? JSON.parse(req.rawBody) : undefined;
+  dashboardsManager.set(req.params.id, state);
 });
 
 app.get('/dashboard/:id/state', function(req, res){
   res.send(JSON.stringify(dashboardsManager.find(req.params.id)));
 });
 
-app.post('/dashboard/:id', function(req, res){
-  console.log("STATE: " + req.body);
-  dashboardsManager.set(req.params.id, req.body);
-});
-
 app.get('/dataSet/:id', function(req, res){
-  res.send(JSON.stringify(dataSetsManager.find(req.params.id)));
-});               
+  var dataSetFound = function (dataSet) {
+    res.send(JSON.stringify(dataSet));
+  };
+  dataSetsManager.find(req.params.id, dataSetFound);
+});  
+
+app.post('/dataSet/', function(req, res){
+  var queryInfo = req.rawBody? JSON.parse(req.rawBody) : undefined;
+  console.log("DATASET : " + req.rawBody);
+  var dataSetCreated = function(dataSet){
+    res.send(JSON.stringify(dataSet));
+  }
+  dataSetsManager.createDataSet(queryInfo, dataSetCreated);
+});           
 
 if (!module.parent) {
   app.listen(80);

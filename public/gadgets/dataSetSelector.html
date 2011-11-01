@@ -32,31 +32,30 @@ function updateDataSetList() {
 }
  
 // adds the creates a new dataset list element and adds it to the list
-function addDatasetToList(dataSetName) {        
+function addDatasetToList(dataSetInfo) {        
   // create the div
   var dataSetDiv = document.createElement("div");
   // TODO: Possibly dangerous to allow any chars in the ID
-  dataSetDiv.id = 'dataSet' + dataSetName;
+  dataSetDiv.id = 'dataSet' + dataSetInfo.id;
   dataSetDiv.className = 'dataSetListItem';
-  dataSetDiv.appendChild(createDataSetItem(dataSetName));
+  dataSetDiv.appendChild(createDataSetItem(dataSetInfo));
   // append the div element to the list div
   $('#dataSetList').append(dataSetDiv);
 }
   
 // returns a div filled with dataset functions
-function createDataSetItem(dataSetName) {
-  
-  var dataSet = gadget.dashboard.getDataSet(dataSetName);     
+function createDataSetItem(dataSetInfo) {
+  var dataSet = gadget.dashboard.getDataSet(dataSetInfo.id);     
   var dataSetDiv = document.createElement("div");
   var checkBoxVisibility = document.createElement("input");
   var dataSetNameSpan = document.createElement("span");
   
   checkBoxVisibility.type = "checkbox";
-  checkBoxVisibility.id = "ckVis_" + dataSetName;
+  checkBoxVisibility.id = "ckVis_" + dataSetInfo.id;
   checkBoxVisibility.checked = dataSet.isVisible();
-  checkBoxVisibility.onclick = function() { toggleDataSetVisbility(dataSetName); }
+  checkBoxVisibility.onclick = function() { toggleDataSetVisbility(dataSetInfo.id); }
   
-  dataSetNameSpan.innerHTML = "<b>" + dataSetName + "</b> (" +  dataSet.length() + ")";
+  dataSetNameSpan.innerHTML = "<b>" + dataSetInfo.text + "</b> (" +  dataSet.length() + ")";
       
   dataSetDiv.appendChild(checkBoxVisibility);
   dataSetDiv.appendChild(dataSetNameSpan);

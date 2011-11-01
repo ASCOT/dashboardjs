@@ -79,7 +79,7 @@ function redrawAll() {
   clearKML();
   var list = gadget.dashboard.getDataSetList();
   for (var i = 0; i < list.length; i++){
-    plotDataset(list[i]);
+    plotDataset(list[i].id);
   }
 }
 

@@ -60,11 +60,11 @@ if (!UW) var UW = {};
     xhr.open(type, url, true, user, password);
     
     // Default content-type
-    if (type == "GET" || type == "HEAD") {
+    //if (type == "GET" || type == "HEAD") {
       xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-    } else if (data) {
-  	    xhr.setRequestHeader("Content-Type", "text/plain; charset=UTF-8");
-    }
+    //} else if (data) {
+  	//    xhr.setRequestHeader("Content-Type", "text/plain; charset=UTF-8");
+    //}
     // Check for headers option
     for (i in headers) {
   		  xhr.setRequestHeader(i, headers[ i ]);

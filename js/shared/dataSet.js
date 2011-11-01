@@ -22,20 +22,31 @@ if (!UW) var UW={};
     _ = this._;
   }
     
-  UW.DataSet = function(){
-    this.initialize();
+  UW.DataSet = function(dataSetJSON){
+    this.initialize(dataSetJSON);
   }
   
   _.extend(UW.DataSet.prototype, Backbone.Events, {
     
     id: _.uniqueId('ds'),
     
-    initialize: function(){
+    initialize: function(dataSetJSON){
       this.records = [];
       this.columns = {};
       this.visible = true;
       this.indices = {};
       this.modifiers = {};
+      if (dataSetJSON) {
+        this.name = dataSetJSON.name;
+        this.id = dataSetJSON.id;
+        if (dataSetJSON.records) {
+          this.addRecords(dataSetJSON.records);
+        } 
+        if (dataSetJSON.modifiers) {
+          this.applyModifiers(dataSetJSON.modifiers)
+        }
+      }
+      
     },
     
     addRecords: function(records, silent){
@@ -104,12 +115,12 @@ if (!UW) var UW={};
           this.setRecord(attributes, ids);
         }
       }
-      if(!silent){
+      if (!silent) {
         this.trigger('changed', { event: 'dataSetChanged', id: this.id });
       }
     },
   
-    setRecord: function(attributes, id){
+    setRecord: function (attributes, id) {
       var record = this.getRecord(id);
       var modifier;
       var newValue;
@@ -119,12 +130,12 @@ if (!UW) var UW={};
       
       for (var attr in attributes) {
         newValue = attributes[attr];
-        if(!this.modifiers[attr]){
+        if (!this.modifiers[attr]) {
           this.modifiers[attr] = new UW.DataSetModifier(attr);
         }
         oldValue = this.modifiers[attr].getModifier(id) || record[attr];
         if (!_.isEqual(newValue, oldValue)) {
-           this.modifiers[attr].applyModifier(newValue,id);      
+           this.modifiers[attr].applyModifier(newValue, id);      
         }
       }
       
@@ -136,6 +147,10 @@ if (!UW) var UW={};
     
     getId: function(){
       return this.id;
+    },
+
+    getModifiers: function(){
+      return this.modifiers;
     },
     
     getColumns: function(){

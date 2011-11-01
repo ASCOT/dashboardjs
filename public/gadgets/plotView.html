@@ -8,6 +8,7 @@
 
 <!-- chart dependencies -->
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js" type="text/javascript"></script>
+<script src="/util.js" type="text/javascript"></script> 
 <script src="/highcharts.src.js" type="text/javascript"></script>
 
 <!-- ASCOT Basic Style Sheets -->
@@ -258,9 +259,9 @@ function plotData(){
   }
   else{
     drawPlot();
-    gadget.notify("plotRendered", { 'dataSetName': selectedDataSetName, 'color': selectedColor, 'xAxis': selectedXAxis, 'yAxis': selectedYAxis }, {'private': true});
+    gadget.notify("plotRendered", { 'dataSetName' : selectedDataSetName, 'color' : selectedColor, 'xAxis' : selectedXAxis, 'yAxis' : selectedYAxis }, {'private' : true});
   }
-}
+} 
                                                                         
 function redrawAll(){
   var columnNames = [];
@@ -411,29 +412,6 @@ function showPlot(show) {
     $('#divPlot').css('display', 'hidden');
   }
 	gadget.resize();
-}
-
-function populateSelect(selectName, options, selectedOption) { 
-  var html = '';
-  var currentSelection = $("#" + selectName + " option:selected").text();
-  var len = options.length;
-  var keepSelection = false;
-  for (var i = 0; i< len; i++) {
-    if (options[i]===currentSelection && !selectedOption){
-      keepSelection = true;
-    }
-    html += '<option value="' + options[i] + '">' + options[i] + '</option>';
-  }
-  $("#" + selectName).html(html);
-  if(keepSelection){
-    $("#" + selectName).val(currentSelection).attr('selected',true);    
-  }else if(isDef(selectedOption)){
-    $("#" + selectName).val(selectedOption).attr('selected',true);
-  }else{
-    $("#" + selectName).val(options[0]).attr('selected',true);
-  }
-  
-  $('#' + selectName).change();
 }
     
 function syncPlot(plotOptions){

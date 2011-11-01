@@ -14,6 +14,29 @@ function parseURL(data) {
     }
 }
 
+function populateSelect(selectName, options, selectedOption) { 
+  var select = $("#" + selectName);
+  var currentSelection = $("#" + selectName + " option:selected").val();
+  select.find('option').remove().end();
+  $.each(options, function() {
+    if (isObject(this) && toString.call(this) !== '[object String]') {
+      select.append($("<option />").val(this.id).text(this.text));
+    } else {
+      select.append($("<option />").val(this.toString()).text(this.toString()));
+    }
+  });
+
+  if (select.val(selectedOption)) {
+    select.val(currentSelection).attr('selected',true);    
+  }else if(select.val(currentSelection)) {
+    select.val(currentSelection).attr('selected',true);
+  }else{
+    select.val(options[0]).attr('selected',true);
+  }
+  
+  select.change();
+}
+
 function extractKeys(obj){
   var keys = [];
   for(var key in obj){
@@ -71,6 +94,10 @@ function tupleStrToDecimal(str) {
 // Helper
 function trimString(str) {
   return str.replace(/^\s+|\s+$/g,"");
+}
+
+function isObject(obj){
+  return obj === Object(obj);
 }
 
 function roughSizeOfObject(object) {

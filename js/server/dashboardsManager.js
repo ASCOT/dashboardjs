@@ -68,7 +68,7 @@ module.exports.length = function() {
   return dashboards.length;
 }
 
-module.exports.new = function(configuration, callback) {
+module.exports.createDashboard = function(configuration, callback) {
   var gadgets = configuration? configuration.gadgets || defaultGadgetsSet: defaultGadgetsSet;
   var i;
   var newDashboardId = dashboards.length;  
@@ -85,7 +85,8 @@ module.exports.new = function(configuration, callback) {
   var newGadget;
   
   var dataSetLoaded = function(dataSetId){
-    newDashboard.dataSets.push(dataSetId);
+    var dataSet = { "id" : dataSetId, "modifiers" : [] };
+    newDashboard.dataSets.push(dataSet);
     remainingDataSets--;
     if(remainingDataSets == 0){
       callback(newDashboardId);
@@ -109,7 +110,7 @@ module.exports.new = function(configuration, callback) {
   
   if(currentDataSet){
     while(currentDataSet--){
-      dataSetsManager.loadDataSet(dataSetsInfo[currentDataSet], dataSetLoaded);
+      dataSetsManager.createDataSet(dataSetsInfo[currentDataSet], dataSetLoaded);
     }
   }
   else{
