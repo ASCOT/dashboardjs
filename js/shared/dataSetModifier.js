@@ -24,8 +24,12 @@ if (!UW) var UW={};
     _ = this._;
   }
     
-  UW.DataSetModifier = function(name){
+  UW.DataSetModifier = function(name, modifierJSON){
     this.initialize();
+    if (modifierJSON) {
+      this.values = modifierJSON.values || {};
+      this.indices = modifierJSON.indices || {};
+    }
   }
   
   _.extend(UW.DataSetModifier.prototype, Backbone.Events, {

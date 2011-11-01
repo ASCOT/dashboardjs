@@ -84,12 +84,22 @@ app.post('/dashboard/', function(req, res){
   var dashboardCreated = function(dashboardId){
     res.send(dashboardId.toString());
   }
-  dashboardsManager.createDashboard(configuration, dashboardCreated);
+  dashboardsManager.create(configuration, dashboardCreated);
 });
 
 app.post('/dashboard/:id', function(req, res){
   var state = req.rawBody? JSON.parse(req.rawBody) : undefined;
   dashboardsManager.set(req.params.id, state);
+  res.send("Dashboard saved");
+});
+
+app.post('/forkdashboard/:id', function(req, res){
+  var dashboardCopied = function(dashboardId){
+    res.send(dashboardId.toString());
+  }
+  if (req.params.id) {
+    dashboardsManager.copy(req.params.id, dashboardCopied);
+  }
 });
 
 app.get('/dashboard/:id/state', function(req, res){

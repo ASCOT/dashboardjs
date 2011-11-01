@@ -54,6 +54,15 @@ module.exports.all = dashboards;
 
 var defaultGadgetsSet = {skyView: { number: 1 }, nameResolver: { number: 1 }, dataSetSelector: { number: 1 }, dataInquirer: { number: 1 }, tableView: { number: 1 }, plotView: { number: 1 }};
 
+function clone(obj) {
+  if (null == obj || "object" != typeof obj) return obj;
+  var copy = obj.constructor();
+  for (var attr in obj) {
+      if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
+  }
+  return copy;
+}
+
 module.exports.find = function(id) {
   id = parseInt(id, 10);
   return dashboards[id];
@@ -66,9 +75,9 @@ module.exports.set = function(id, dashboard) {
 
 module.exports.length = function() {
   return dashboards.length;
-}
+};
 
-module.exports.createDashboard = function(configuration, callback) {
+module.exports.create = function(configuration, callback) {
   var gadgets = configuration? configuration.gadgets || defaultGadgetsSet: defaultGadgetsSet;
   var i;
   var newDashboardId = dashboards.length;  
@@ -116,7 +125,18 @@ module.exports.createDashboard = function(configuration, callback) {
   else{
     callback(newDashboardId);
   }
-}
+};
+
+module.exports.copy = function(id, success, error){
+  var dashboardConfiguration = clone(dashboards[id]);
+  if (dashboardConfiguration) {
+    dashboards.push(dashboardConfiguration);
+    dashboards[dashboards.length - 1].id = dashboards.length - 1;
+    success(dashboards.length - 1);
+  } else {
+    error();
+  }
+};
 
 module.exports.insert = function(dashboard) {
   var id = dashboards.length + 1;

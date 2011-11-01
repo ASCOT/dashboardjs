@@ -53,7 +53,6 @@ var selectionObject;
 gadget.init = function(callback){
   gadget.onNotification('dataSetChanged', redrawAll);  
   gadget.onNotification('plotRendered', syncPlot);
-  gadget.onNotification('pointsSelected', setSelectedByMinMax);
   gadget.onNotification('axisInverted', invertAxis);
   
   $("#checkVerboseInfo").change( function(){
@@ -177,7 +176,7 @@ var chartOptions = {
           selectionObject = {'seriesId': 'series1', 'xMin': selectionEvent.xAxis[0].min, 'xMax':  selectionEvent.xAxis[0].max, 
                               'yMin': selectionEvent.yAxis[0].min, 'yMax':  selectionEvent.yAxis[0].max, color: selectedColor};
           // We make this call ashyncronous and the plot gives the impression of being more responsive
-          setTimeout(function() { gadget.notify('pointsSelected', selectionObject, {'private': true}) },1);
+          setTimeout(function() { setSelectedByMinMax(selectionObject) }, 1);
         }
       }
     }

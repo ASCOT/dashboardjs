@@ -159,44 +159,44 @@ UW.Dashboard = function(container, dashboardUrl){
     return dataSetsIds;
   };
 
-  this.save = function(stateUrl){
+  this.save = function(successCallback, failureCallback){
    
     var currentDataSet;
     var successSaveState = function() {
       console.log("State Saved");
+      successCallback();
     }
 
-    dashboardState.dataSets = [];
+    dashboardState.dataSets = {};
     for (var id in loadedDataSets) {
       if(loadedDataSets.hasOwnProperty(id)){
         currentDataSet = loadedDataSets[id];
-        dashboardState.dataSets.push({ 
+        dashboardState.dataSets[id] = { 
           "id" : id,
           "modifiers" : currentDataSet.getModifiers()
-        });
+        };
       }
     }
     UW.ajax({
-      "url" : "/dashboard/" + dashboardState.id,
+      "url" : url,
       "type" : "post",
       "data" : JSON.stringify(dashboardState),
       "success" : _.bind(successSaveState, this)
     }); 
-    //console.log(JSON.stringify(dashboardState));
-    // dashboardModel.setUrl(stateUrl);
-    //         
-    //          $.ajax({
-    //              type: 'POST',
-    //              url: '/dashboard/' + dashboardState.id,
-    //              data: JSON.stringify(dashboardState.export()),
-    //              contentType: "application/json",
-    //              dataType: "text",
-    //              success: _.bind( function(resp) { }, this )
-    //            });
-    //          
-    //          var objStr = JSON.stringify(dashboardState.export());
-    //          var obj = JSON.parse(objStr);
-    //          console.log("DASHBOARD STATE: " + objStr);
+
+  };
+
+  this.fork = function(successCallback, failureCallback){
+    var successFork = function(id) {
+      console.log("Dashboard forked");
+      successCallback(id);
+    };
+
+    UW.ajax({
+      "url" : "/forkdashboard/" + dashboardState.id,
+      "type" : "post",
+      "success" : successFork
+    }); 
 
   };
   
@@ -223,9 +223,13 @@ UW.Dashboard = function(container, dashboardUrl){
     }
   };
   
-  
   this.initCommunications = function(channelId){
     var processNotification = _.bind(function(message){
+        if (message.notification === "dataSetChanged") {
+          if (message.data && message.data.modifiers) {
+            loadedDataSets[message.data.id].applyModifiers(message.data.modifiers);
+          }
+        }
         this.trigger(message.notification, message);
     },this);
     
@@ -297,22 +301,38 @@ UW.Dashboard = function(container, dashboardUrl){
   };
   
   this.loadDataSets = function(dataSets){
-    var remainingDataSets = dataSets.length;
-    for(var i = 0; i < dataSets.length; ++i){
-      UW.ajax({
-        "url" : "/dataSet/" + dataSets[i].id,
-        "type" : "get",
-        "success" : _.bind(function(data) {
-          var dataSetJSON = JSON.parse(data);
-          var newDataSet = new UW.DataSet(dataSetJSON);
-          loadedDataSets[newDataSet.id] = newDataSet;
-          remainingDataSets--;
-          if(remainingDataSets == 0){
-            this.notify("dataSetChanged", {});
-          }
-        },this)
-      });    
+    var remainingDataSets = 0;
+    var succesLoadingDataSet = function (data) {
+      var dataSetJSON = JSON.parse(data);
+      var newDataSet;
+      dataSetJSON.modifiers = dataSets[dataSetJSON.id].modifiers || {};
+      newDataSet = new UW.DataSet(dataSetJSON);
+      loadedDataSets[newDataSet.id] = newDataSet;
+      newDataSet.bind('changed', _.bind(function(data) {
+        this.notify("dataSetChanged", data)
+      },this));
+      remainingDataSets--;
+      if(remainingDataSets == 0){
+        this.notify("dataSetChanged", {});
+      }
+    } 
+    var dataSetId;
+    for (dataSetId in dataSets) {
+      if (dataSets.hasOwnProperty(dataSetId)) {
+        remainingDataSets += 1;
+      }
     }
+
+    for (dataSetId in dataSets) {
+      if (dataSets.hasOwnProperty(dataSetId)) {
+        UW.ajax({
+          "url" : "/dataSet/" + dataSetId,
+          "type" : "get",
+          "success" : _.bind(succesLoadingDataSet ,this)
+        });    
+      }
+    }
+    
   };
   
   this.gadgetLoaded = function(callback) { 

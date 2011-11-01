@@ -48,9 +48,20 @@
     };
 
     function saveDashboard() {
+      var succesSaved = function(){
+        displayNote('The dashboard has been saved');
+      };
       //displayNote('ALERT');
       //showPopUp('popUp');
-      ASCOT.dashboard.save();
+      ASCOT.dashboard.save(succesSaved);
+    }
+
+    function forkDashboard() {
+      var succesForked = function(id){
+        displayNote('The dashboard has been forked');
+        setTimeout(function() { document.location.href = "/dashboard/" + id }, 1500);
+      }
+      ASCOT.dashboard.fork(succesForked);
     }
     
     function tabClicked(){
@@ -180,7 +191,7 @@
                 </div>
                 <div class="buttonGroup">
                   <ul>
-                    <li><a href="#" title="forkDashboard" onClick="displayNote('The dashboard has been forked')">Fork</a></li>
+                    <li><a href="#" title="forkDashboard" onClick="forkDashboard()">Fork</a></li>
                   </ul>
                 </div>
               </nav>

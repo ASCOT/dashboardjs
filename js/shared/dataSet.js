@@ -49,7 +49,7 @@ if (!UW) var UW={};
       
     },
     
-    addRecords: function(records, silent){
+    addRecords : function(records, silent){
       if (_.isArray(records)) {
         for (var i = 0, l = records.length; i < l; i++) {
           this.addRecord(records[i], {silent: true});
@@ -63,21 +63,41 @@ if (!UW) var UW={};
       }
     },
     
-    addRecord: function(record){
+    addRecord : function(record){
       this._addColumns(record);
       record.id = this.records.length;
       return this.records.push(record);
+    },
+
+    applyModifiers: function(modifiersJSON, silent){
+      for (var attribute in modifiersJSON) {
+        if (modifiersJSON.hasOwnProperty(attribute)) {
+          this.applyModifier(attribute, modifiersJSON[attribute]);
+        }
+      }
+      if(!silent){
+        this.trigger('changed');
+      }
+    },
+
+    applyModifier : function(attribute, modifierJSON){
+      var newModifier = new UW.DataSetModifier(attribute, modifierJSON);
+      this.modifiers[attribute] = newModifier;
     },
     
     setAllRecords: function(attributes, silent){
       if(!attributes){
         return;
       }
+      var modifiers = {};
       for(var i=0; i < this.records.length; ++i){
         this.setRecords(attributes, i, true);
       }
       if(!silent){
-        this.trigger('changed', { event: 'dataSetChanged', id: this.id});
+        for (var currentAttribute in attributes) {
+          modifiers[currentAttribute] = this.modifiers[currentAttribute];
+        }
+        this.trigger('changed', { "event": 'dataSetChanged', "id" : this.id, "modifiers" : modifiers });
       }
     },
     
@@ -102,6 +122,9 @@ if (!UW) var UW={};
     },
     
     setRecords: function(attributes, ids, silent){
+
+      var modifiers = {};
+
       if(ids === undefined){
         return;
       }
@@ -115,8 +138,12 @@ if (!UW) var UW={};
           this.setRecord(attributes, ids);
         }
       }
+
       if (!silent) {
-        this.trigger('changed', { event: 'dataSetChanged', id: this.id });
+        for (var currentAttribute in attributes) {
+          modifiers[currentAttribute] = this.modifiers[currentAttribute];
+        }
+        this.trigger('changed', { "event": 'dataSetChanged', "id" : this.id, "modifiers" : modifiers });
       }
     },
   
