@@ -63,6 +63,7 @@ function clone(obj) {
   return copy;
 }
 
+
 module.exports.find = function(id) {
   id = parseInt(id, 10);
   return dashboards[id];

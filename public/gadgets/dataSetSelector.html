@@ -16,7 +16,8 @@
 
 // Creates gadget object
 gadget.init = function(callback){
-  gadget.onNotification('dataSetChanged', updateDataSetList); 
+  gadget.onNotification('dataSetChanged', updateDataSetList);
+  updateDataSetList(); 
   callback();
 }
 

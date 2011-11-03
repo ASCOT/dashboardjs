@@ -17,33 +17,33 @@ function parseURL(data) {
 function populateSelect(selectName, options, selectedOption) { 
   var select = $("#" + selectName);
   var currentSelection = $("#" + selectName + " option:selected").val();
+  if (options.length === 0) {
+    return;
+  }
   select.find('option').remove().end();
   $.each(options, function() {
+    var newOption;
     if (isObject(this) && toString.call(this) !== '[object String]') {
-      select.append($("<option />").val(this.id).text(this.text));
+        newOption = $("<option />")
+        newOption.val(this.id).text(this.text);
+        select.append(newOption);
     } else {
-      select.append($("<option />").val(this.toString()).text(this.toString()));
+        newOption = $("<option />")
+        newOption.val(this.toString()).text(this.toString());
+        select.append(newOption);
     }
+    if (newOption.text() === selectedOption) {
+      newOption.attr('selected',true);    
+    } else if (newOption.val() === currentSelection) {
+      newOption.attr('selected',true);    
+    } 
   });
 
-  if (select.val(selectedOption)) {
-    select.val(currentSelection).attr('selected',true);    
-  }else if(select.val(currentSelection)) {
-    select.val(currentSelection).attr('selected',true);
-  }else{
-    select.val(options[0]).attr('selected',true);
+  if (!selectedOption && !currentSelection) {
+    select.find('option').attr('selected',true);
   }
-  
-  select.change();
-}
 
-function clone(obj) {
-  if (null == obj || "object" != typeof obj) return obj;
-  var copy = obj.constructor();
-  for (var attr in obj) {
-      if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
-  }
-  return copy;
+  select.change();
 }
 
 function extractKeys(obj){

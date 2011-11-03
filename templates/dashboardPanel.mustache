@@ -59,7 +59,7 @@
     function forkDashboard() {
       var succesForked = function(id){
         displayNote('The dashboard has been forked');
-        setTimeout(function() { document.location.href = "/dashboard/" + id }, 1500);
+        setTimeout(function() { document.location.href = "/dashboard/" + id }, 1000);
       }
       ASCOT.dashboard.fork(succesForked);
     }

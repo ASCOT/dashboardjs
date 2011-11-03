@@ -62,8 +62,8 @@ gadget.init = function(callback){
   // add colors to the select box (pass the select Name and color array)
   $('#selectDatasetName').change( function(){
     if(this.selectedIndex != -1){
-      selectedDataSetName = this[this.selectedIndex].value;
-      selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetName);
+      selectedDataSetName = $(this).find('option:selected').text();
+      selectedDataSet = gadget.dashboard.getDataSet($(this).val());
       if(selectedDataSet){
         columnNames = selectedDataSet.getColumns();
         populateSelect("selectXAxis", columnNames, selectedXAxis);
@@ -74,19 +74,19 @@ gadget.init = function(callback){
   
   $('#selectXAxis').change( function(){
     if(this.selectedIndex != -1){
-      selectedXAxis = this[this.selectedIndex].value;
+      selectedXAxis = $(this).find('option:selected').val();
     }
   });
   
   $('#selectYAxis').change( function(){
     if(this.selectedIndex != -1){
-      selectedYAxis = this[this.selectedIndex].value;
+      selectedYAxis = $(this).find('option:selected').val();
     }
   });
   
   $('#selectColor').change( function(){
     if(this.selectedIndex != -1){
-      selectedColor = this[this.selectedIndex].value;
+      selectedColor = $(this).find('option:selected').val();
     }
   });  
   populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"], selectedColor);
@@ -105,61 +105,34 @@ gadget.saveState = function(){
     'selectedDataSetName': selectedDataSetName,
     'selectedXAxis': selectedXAxis,
     'selectedYAxis': selectedYAxis,
-    'selectedColor': selectedColor,
-    'selectedDataSet': selectedDataSet,
-    'selectionObject': selectionObject
+    'selectedColor': selectedColor
   }
 };
 
 gadget.loadState = function(state){
-   if(isDef(state.axisInverted)){
-	  axisInverted = state.axisInverted;
-	  if(axisInverted.x){
-       axisInverted.x = false;
-       invertX();
-     }
-     if(axisInverted.y){
-       axisInverted.y = false;
-       invertY();
-     }
-	}
-	if(isDef(state.verboseTooltip)){
-	  verboseTooltip = state.verboseTooltip;
-	  $("#checkVerboseInfo").get(0).checked = verboseTooltip;
-	}
-	if(isDef(state.selectedDataSetName)){
-	  selectedDataSetName = state.selectedDataSetName;
-   }
-   if(isDef(state.selectedXAxis)){
-	  selectedXAxis = state.selectedXAxis;
-	}
-	if(isDef(state.selectedYAxis)){  
-	  selectedYAxis = state.selectedYAxis;
-   }
-   if(isDef(state.selectedColor)){
-	  selectedColor = state.selectedColor;
-   }
-   if(isDef(state.selectedDataSet)){
-	  selectedDataSet = state.selectedDataSet;
-   }
-   if(isDef(state.selectionObject)){
-	  selectionObject = state.selectionObject;
-	  selectionObject.color = selectedColor;
-	  selectionObject.seriesId = 'series1';
-   }
-   redrawAll();
-   setSelectedByMinMax(selectionObject);
+  
+  axisInverted = state.axisInverted || {};
+  if (axisInverted.x) {
+    invertX();
+  }
+  
+  if (axisInverted.y) {
+    invertY();
+  }
+
+  verboseTooltip = state.verboseTooltip || false;
+  $("#checkVerboseInfo").get(0).checked = verboseTooltip;
+
+  selectedDataSetName = state.selectedDataSetName || "";
+  selectedXAxis = state.selectedXAxis || false;
+  selectedYAxis = state.selectedYAxis || false;
+  selectedColor = state.selectedColor || "";
+  selectedDataSet = state.selectedDataSet || "";
+
+  redrawAll();
+
 };
 
-// Check definedness
-function isDef(testvar){
-  if (typeof testvar === 'undefined') {
-    return false;
-  }
-  else {
-    return true;
-  }
-}
 
 // Highcharts plot options
 var chartOptions = {

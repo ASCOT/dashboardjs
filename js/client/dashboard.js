@@ -162,10 +162,11 @@ UW.Dashboard = function(container, dashboardUrl){
   this.save = function(successCallback, failureCallback){
    
     var currentDataSet;
+    var currentGadget;
     var successSaveState = function() {
       console.log("State Saved");
       successCallback();
-    }
+    };
 
     dashboardState.dataSets = {};
     for (var id in loadedDataSets) {
@@ -177,6 +178,12 @@ UW.Dashboard = function(container, dashboardUrl){
         };
       }
     }
+
+    for (var i = 0; i < dashboardState.gadgets.length; ++i) {
+      currentGadget = dashboardState.gadgets[i];
+      currentGadget.state = gadgets[currentGadget.id].saveState();
+    }
+
     UW.ajax({
       "url" : url,
       "type" : "post",
@@ -261,10 +268,23 @@ UW.Dashboard = function(container, dashboardUrl){
     var newGadget;
     var newGadgetModel;
     var gadgetInstanceInfo;
-    var loadDataSets = _.bind(function(){
-        if(dashboardState.dataSets){
-          this.loadDataSets(dashboardState.dataSets);
-        }
+    var loadGadgets = _.bind(function(){ 
+      for(var i=0; i < dashboardState.gadgets.length; ++i){
+        gadgetInstanceInfo = dashboardState.gadgets[i];
+        newGadgetModel = new UW.GadgetModel(gadgetInstanceInfo.state);
+        newGadget = new UW.Gadget({model: newGadgetModel});
+        newGadget.id = gadgetInstanceInfo.id;
+        newGadget.gadgetInfoId = gadgetInstanceInfo.gadgetInfoId;    
+        newGadget.dashboard = this;
+        newGadget.url = '/gadgets/' + gadgetsInfo[newGadget.gadgetInfoId].fileName
+        gadgets[newGadget.id] = newGadget;
+        this.loadedGadgets++;
+      }
+     
+      chatModel = new UW.NodeChatModel(); 
+      chat = new UW.ChatView({'model': chatModel, 'dashboard': this, 'el': $('#dashboardArea'), 'id': dashboardState.id}); 
+      this.renderGadgets(function() {}); 
+
     }, this);
     
     if(!dashboardStateJSON)
@@ -280,27 +300,15 @@ UW.Dashboard = function(container, dashboardUrl){
       
       id = dashboardState.id;
       this.initCommunications(id);
-      
-      for(var i=0; i < dashboardState.gadgets.length; ++i){
-        gadgetInstanceInfo = dashboardState.gadgets[i];
-        newGadgetModel = new UW.GadgetModel(gadgetInstanceInfo.state);
-        newGadget = new UW.Gadget({model: newGadgetModel});
-        newGadget.id = gadgetInstanceInfo.id;
-        newGadget.gadgetInfoId = gadgetInstanceInfo.gadgetInfoId;    
-        newGadget.dashboard = this;
-        newGadget.url = '/gadgets/' + gadgetsInfo[newGadget.gadgetInfoId].fileName
-        gadgets[newGadget.id] = newGadget;
-        this.loadedGadgets++;
+
+      if(dashboardState.dataSets){
+        this.loadDataSets(dashboardState.dataSets, loadGadgets);
       }
-     
-      chatModel = new UW.NodeChatModel(); 
-      chat = new UW.ChatView({'model': chatModel, 'dashboard': this, 'el': $('#dashboardArea'), 'id': dashboardState.id}); 
-      this.renderGadgets(loadDataSets);
     
     }
   };
   
-  this.loadDataSets = function(dataSets){
+  this.loadDataSets = function(dataSets, success, error){
     var remainingDataSets = 0;
     var succesLoadingDataSet = function (data) {
       var dataSetJSON = JSON.parse(data);
@@ -312,8 +320,8 @@ UW.Dashboard = function(container, dashboardUrl){
         this.notify("dataSetChanged", data)
       },this));
       remainingDataSets--;
-      if(remainingDataSets == 0){
-        this.notify("dataSetChanged", {});
+      if(remainingDataSets === 0){
+        success();
       }
     } 
     var dataSetId;

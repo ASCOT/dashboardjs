@@ -14,7 +14,6 @@ if (!UW) var UW = {};
   var module;
 	var self = this;
 	var XMLHttpRequest;
-  var xhr;
   var nativeCrossDomainAvailable = false; // Native CORS method available
   var proxyIframe; // Iframe use for the postMessage method fallback in the browser
   var sourceWindow;
@@ -46,7 +45,27 @@ if (!UW) var UW = {};
     
     var successHandler = iframeProxy? iframeProxySuccesHandler : success;
     var errorHandler = iframeProxy? iframeProxyErrorHAandler : error;
+    var xhr;
+
+    if (server) {
+      XMLHttpRequest = require("./xhrNode").XMLHttpRequest;
+      xhr = new XMLHttpRequest();
+    } else {
+      if (window.ActiveXObject) { // IE
+        xhr = new window.XMLHttpRequest() || new window.ActiveXObject( "Microsoft.XMLHTTP" );
+      } else { // All other browsers standar XMLHttpRequest object
+        xhr = new window.XMLHttpRequest();
+      }
     
+      nativeCrossDomainAvailable = ("withCredentials" in xhr);
+
+      if (window.addEventListener) { // normal browsers
+        window.addEventListener("message", iframeProxyRequestHandler, false);
+      } else if (window.attachEvent) { // IE 
+        window.attachEvent("onmessage", iframeProxyRequestHandler); 
+      }
+    }
+
     xhr.onreadystatechange = function (){
       if (this.readyState == 3) {
     	}
@@ -71,31 +90,14 @@ if (!UW) var UW = {};
     }
     xhr.send(data || null); 
   }
-  
-  if (typeof exports !== 'undefined') {
-      server = true;
-      module = exports;
-      XMLHttpRequest = require("./xhrNode").XMLHttpRequest;
-      xhr = new XMLHttpRequest();
-      nativeCORSAvailable = true;
-   }
-   else{
-     server = false;
-     module = UW;
-     if (window.ActiveXObject){ // IE
-       xhr = new window.XMLHttpRequest() || new window.ActiveXObject( "Microsoft.XMLHTTP" );
-     }
-     else{ // All other browsers standar XMLHttpRequest object
-       xhr = new window.XMLHttpRequest();
-     }
-     nativeCrossDomainAvailable = ("withCredentials" in xhr);
 
-     if (window.addEventListener){ // normal browsers
-       window.addEventListener("message", iframeProxyRequestHandler, false);
-     } 
-     else if (window.attachEvent){ // IE 
-       window.attachEvent("onmessage", iframeProxyRequestHandler); 
-     }
+  if (typeof exports !== 'undefined') {
+    server = true;
+    module = exports;
+    nativeCORSAvailable = true;
+  } else {
+    server = false;
+    module = UW;
   }
     
   module.ajax = function(options){
@@ -118,7 +120,6 @@ if (!UW) var UW = {};
     };
     
     var iframeProxyResponseHandler = function(event){
-      console.log("PENE");
       var response = JSON.parse(event.data);
       if (response.iframeProxy){
         if(response.succes){
