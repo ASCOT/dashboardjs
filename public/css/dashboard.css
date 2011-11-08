@@ -22,6 +22,10 @@ body {
   background-origin: padding-box, padding-box;
 }
 
+strong, b {
+  font-weight: bolder;
+}
+
 ul {
   list-style: none;
 }

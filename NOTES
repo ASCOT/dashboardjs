@@ -40,7 +40,7 @@ Testing API from console
 
 - Creating dashboard by providing records
 
-curl -v -X POST -d '{"gadgets":{"skyView":1, "plotView": 1}, "dataSets": [{"name": "Stars", "records": [{"objid":"1237671262272290970","ra":"132.82279455","dec":"11.75623274","modelMag_u":"16.483011","modelMag_g":"13.697638","modelMag_r":"8.793903","modelMag_i":"8.776305","modelMag_z":"11.774291","u_g":"2.785374","g_r":"4.903734","r_i":"0.017598","i_z":"-2.997986"},
+curl -v -X POST -d '{"gadgets":{"skyView": {"number": 1}, "plotView": {"number" : 1}}, "dataSets": [{"name": "Stars", "records": [{"objid":"1237671262272290970","ra":"132.82279455","dec":"11.75623274","modelMag_u":"16.483011","modelMag_g":"13.697638","modelMag_r":"8.793903","modelMag_i":"8.776305","modelMag_z":"11.774291","u_g":"2.785374","g_r":"4.903734","r_i":"0.017598","i_z":"-2.997986"},
 {"objid":"1237671262272290962","ra":"132.84498644","dec":"11.80053042","modelMag_u":"15.75631","modelMag_g":"13.703258","modelMag_r":"13.506081","modelMag_i":"12.478303","modelMag_z":"12.25265","u_g":"2.053052","g_r":"0.197177","r_i":"1.027778","i_z":"0.225653"}]}]}' http://localhost/dashboard/
 
 - Creating dashboard by providing query

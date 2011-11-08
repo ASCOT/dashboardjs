@@ -40,7 +40,7 @@ function populateSelect(selectName, options, selectedOption) {
   });
 
   if (!selectedOption && !currentSelection) {
-    select.find('option').attr('selected',true);
+    select.find('option:first').attr('selected',true);
   }
 
   select.change();

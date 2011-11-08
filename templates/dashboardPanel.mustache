@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="/css/text.css"> 
     <link rel="stylesheet" href="/css/gadget.css">
     <link rel="stylesheet" href="/css/dashboardPanel.css"> 
+    <link rel="stylesheet" href="/css/widgets.css"> 
     
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.js" type="text/javascript"></script>
     <script src="/modernizr.custom.80028.js"></script>
@@ -33,10 +34,40 @@
     $(function(){
       initDashboard();
     });
-    
-    var finishedLoading = function(){
-      $('#loadingBar').toggle();
+
+    var insertComment = function(comment){
+      var listEntry = document.createElement('li');
+      var commentBox = document.createElement('div');
+      var meta = document.createElement('div');
+      var body = document.createElement('div');
+      commentBox.className = 'commentBox';
+      meta.className = 'meta';
+      body.className = 'body';
+      body.innerHTML = '<p>' + comment.text + '</p>';
+      meta.innerHTML = '<p class="commentAuthor"><strong>' + comment.author + '</strong> commented</p>';
+      commentBox.appendChild(meta);
+      commentBox.appendChild(body);
+      listEntry.appendChild(commentBox);
+      $('#messagesList').append(listEntry);
+      $('#messagesList').css('display', 'block');
+    };
+
+    function publishComment(){
+      var comment = $('#commentInputBox').val();
+      if (comment !== "") {
+        ASCOT.dashboard.publishComment(comment);
+      }
     }
+
+    var finishedLoading = function(){
+      var comments = ASCOT.dashboard.getComments();
+      ASCOT.dashboard.onNotification('dataSetChanged', updateDataSetPanel); 
+      ASCOT.dashboard.onNotification('commentPublished', insertComment); 
+      for (var i=0; i < comments.length; ++i) {
+        insertComment(comments[i]);
+      }
+      $('#loadingBar').toggle();
+    };
 
     var initDashboard = function() {
       ASCOT.dashboard = new UW.Dashboard();
@@ -56,6 +87,19 @@
       ASCOT.dashboard.save(succesSaved);
     }
 
+    function loadDataset(){
+      var successLoading = function(){
+        $('#spinnerLoadingDataset').toggle();
+        $('#loadDataset').toggle();
+      };
+      var url = $('#datasetURL').val();
+      if (url) {
+        $('#spinnerLoadingDataset').toggle();
+        $('#loadDataset').toggle();
+        ASCOT.dashboard.loadRemoteDataSet($('#datasetURL').val(), successLoading);
+      }
+    }
+
     function forkDashboard() {
       var succesForked = function(id){
         displayNote('The dashboard has been forked');
@@ -64,6 +108,30 @@
       ASCOT.dashboard.fork(succesForked);
     }
     
+    function switchTabContent(tabId){
+      $('#dashboardTab').find('.label').show();
+      $('#dashboardTab').find('.tabContent').hide();
+      $('#dataSetsTab').find('.label').show();
+      $('#dataSetsTab').find('.tabContent').hide();
+      $('#discussionTab').find('.label').show();
+      $('#discussionTab').find('.tabContent').hide();
+      
+      $('#' + tabId).find('.label').hide();
+      $('#' + tabId).find('.tabContent').show();
+    }
+
+    function updateDashboardTab(){
+      var dashboardTabContent = $('#dashboardTab').find('.tabContent');
+      dashboardTabContent.html(
+        '<p>Author: <strong>Anonymous</strong></p>' +
+        '<p>Title: <strong>Untitled</strong></p>'
+      );
+    }
+
+    function updateTabsContent() {
+      updateDashboardTab();
+    }
+
     function tabClicked(){
       if($(this).hasClass('opened')){
         return;
@@ -78,11 +146,14 @@
       $(this).children().css('color','#464547');  
       
       $('#content').children().hide();
+      updateTabsContent();
+      switchTabContent($(this).attr('id'));
       switch($(this).attr('id')){
         case 'dashboardTab':
           $('#dashboardPanel').show();
           break;
         case 'dataSetsTab':
+          updateDataSetPanel();
           $('#dataSetsPanel').show();
           break;
         case 'discussionTab':
@@ -91,6 +162,50 @@
       } 
     }
     
+    var updateDataSetPanel = function(){
+      var dataSet;
+      var dataSetList = ASCOT.dashboard.getDataSetList();
+      var unloadButton;
+      $('#dataSetsList').empty();
+      if (dataSetList.length > 0) {
+        $('#lodadedDataSets').css('visibility', 'visible');
+      } else {
+        $('#lodadedDataSets').css('visibility', 'hidden');
+      }
+      for (var i = 0; i < dataSetList.length; ++i){
+        dataSetEntry = document.createElement("li");
+        dataSetEntry.style.margin = "0px";
+        dataSetInfo = document.createElement("div");
+        dataSetInfo.className = 'dataSetInfo';
+        if ((i & 1) === 1) {
+          dataSetInfo.style['background-color'] = '#faf9fc';
+        }
+        
+        unloadButton = document.createElement("input");
+        unloadButton.setAttribute('type','button');
+        unloadButton.setAttribute('value', 'unload');
+        unloadButton.onclick = (function() {
+          var id = dataSetList[i].id;
+          return function() { 
+            ASCOT.dashboard.unloadDataSet(id);
+          }
+        })();
+
+        unloadButton.className = 'cancelButton';
+        unloadButton.style.float = 'right';
+
+        dataSetInfo.innerHTML = 
+          '<span class="dataSetLabel">Name: <strong>' + ASCOT.dashboard.getDataSet(dataSetList[i].id).name + '</strong></span>' +
+          '<span class="dataSetLabel">Author: <strong>Anonymous</strong></span>' +
+          '<span class="dataSetLabel">Records: <strong>' + ASCOT.dashboard.getDataSet(dataSetList[i].id).length() + '</strong></span>' +
+          '<span class="dataSetLabel">Url: <a href="http://localhost/dataset/' + dataSetList[i].id + '">http://localhost/dataset/' + dataSetList[i].id + '</a></span>';
+
+        dataSetInfo.appendChild(unloadButton)
+        dataSetEntry.appendChild(dataSetInfo);
+        $('#dataSetsList').append(dataSetEntry);
+      }
+    }
+
     function tabHoverIn(){
       $(this).css('border','1px solid rgba(0, 0, 0, 1)'); 
       $(this).children().css('color','black');           
@@ -118,6 +233,12 @@
       $('#tabsBar').children().css('cursor','pointer');
       $('#dashboardTab').css('cursor','auto'); 
       $('#dashboardTab').unbind('mouseenter').unbind('mouseleave');
+      $('#datasetURL').css('color', '#cccccc');
+      $('#datasetURL').val("http://");
+      $('#datasetURL').click(function(){
+        $(this).css('color', '#3A3A3A');
+      });
+      updateTabsContent();
       $(window).resize(function() { placePopUp('popUp') }); 
     }
     
@@ -202,20 +323,43 @@
       <tr>  
         <td id="toolBox">
           <div id="tabsBar">
-            <div id="dashboardTab" class="tab opened"><div class="label">Dashboard</div></div> 
-            <div id="dataSetsTab" class="tab"><div class="label">Data Sets</div></div> 
-            <div id="discussionTab" class="tab"><div class="label">Discussion</div></div>  
+            <div id="dashboardTab" class="tab opened">
+              <div class="label" style="display: none">Dashboard</div>
+              <div class="tabContent"></div>
+            </div>
+            <div id="dataSetsTab" class="tab">
+              <div class="label">Data Sets</div>
+              <div class="tabContent" style="display: none"></div>
+            </div>
+            <div id="discussionTab" class="tab">
+              <div class="label">Discussion</div>
+              <div class="tabContent" style="display: none"></div>
+          </div>  
           </div>
         </td> 
         <td id="content" class="content">
-          <div id="dashboardPanel" class="content">
-            <div id="loadingBar" style="width: 107px; margin: auto; margin-top: 210px"><img style="height: 19px; width: 107px" alt="dashboard loading" src='/images/loadingBar.gif'></div>
+          <div id="dashboardPanel" class="content gadgetsPanelContent">
+            <div id="loadingBar" style="position: relative; width: 107px; top: 210px; left: 600px; z-index: 0"><img style="height: 19px; width: 107px" alt="dashboard loading" src='/images/loadingBar.gif'></div>
           </div>
           <div id="dataSetsPanel" class="content" style="display: none">
-            DataSets Panel
+            <div id="dataSetsPanelContent">
+              <input id="datasetURL" type="text" name="datasetURL" class="big"/>
+              <img id="spinnerLoadingDataset" style="display: none; vertical-align:middle; margin-left: 30px; height: 24px; width: 24px" alt="Loading dataset" src='/images/spinnerLoadDataset.gif'>
+              <input id="loadDataset" class="confirmButton" style="display: inline; font-size: 14px;" onclick="loadDataset()" type="button" value="Load Dataset"/> 
+              <div id="lodadedDataSets" style="visibility: hidden">
+                <h3>Loaded Datasets</h3>
+                <ul id="dataSetsList"></ul>
+              </div>
+            </div>
           </div>
           <div id="discussionPanel" class="content" style="display: none">
-            Discussion Panel
+            <div id="dataSetsPanelContent">
+              <ul id="messagesList" style="display: none"></ul>
+              <div id="commentInputBoxWrapper" style="padding-right: 25px">
+                <textarea id="commentInputBox" type="text" name="comment" class="big" style="border-color: #afaeb0; width: 100%; padding: 10px; height: 100px;"></textarea>
+              </div>
+              <input id="publishButton" class="confirmButton" style="font-size: 14px; display: block" onclick="publishComment()" type="button" value="Publish Comment"/> 
+            </div>
           </div>
         </td>
       </tr>

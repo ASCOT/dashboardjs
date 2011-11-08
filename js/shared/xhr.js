@@ -35,13 +35,8 @@ if (!UW) var UW = {};
   
   var launchRequest = function(url, type, headers, data, iframeProxy, success, error, user, password){ 
     
-    var iframeProxySuccesHandler = function(){
-      
-    };
-    
-    var iframeProxyErrorHAandler = function(){
-      
-    };
+    var iframeProxySuccesHandler = function(){};
+    var iframeProxyErrorHAandler = function(){};
     
     var successHandler = iframeProxy? iframeProxySuccesHandler : success;
     var errorHandler = iframeProxy? iframeProxyErrorHAandler : error;

@@ -52,10 +52,9 @@ UW.Dashboard = function(container, dashboardUrl){
   var loadedDataSets = {};
   
   var gadgetsInfo;
+  var dashboard = this;
    
-  // Chat
-  var chatModel; 
-  var chat;
+  var comments; 
   
   var bayeuxClient;
   var bayeuxClientId;
@@ -67,15 +66,46 @@ UW.Dashboard = function(container, dashboardUrl){
     UW.debugMessage("MANAGER: " + msg);
   } 
 
+  var addDataSet = function(data, silent){
+    var newDataSet = new UW.DataSet(data);
+    loadedDataSets[newDataSet.id] = newDataSet;
+    newDataSet.bind('changed', _.bind(function(data) {
+      dashboard.notify('dataSetChanged', data)}, 
+    dashboard));
+    if(!silent) {
+      dashboard.trigger('dataSetChanged', {});
+    }
+    return newDataSet;
+  };
+
+  var removeDataSet = function(id, silent){
+    delete loadedDataSets[id];
+    if (!silent) {    
+      dashboard.trigger('dataSetChanged', id);
+    } 
+  }
+
   _.extend(this, Backbone.Events);
 
   this.loadedGadgets = 0;
   
   this.init = function(callback) {
-     var stateLoaded = _.bind(function(state) { this.inflateState(state); callback(); },this)
-     var gadgetsLoaded = _.bind(function(gadgets) { gadgetsInfo = gadgets; this.loadState(stateLoaded); },this);
-     this.loadGadgets(gadgetsLoaded);
+    var stateLoaded = _.bind(function(state) { this.inflateState(state, callback); },this)
+    var gadgetsLoaded = _.bind(function(gadgets) { gadgetsInfo = gadgets; this.loadState(stateLoaded); },this);
+    this.loadGadgets(gadgetsLoaded);
+    this.onNotification('dataSetLoaded', addDataSet)
+    this.onNotification('dataSetUnloaded', removeDataSet)
    };
+
+  this.onNotification = function(notification, callback){
+    var newCallback = function(notificationObject){
+      if(notificationObject['private']){
+        return;
+      }
+      callback(notificationObject.data);
+    }  
+    this.bind(notification, newCallback);
+  };
 
   this.loadGadgets = function(callback){
      $.ajax({
@@ -102,13 +132,11 @@ UW.Dashboard = function(container, dashboardUrl){
    };
 
   this.addGadget = function(gadgetState){
-    
     // Adding reference to the gadget in the global scope of the iframe. The user can have access to the object.
 		var newGadget = new UW.Gadget({ model: gadgetState });
     newGadget.dashboard = this;
     gadgets[newGadget.id] = newGadget;
     gadgetModels.add(gadgetState, {silent: true});		  
-
   };
 
   this.renderGadgets = function(callback){ 
@@ -120,24 +148,20 @@ UW.Dashboard = function(container, dashboardUrl){
       );  			
   };
 
-  this.createDataSet = function(name, source, query, successCallback, errorCallback){
-    var newDataSet;
+  this.createDataSet = function(name, source, query, successCallback, errorCallback, staticData){
     var createDataSetSuccess = function(response){
       var dataSetJSON = JSON.parse(response);
-      newDataSet = new UW.DataSet(dataSetJSON);      
-      loadedDataSets[newDataSet.id] = newDataSet;
-      newDataSet.bind('changed', _.bind(function(data) {
-        this.notify("dataSetChanged", data)}, 
-      this));
-      successCallback(newDataSet);
+      this.loadDataSet(dataSetJSON);
+      successCallback(dataSetJSON.id);
     }
     var queryData = { 
       "name" : name,
       "source" : source,
       "query" : query,
+      "staticData" : staticData || false,
       "returnRecords" : true
     };
-
+    
     UW.ajax({
       "url" : "/dataSet/",
       "type" : "post",
@@ -146,6 +170,26 @@ UW.Dashboard = function(container, dashboardUrl){
     });    
     
   };
+
+  this.getComments = function(){
+    return comments;
+  };
+
+  this.publishComment = function(comment){
+    var currentDate = new Date();
+    var commentObj = {
+      "text" : comment,
+      "author" : 'Anonymous',
+      "day" : currentDate.getDate(),
+      "hours" : currentDate.getHours(),
+      "minutes" : currentDate.getMinutes(),
+      "month" : currentDate.getMonth(),
+      "weekday" : currentDate.getDay(),
+      "year" : currentDate.getFullYear()
+    }
+    comments.push(commentObj);
+    this.notify("commentPublished", commentObj);
+  }
 
   this.getDataSet = function(id){
     return loadedDataSets[id];
@@ -167,6 +211,8 @@ UW.Dashboard = function(container, dashboardUrl){
       console.log("State Saved");
       successCallback();
     };
+
+    dashboardState.comments = comments;
 
     dashboardState.dataSets = {};
     for (var id in loadedDataSets) {
@@ -205,10 +251,6 @@ UW.Dashboard = function(container, dashboardUrl){
       "success" : successFork
     }); 
 
-  };
-  
-  this.sendChatMessage = function(message){
-    this.notify("chatMessage", {'text': message});
   };
   
   this.notify = function(notification, data, options){
@@ -264,7 +306,7 @@ UW.Dashboard = function(container, dashboardUrl){
       });  
   };
   
-  this.inflateState = function(dashboardStateJSON) {  
+  this.inflateState = function(dashboardStateJSON, success, error) {  
     var newGadget;
     var newGadgetModel;
     var gadgetInstanceInfo;
@@ -281,8 +323,9 @@ UW.Dashboard = function(container, dashboardUrl){
         this.loadedGadgets++;
       }
      
-      chatModel = new UW.NodeChatModel(); 
-      chat = new UW.ChatView({'model': chatModel, 'dashboard': this, 'el': $('#dashboardArea'), 'id': dashboardState.id}); 
+      comments = dashboardState.comments || [];
+        
+      success(); 
       this.renderGadgets(function() {}); 
 
     }, this);
@@ -304,21 +347,45 @@ UW.Dashboard = function(container, dashboardUrl){
       if(dashboardState.dataSets){
         this.loadDataSets(dashboardState.dataSets, loadGadgets);
       }
+      else {
+        loadGadgets();
+      }
     
     }
   };
+
+  this.loadRemoteDataSet = function(url, success, error){
+    var successLoadingDataSet = function(data){
+      this.loadDataSet(JSON.parse(data));
+      success();
+    };
+    UW.ajax({
+      "url" : url,
+      "type" : "get",
+      "success" : _.bind(successLoadingDataSet ,this)
+    });   
+  }
   
+  this.loadDataSet = function(data, silent) {
+    addDataSet(data);
+    if (!silent) {
+      this.notify('dataSetLoaded', data);
+    }
+  }
+
+  this.unloadDataSet = function(id, silent) {
+     if (!silent) {
+      this.notify('dataSetUnloaded', id); 
+    }
+  }
+
   this.loadDataSets = function(dataSets, success, error){
     var remainingDataSets = 0;
-    var succesLoadingDataSet = function (data) {
+    var successLoadingDataSet = function (data) {
       var dataSetJSON = JSON.parse(data);
       var newDataSet;
       dataSetJSON.modifiers = dataSets[dataSetJSON.id].modifiers || {};
-      newDataSet = new UW.DataSet(dataSetJSON);
-      loadedDataSets[newDataSet.id] = newDataSet;
-      newDataSet.bind('changed', _.bind(function(data) {
-        this.notify("dataSetChanged", data)
-      },this));
+      this.loadDataSet(dataSetJSON, true);
       remainingDataSets--;
       if(remainingDataSets === 0){
         success();
@@ -331,12 +398,16 @@ UW.Dashboard = function(container, dashboardUrl){
       }
     }
 
+    if (remainingDataSets === 0){
+      success();
+    }
+
     for (dataSetId in dataSets) {
       if (dataSets.hasOwnProperty(dataSetId)) {
         UW.ajax({
           "url" : "/dataSet/" + dataSetId,
           "type" : "get",
-          "success" : _.bind(succesLoadingDataSet ,this)
+          "success" : _.bind(successLoadingDataSet ,this)
         });    
       }
     }

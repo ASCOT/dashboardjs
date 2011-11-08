@@ -1,10 +1,14 @@
 html{
- color: #555555; 
+ color: #3a3a3a; 
 }
 
 a {
   color: #71829E;
   cursor: pointer;
+}
+
+a:hover{
+  color: #5193CA;
 }
 
 label {
@@ -25,6 +29,16 @@ input, textarea {
   font-weight: normal;
   background-color: white;  
   border: 1px solid #CACACA;
+}
+
+input.big{
+  font-size: 16px;
+  border-color: #afaeb0;
+  width: 500px;
+  padding: 5px;
+  -moz-box-shadow: 0px 0px 1px rgba(0,0,0,0.1) inset;
+  -webkit-box-shadow: 0px 0px 1px rgba(0,0,0,0.1) inset;
+  box-shadow: 0px 0px 1px rgba(0,0,0,.2) inset;
 }
 
 input[type="checkbox"] {
@@ -84,6 +98,28 @@ input[type="button"]:hover,[type="submit"]:hover {
   border-color: #737373;
 }
 
+input[type="button"].cancelButton,[type="submit"].cancelButton {
+  margin: 0px;
+  border-color: #ce316a;
+  background: #ff93b8;
+  color: white;
+}
+
+input[type="button"].cancelButton:hover,[type="submit"].cancelButton:hover {
+  background: #ff6d9f
+}
+
+input[type="button"].confirmButton,[type="submit"].confirmButton {
+  margin: 0px;
+  border-color: #5193ca;
+  background: #85b3da;
+  color: white;
+}
+
+input[type="button"].confirmButton:hover,[type="submit"].confirmButton:hover {
+  background: #5193ca
+}
+
 input[type="button"]:active,[type="submit"]:active {
   background: -webkit-gradient(linear, 0% 40%, 0% 70%, from(rgb(241, 241, 241)), to(rgb(245, 245, 245)));
   background: -moz-linear-gradient(linear, 0% 40%, 0% 70%, from(rgb(241, 241, 241)), to(rgb(245, 245, 245)));
@@ -91,12 +127,15 @@ input[type="button"]:active,[type="submit"]:active {
 
 textarea {
   /* To give the same inset shadows as input[type='text'] */
-  padding: 5px;
   /* 
     Hack to make the same size as text inputs,
     since their native border isn't taken into
     account when calculating width.
   */
+  resize: none;
+  -moz-box-shadow: 0px 0px 1px rgba(0,0,0,0.2) inset;
+  -webkit-box-shadow: 0px 0px 1px rgba(0,0,0,0.2) inset;
+  box-shadow: 0px 0px 1px rgba(0,0,0,.2) inset;
 }
 
 select {

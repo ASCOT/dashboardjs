@@ -7,7 +7,6 @@ lsstMySQLClient.host = 'lsst10.ncsa.uiuc.edu';
 var dataSets = [];
 
 var querySDSS = function(query, callback){
-  
   var xhr = new XMLHttpRequest();
   xhr.onreadystatechange = function() {
     console.log("State: " + this.readyState);
@@ -18,7 +17,6 @@ var querySDSS = function(query, callback){
   };
   xhr.open("GET", dataSources.sdss.url + '?format=xml&cmd=' + encodeURIComponent(query));
   xhr.send();
-  
 };
 
 var queryLSST = function(query, callback){	
@@ -88,6 +86,28 @@ var dataSources = {
 
 var dataSourcesNameIndex = {};
 
+var retrieveRecords = function(source, query, success, error){
+  var dataInquirer = dataSources[source].dataInquirer;
+  var queryResultParser;
+  var processQueryResult = function(queryResult){
+    var records = queryResultParser(queryResult) || [];
+    success(records);
+  }
+    
+  if (!dataInquirer) {
+    console.error("ASCOT doesn't know how to query the data source: " + sourceId + " No default method and no function provided");
+    success([]);
+    return;
+  }
+  queryResultParser = dataSources[source].queryResultParser;
+  if (!queryResultParser) {
+    console.error('Parser not available for ' + sourceId);
+    success([]);
+    return;
+  }
+  dataInquirer(query, processQueryResult); 
+}
+
 var addDataSet = function(dataSet){
   var dataSetName = dataSet.name;
   if(!dataSetName){
@@ -104,8 +124,7 @@ module.exports.find = function(id, callback) {
   var dataSet = dataSets[id];
   var dataInquirer;
   var queryResultParser;
-  var processQueryResult = function(queryResult){
-    records = queryResultParser(queryResult) || [];
+  var successRecordsRetrieval = function(records){
     callback({'id': dataSet.id, 'name': dataSet.name, 'records': records});
   }
 
@@ -115,21 +134,9 @@ module.exports.find = function(id, callback) {
   }
 
   if (dataSet.records) {
-    return dataSet;
+    callback(dataSet);
   } else {
-    dataInquirer = dataSources[dataSet.source].dataInquirer;
-    if (!dataInquirer) {
-      console.error("ASCOT doesn't know how to query the data source: " + sourceId + " No default method and no function provided");
-      callback({});
-      return;
-    }
-    queryResultParser = dataSources[dataSet.source].queryResultParser;
-    if (!queryResultParser) {
-      console.error('Parser not available for ' + sourceId);
-      callback({});
-      return;
-    }
-    dataInquirer(dataSet.query, processQueryResult);  
+    retrieveRecords(dataSet.source, dataSet.query, successRecordsRetrieval);
   }
 
 }
@@ -141,6 +148,11 @@ module.exports.createDataSet = function(dataSetInfo, callback) {
   var sourceId = dataSetInfo.source;
   var query = dataSetInfo.query;
   var records = dataSetInfo.records;
+  var staticData = dataSetInfo.staticData;
+  var successRecordsRetrieval = function(records){
+    id = addDataSet({'id': id, 'name': name, 'records': records});
+    module.exports.find(id, callback);
+  }
 
   if(id && dataSets[id]){
     id = id;
@@ -160,8 +172,12 @@ module.exports.createDataSet = function(dataSetInfo, callback) {
         callback(-1);
         return;
       }
-      id = addDataSet({'id': id, 'name': name, 'source': sourceId, 'query': query});
-      module.exports.find(id, callback);
+      if (staticData) {
+        retrieveRecords(sourceId, query, successRecordsRetrieval);
+      } else {
+        id = addDataSet({'id': id, 'name': name, 'source': sourceId, 'query': query});
+        module.exports.find(id, callback);
+      }
     }
   }
 }

@@ -111,12 +111,11 @@ gadget.saveState = function(){
 
 gadget.loadState = function(state){
   
-  axisInverted = state.axisInverted || {};
-  if (axisInverted.x) {
+  if (state.axisInverted.x) {
     invertX();
   }
   
-  if (axisInverted.y) {
+  if (state.axisInverted.y) {
     invertY();
   }
 
@@ -128,7 +127,7 @@ gadget.loadState = function(state){
   selectedYAxis = state.selectedYAxis || false;
   selectedColor = state.selectedColor || "";
   selectedDataSet = state.selectedDataSet || "";
-
+  populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"], selectedColor);
   redrawAll();
 
 };
@@ -332,6 +331,11 @@ function drawPlot() {
   }
   plot.setTitle({ text: selectedDataSetName });
   
+  if (plot.xAxis[0] && plot.yAxis[0]) {
+    plot.xAxis[0].reversed = axisInverted.x;
+    plot.yAxis[0].reversed = axisInverted.y;
+  }
+
   // Set Data + Axis labels + Redraw
   if(plot.xAxis[0].axisTitle && plot.xAxis[0].axisTitle){
      $(plot.xAxis[0].axisTitle.element).text(selectedXAxis);
@@ -405,11 +409,6 @@ function invertAxis(axis){
     axisInverted.x = !axisInverted.x;
   else
     axisInverted.y = !axisInverted.y;
-  
-  if (plot) {
-    plot.xAxis[0].reversed = axisInverted.x;
-    plot.yAxis[0].reversed = axisInverted.y;
-  }
   drawPlot();
 }          
 

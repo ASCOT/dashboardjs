@@ -40,10 +40,14 @@ if (!UW) var UW={};
         this.name = dataSetJSON.name;
         this.id = dataSetJSON.id;
         if (dataSetJSON.records) {
-          this.addRecords(dataSetJSON.records);
+          this.addRecords(dataSetJSON.records, true);
         } 
         if (dataSetJSON.modifiers) {
-          this.applyModifiers(dataSetJSON.modifiers)
+          this.applyModifiers(dataSetJSON.modifiers, true)
+        } 
+        if (!dataSetJSON.modifiers || !dataSetJSON.modifiers.color) {
+          this.setAllRecords({'color' : 'grey'}, true);
+          this.setAllRecords({'visible' : true});
         }
       }
       

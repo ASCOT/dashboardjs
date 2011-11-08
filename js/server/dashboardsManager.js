@@ -99,12 +99,11 @@ module.exports.create = function(configuration, callback) {
     newDashboard.dataSets.push(dataSet);
     remainingDataSets--;
     if(remainingDataSets == 0){
+      dashboards.push(newDashboard);
       callback(newDashboardId);
     }
   }
-  
-  dashboards.push(newDashboard);
-  
+    
   for(id in gadgets){
     i = gadgets[id].number;
     for(i; i>0; --i){
@@ -117,13 +116,14 @@ module.exports.create = function(configuration, callback) {
       newDashboard.gadgets.push(newGadget);
     }
   }
-  
+
   if(currentDataSet){
     while(currentDataSet--){
       dataSetsManager.createDataSet(dataSetsInfo[currentDataSet], dataSetLoaded);
     }
   }
   else{
+    dashboards.push(newDashboard);
     callback(newDashboardId);
   }
 };

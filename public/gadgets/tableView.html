@@ -11,6 +11,7 @@
 <link href="/css/text.css" rel="stylesheet" type="text/css"> 
 <link href="/css/widgets.css" rel="stylesheet" type="text/css"> 
 
+<script src="/util.js" type="text/javascript"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js" type="text/javascript"></script>
 <script src="/underscore.js" type="text/javascript"></script>
 <script src="/backbone.js" type="text/javascript"></script>
@@ -31,33 +32,48 @@
 #divTable, ##divTable .yui-dt-loading { 
   text-align: center; background-color: transparent; 
 
-#divSelectDataset { 
-        text-align: left
+#divSelectDataSet { 
+  text-align: left
 }
 .yui-skin-sam .yui-dt-liner { white-space:nowrap; } 
 </style>
 
 <script>
 
-var dataSetList;
-var selectedDataSetName = "";
+var selectedDataSetId = "";
+var table;
 
 // Creates gadget object
 gadget.init = function(callback){ 
-  gadget.onNotification('dataSetChanged', updateDataSetList);  
+  gadget.onNotification('dataSetChanged', populateDataSetList);  
   // add colors to the select box (pass the select Name and color array)
-  $('#selectDatasetName').change( function(){
+  $('#selectDataSetName').change( function(){
     if(this.selectedIndex != -1){
-      selectedDataSetName = this[this.selectedIndex].value;
+      selectedDataSetId = this[this.selectedIndex].value;
       updateTable();
     }
   });
  callback();
 }
 
+gadget.saveState = function(){
+  return { 
+    'selectedDataSetId': selectedDataSetId
+  }
+};
+
+gadget.loadState = function(state){
+  selectedDataSetId = state.selectedDataSetId || "";
+  populateDataSetList();
+};
+
+var populateDataSetList = function(){
+  populateSelect('selectDataSetName', gadget.dashboard.getDataSetList(), selectedDataSetId);
+};
+
 function updateTable() {
   var tableDiv = "divTable";
-  var dataSet = gadget.dashboard.getDataSet(selectedDataSetName);
+  var dataSet = gadget.dashboard.getDataSet(selectedDataSetId);
   if (dataSet === undefined || dataSet === null) {
     return;
   }
@@ -67,8 +83,9 @@ function updateTable() {
   var newColumn;
   var width;
   var tableConfig;
-  var table;
   
+  $('#divSelectDataSet').show();
+
   for (var i=0, len=columnNames.length; i<len; i++) {
     newColumn = {};
     newColumn.key = columnNames[i];
@@ -86,8 +103,9 @@ function updateTable() {
     draggableColumns: true 
   };
   
-  if(table)
+  if (table) {
     table.destroy();
+  }
   table = new YAHOO.widget.DataTable(tableDiv, columns, data, tableConfig);
   table.subscribe("postRenderEvent", function(){
     //$("#content")[0].style.height = $('#divTable')[0].offsetHeight + 450;
@@ -126,26 +144,12 @@ function moveIndexToStart(arr, index) {
   return arr;
 }
 
-function updateDataSetList() { 
-  var html = '';
-  var currentSelection = selectedDataSetName;
-  var options = gadget.dashboard.getDataSetList();
-  var len = options.length;
-  for (var i = 0; i< len; i++) {
-    html += '<option value="' + options[i] + '">' + options[i] + '</option>';
-  }
-  $("#selectDatasetName").html(html);
-  $("#selectDatasetName").val(currentSelection).attr('selected',true);      
-  $("#selectDatasetName").change();
-  $("#divSelectDataset").show();
-}
-
 </script>
 </head>
 <body>
 <div id="content" class="yui-skin-sam">
-	<div id="divSelectDataset" style="display: none">
-  	Dataset: <select id="selectDatasetName"></select>
+	<div id="divSelectDataSet" style="display: none">
+  	Dataset: <select id="selectDataSetName"></select>
   </div>
   <div id="divTable" style="width:100%; overflow:auto;"></div>
 </div>
