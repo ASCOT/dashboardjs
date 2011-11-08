@@ -455,11 +455,11 @@ div.closePopUp{
 }
 
 div.tabContent {
-  padding: 15px;
+  padding: 20px 15px 15px 15px;
 }
 
 div.tabContent p{
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   color: #464547;
   text-align: left;
 }

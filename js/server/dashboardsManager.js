@@ -48,7 +48,12 @@ var dashboards = [
                {"id":"tableView", "gadgetInfoId": "tableView"},
                {"id":"scalableScatter", "gadgetInfoId": "scalableScatter"},
                {"id":"histogramView", "gadgetInfoId": "histogramView"} ]
-  } ];
+  },
+  { id : 5,
+    author : 'Diego',
+    numberOfColumns : 1,
+    gadgets: [ {"id":"newFitsViewer1","gadgetInfoId":"newFitsViewer"}],
+  }];
 
 module.exports.all = dashboards;
 
