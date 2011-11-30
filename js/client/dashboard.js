@@ -54,7 +54,7 @@ UW.Dashboard = function(container, dashboardUrl){
   var gadgetsInfo;
   var dashboard = this;
    
-  var comments; 
+  var dashboardModel; 
   
   var bayeuxClient;
   var bayeuxClientId;
@@ -116,10 +116,41 @@ UW.Dashboard = function(container, dashboardUrl){
   };
 
   this.loadState = function(callback){
+    var onDocChanged = _.bind(function (op) {
+      var communications = bayeuxClient;
+      console.log(JSON.stringify(op));
+      if (communications) {
+        this.notify("commentPublished", op[0].li, { 'self' : true });
+      }
+    }, this);
+    var onDocOpened =  function(error, doc) {
+        var that = this;
+        dashboardModel = doc;
+        dashboardModel.on('change', onDocChanged);
+        if (dashboardModel.created) {
+          console.log("Doc Started"); 
+          dashboardModel.submitOp([
+            {
+              p : [],
+              oi : { 
+                comments : []
+              }
+            }
+          ])
+        }
+    };
+    var sharejsTest = function(result){
+      sharejs.open('dashboardModel', 'json', 
+        function(error, doc) {
+          onDocOpened(error, doc);
+          callback(result);
+        }
+    )};
+
     $.ajax({
        url: url + '/state',
        type: 'GET',
-       success: callback
+       success: sharejsTest
      });
    };
 
@@ -172,7 +203,7 @@ UW.Dashboard = function(container, dashboardUrl){
   };
 
   this.getComments = function(){
-    return comments;
+    return dashboardModel.at('comments').get();
   };
 
   this.publishComment = function(comment){
@@ -187,8 +218,10 @@ UW.Dashboard = function(container, dashboardUrl){
       "weekday" : currentDate.getDay(),
       "year" : currentDate.getFullYear()
     }
-    comments.push(commentObj);
-    this.notify("commentPublished", commentObj);
+    dashboardModel.submitOp({
+      p: ['comments' , 0],
+      li: commentObj
+    });
   }
 
   this.getDataSet = function(id){
@@ -212,7 +245,7 @@ UW.Dashboard = function(container, dashboardUrl){
       successCallback();
     };
 
-    dashboardState.comments = comments;
+    dashboardState.comments = dashboardModel.at('comments');
 
     dashboardState.dataSets = {};
     for (var id in loadedDataSets) {
@@ -254,20 +287,20 @@ UW.Dashboard = function(container, dashboardUrl){
   };
   
   this.notify = function(notification, data, options){
-    var optionsArgument = options || {};
+    options = options || {};
     var notificationObject = {};
     notificationObject['notification'] = notification;
     if(data){
       notificationObject['data'] = data;
     }
-    if(optionsArgument.sourceId){
+    if(options.sourceId){
       notificationObject['sourceId'] = options.sourceId;
     }
-    if(optionsArgument['private']){
+    if(options['private']){
       notificationObject['private'] = true;
     }
     this.trigger(notification, notificationObject);
-    if(!optionsArgument.self){
+    if(!options.self){
       bayeuxClient.publish('/dashboard/' + id, notificationObject);
     }
   };
@@ -322,9 +355,7 @@ UW.Dashboard = function(container, dashboardUrl){
         gadgets[newGadget.id] = newGadget;
         this.loadedGadgets++;
       }
-     
-      comments = dashboardState.comments || [];
-        
+             
       success(); 
       this.renderGadgets(function() {}); 
 

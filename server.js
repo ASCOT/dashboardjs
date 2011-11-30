@@ -1,12 +1,10 @@
 // Node Modules dependencies
 var http = require('http');
 var url = require('url');
-var util = require('util');
-var sys = require('sys');
-var FFI = require('node-ffi');
 var exec = require('child_process').exec;
 var _ = require('underscore');
 var express = require('express');
+var sharejs = require('../share/').server;
 var faye = require('faye');
 
 // Local Modules
@@ -14,19 +12,44 @@ var dashboardsManager = require('./js/server/dashboardsManager');
 var dataSetsManager = require('./js/server/dataSetsManager');
 var gadgets = require('./public/gadgets/gadgetsInfo');
 var xhr = require("./js/shared/xhr");
-  
+
 var app = express.createServer();
 
+// Share JS
+var options = {
+  db: {type: 'none'},
+  auth: function(client, action) {
+    // This auth handler rejects any ops bound for docs starting with 'readonly'.
+    if (action.name === 'submit op' && action.docName.match(/^readonly/)) {
+      action.reject();
+    } else {
+      action.accept();
+    }
+  }
+};
+
+// Lets try and enable redis persistance if redis is installed...
+try {
+  require('redis');
+  options.db = {type: 'redis'};
+} catch (e) {}
+
+//console.log("ShareJS example server v" + sharejs.version);
+//console.log("Options: ", options);
+
+// Attach the sharejs REST and Socket.io interfaces to the server
+sharejs.attach(app, options);
+  
 adapter = new faye.NodeAdapter({ mount: '/faye', timeout: 45 });
 adapter.attach(app)
  
 // Configuration
 app.configure(function(){
   app.set('views', __dirname + '/templates');
-  app.use(express.bodyParser());
   app.set('view engine', 'mustache');
   app.register(".mustache", require('stache'));
   app.set('view options', {layout: false });
+  app.use(express.bodyParser());
   app.use(express.static(__dirname + '/js/client'));
   app.use(express.static(__dirname + '/js/shared'));  
   app.use(express.static(__dirname + '/public')); 
@@ -38,19 +61,6 @@ app.configure('development', function(){
 
 app.configure('production', function(){
   app.use(express.errorHandler()); 
-});
-
-// Convert a FITS file into a thumbnail and raw data
-app.get('/convertFITS/:file', function(req, res){
-	console.log('executing shell script');
-	var libc = new FFI.Library(null, { "system": ["int32", ["string"]] });
-	var run = libc.system;
-	// Remove all previous files created by the converter
-	run("cd ./public/images/FITSConverter; rm header.js; rm tile*.js; rm thumb.jpg;");
-	// Convert the next fits image
-	run("cd ./public/images/FITSConverter; ./extractFitsFrame ../"+req.params.file+" 0 512;");
-	console.log('shell script done');
-	res.send('done');
 });
 
 app.get('/xhrProxy/:request', function(req, res){
@@ -80,7 +90,7 @@ app.get('/dashboard/:id', function(req, res){
 });
 
 app.post('/dashboard/', function(req, res){
-  var configuration = req.rawBody? JSON.parse(req.rawBody) : undefined;
+  var configuration = req.body || undefined;
   var dashboardCreated = function(dashboardId){
     res.send(dashboardId.toString());
   }
@@ -88,7 +98,7 @@ app.post('/dashboard/', function(req, res){
 });
 
 app.post('/dashboard/:id', function(req, res){
-  var state = req.rawBody? JSON.parse(req.rawBody) : undefined;
+  var state = req.body || undefined;
   dashboardsManager.set(req.params.id, state);
   res.send("Dashboard saved");
 });
@@ -114,8 +124,8 @@ app.get('/dataSet/:id', function(req, res){
 });  
 
 app.post('/dataSet/', function(req, res){
-  var queryInfo = req.rawBody? JSON.parse(req.rawBody) : undefined;
-  console.log("DATASET : " + req.rawBody);
+  var queryInfo = req.body || undefined;
+  console.log("DATASET : " + req.body);
   var dataSetCreated = function(dataSet){
     res.send(JSON.stringify(dataSet));
   }

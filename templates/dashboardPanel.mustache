@@ -21,6 +21,9 @@
     <script src="/dataSetModifier.js" type="text/javascript"></script> 
     <script src="/dataSet.js" type="text/javascript"></script> 
     <script src="/renderer.js" type="text/javascript"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/share/share.js"></script>
+    <script src="/share/json.js"></script>
     <script src="/dashboard.js" type="text/javascript"></script>
     <script src="/xhr.js" type="text/javascript"></script> 
     
@@ -107,30 +110,6 @@
       }
       ASCOT.dashboard.fork(succesForked);
     }
-    
-    function switchTabContent(tabId){
-      $('#dashboardTab').find('.label').show();
-      $('#dashboardTab').find('.tabContent').hide();
-      $('#dataSetsTab').find('.label').show();
-      $('#dataSetsTab').find('.tabContent').hide();
-      $('#discussionTab').find('.label').show();
-      $('#discussionTab').find('.tabContent').hide();
-      
-      $('#' + tabId).find('.label').hide();
-      $('#' + tabId).find('.tabContent').show();
-    }
-
-    function updateDashboardTab(){
-      var dashboardTabContent = $('#dashboardTab').find('.tabContent');
-      dashboardTabContent.html(
-        '<p>Author: <strong>Anonymous</strong></p>' +
-        '<p>Title: <strong>Untitled</strong></p>'
-      );
-    }
-
-    function updateTabsContent() {
-      updateDashboardTab();
-    }
 
     function tabClicked(){
       if($(this).hasClass('opened')){
@@ -143,11 +122,8 @@
       $(this).unbind('mouseenter').unbind('mouseleave');
       $(this).css('border','1px solid rgba(0, 0, 0, 0.4)');
       $(this).css('cursor','auto');
-      $(this).children().css('color','#464547');  
       
       $('#content').children().hide();
-      updateTabsContent();
-      switchTabContent($(this).attr('id'));
       switch($(this).attr('id')){
         case 'dashboardTab':
           $('#dashboardPanel').show();
@@ -208,7 +184,7 @@
 
     function tabHoverIn(){
       $(this).css('border','1px solid rgba(0, 0, 0, 1)'); 
-      $(this).children().css('color','black');           
+      $(this).children().css('color','inherit');           
     }
     
     function tabHoverOut(){
@@ -238,7 +214,6 @@
       $('#datasetURL').click(function(){
         $(this).css('color', '#3A3A3A');
       });
-      updateTabsContent();
       $(window).resize(function() { placePopUp('popUp') }); 
     }
     
@@ -324,16 +299,13 @@
         <td id="toolBox">
           <div id="tabsBar">
             <div id="dashboardTab" class="tab opened">
-              <div class="label" style="display: none">Dashboard</div>
-              <div class="tabContent"></div>
+              <div class="label">Dashboard</div>
             </div>
             <div id="dataSetsTab" class="tab">
               <div class="label">Data Sets</div>
-              <div class="tabContent" style="display: none"></div>
             </div>
             <div id="discussionTab" class="tab">
               <div class="label">Discussion</div>
-              <div class="tabContent" style="display: none"></div>
           </div>  
           </div>
         </td> 

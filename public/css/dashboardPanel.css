@@ -115,7 +115,7 @@ footer a:visited {
 }
 
 .content td#toolBox{
- width: 200px;
+ width: 100px;
  padding-left: 20px;
  padding-right: 15px;
 }
@@ -147,7 +147,7 @@ div.content{
 
 header div.logo {
  float: left;
- margin: 0px 0px 0px 40px;
+ margin: 0px 0px 0px 150px;
 }
 
 header div.logo a {
@@ -429,7 +429,7 @@ div.closePopUp{
 }
 
 #tabsBar div.tab{
-  width: 99%;
+  width: 98%;
   height: 60px;
   border: 1px solid rgba(0, 0, 0, 0.4);
   margin: auto; 
@@ -439,29 +439,19 @@ div.closePopUp{
 }
 
 #tabsBar div.tab div.label{
+  color: inherit;
   position: relative;
-  color: #464547;
   top: 20px;
 }
 
 #tabsBar div.opened{
-  height: 240px;
+  color: #662d91;
   border: 1px solid rgba(0, 0, 0, 0.4);
   margin: auto; 
   background: rgba(163, 154, 198, 0.4);
   -moz-box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.4);
   -webkit-box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.4);
   box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.4);
-}
-
-div.tabContent {
-  padding: 20px 15px 15px 15px;
-}
-
-div.tabContent p{
-  margin-bottom: 10px;
-  color: #464547;
-  text-align: left;
 }
 
 #tabsBar div:first-child.tab{
