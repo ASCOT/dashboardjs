@@ -10,6 +10,9 @@
 <link href="/css/text.css" rel="stylesheet" type="text/css"> 
 <link href="/css/widgets.css" rel="stylesheet" type="text/css"> 
 
+</head>
+<body>
+	<div id="content" style="width: 100%; height: 600px"></div>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js"></script>
 <script src="http://google.com/jsapi?key=ABQIAAAAVGHgv2pouycqhAw5tCmtChR1aol8vC9LmxJ_-IIqPo0vb4nybRTh6avLgiFPsdQwzEmpcYDE1DLlcA" type="text/javascript"></script>
 <script> 
@@ -27,7 +30,7 @@ var latitude = 0;
 google.load("earth", "1");
 google.setOnLoadCallback();
 
-gadget.init = function(callback){	
+gadget.init = function(callback){ 
   gadget.onNotification('centerOfCoordinatesChanged', moveMap);
   gadget.onNotification('dataSetChanged', redrawAll);
   google.earth.createInstance('content', success, failure);
@@ -163,23 +166,23 @@ function plotDataset(dataSetName) {
 
 function getColorIcon(color){
   // change the color and the iconUrl
-  var iconUrl;     	
+  var iconUrl;      
   switch(color){
     case "red":
-  	  iconUrl = "http://127.0.0.1/images/targetRed.png";
-  		break;
-  	case "green":
-  		iconUrl = "http://127.0.0.1/images/targetGreen.png";
-  		break;
-  	case "yellow":
-  		iconUrl = "http://127.0.0.1/images/targetYellow.png";
-  		break;
-  	case "blue":
-  		iconUrl = "http://127.0.0.1/images/targetBlue.png";
-  		break;
-  	default:
-  		iconUrl = "http://127.0.0.1/images/targetGrey.png";
-  		break;
+      iconUrl = "http://127.0.0.1/images/targetRed.png";
+      break;
+    case "green":
+      iconUrl = "http://127.0.0.1/images/targetGreen.png";
+      break;
+    case "yellow":
+      iconUrl = "http://127.0.0.1/images/targetYellow.png";
+      break;
+    case "blue":
+      iconUrl = "http://127.0.0.1/images/targetBlue.png";
+      break;
+    default:
+      iconUrl = "http://127.0.0.1/images/targetGrey.png";
+      break;
   }
   return iconUrl
 };
@@ -246,8 +249,5 @@ function clearTimerArray(timers){
 }
 
 </script>
-</head>
-<body>
-	<div id="content" style="width: 100%; height: 600px"></div>
 </body>
 </html>

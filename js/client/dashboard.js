@@ -18,27 +18,6 @@ UW.GadgetsCollection = Backbone.Collection.extend({
   model: UW.GadgetModel
 }); 
 
-// The dashboard state
-UW.DashboardModel = Backbone.Model.extend({
-
-  defaults: {
-    id: -1,	
-    author: "Unknown",
-  },
-  
-  initialize: function () {
-  },
-  
-  url: function(){
-    return this.modelUrl;
-  },
-  
-  setUrl: function(url){
-    this.modelUrl = url;
-  }
-  
-});
-
 // The constructor takes the DOM element where the dashboard will be rendered
 UW.Dashboard = function(container, dashboardUrl){
   
@@ -68,10 +47,20 @@ UW.Dashboard = function(container, dashboardUrl){
 
   var addDataSet = function(data, silent){
     var newDataSet = new UW.DataSet(data);
-    loadedDataSets[newDataSet.id] = newDataSet;
+    var id = newDataSet.id;
+    loadedDataSets[id] = newDataSet;
+    if ((dashboardModel.at('dataSets').get())[id]) {
+      loadedDataSets[id].applyModifiers((dashboardModel.at('dataSets').get())[id].modifiers);
+    }
     newDataSet.bind('changed', _.bind(function(data) {
-      dashboard.notify('dataSetChanged', data)}, 
-    dashboard));
+      if (data && data.modifiers) {
+        dashboardModel.submitOp({
+          p : ['dataSets', data.id, 'modifiers'],
+          oi : data.modifiers
+        });
+      }
+      dashboard.trigger('dataSetChanged', {});
+    },dashboard));
     if(!silent) {
       dashboard.trigger('dataSetChanged', {});
     }
@@ -116,23 +105,38 @@ UW.Dashboard = function(container, dashboardUrl){
   };
 
   this.loadState = function(callback){
-    var onDocChanged = _.bind(function (op) {
+    var dashboardModelChanged = _.bind(function (op) {
       var communications = bayeuxClient;
-      console.log(JSON.stringify(op));
       if (communications) {
-        this.notify("commentPublished", op[0].li, { 'self' : true });
+        if (op[0].p[0] === 'comments') {
+          this.notify("commentPublished", op[0].li, { 'self' : true });
+        }
+        if (op[0].p[0] === 'dataSets') {
+          if (!op[0].oi) {
+            removeDataSet(op[0].p[1]);
+            return;
+          }
+          if (op[0].p[2] === 'modifiers') {
+            loadedDataSets[op[0].p[1]].applyModifiers(op[0].oi);
+            return;
+          }
+          if (loadedDataSets[op[0].oi.id] === undefined) {
+            this.fetchDataSet(op[0].oi.url);
+            return;    
+          }
+        }
       }
     }, this);
     var onDocOpened =  function(error, doc) {
         var that = this;
         dashboardModel = doc;
-        dashboardModel.on('change', onDocChanged);
+        dashboardModel.on('change', dashboardModelChanged);
         if (dashboardModel.created) {
-          console.log("Doc Started"); 
           dashboardModel.submitOp([
             {
               p : [],
               oi : { 
+                dataSets : {},
                 comments : []
               }
             }
@@ -179,11 +183,12 @@ UW.Dashboard = function(container, dashboardUrl){
       );  			
   };
 
-  this.createDataSet = function(name, source, query, successCallback, errorCallback, staticData){
+  this.createDataSet = function(name, source, query, success, error, staticData){
     var createDataSetSuccess = function(response){
       var dataSetJSON = JSON.parse(response);
-      this.loadDataSet(dataSetJSON);
-      successCallback(dataSetJSON.id);
+      addDataSet(dataSetJSON, true);
+      this.loadDataSet(dataSetJSON.id);
+      success(dataSetJSON.id);
     }
     var queryData = { 
       "name" : name,
@@ -236,13 +241,13 @@ UW.Dashboard = function(container, dashboardUrl){
     return dataSetsIds;
   };
 
-  this.save = function(successCallback, failureCallback){
+  this.save = function(success, error){
    
     var currentDataSet;
     var currentGadget;
     var successSaveState = function() {
       console.log("State Saved");
-      successCallback();
+      success();
     };
 
     dashboardState.comments = dashboardModel.at('comments');
@@ -272,10 +277,10 @@ UW.Dashboard = function(container, dashboardUrl){
 
   };
 
-  this.fork = function(successCallback, failureCallback){
+  this.fork = function(success, error){
     var successFork = function(id) {
       console.log("Dashboard forked");
-      successCallback(id);
+      success(id);
     };
 
     UW.ajax({
@@ -307,11 +312,6 @@ UW.Dashboard = function(container, dashboardUrl){
   
   this.initCommunications = function(channelId){
     var processNotification = _.bind(function(message){
-        if (message.notification === "dataSetChanged") {
-          if (message.data && message.data.modifiers) {
-            loadedDataSets[message.data.id].applyModifiers(message.data.modifiers);
-          }
-        }
         this.trigger(message.notification, message);
     },this);
     
@@ -355,9 +355,12 @@ UW.Dashboard = function(container, dashboardUrl){
         gadgets[newGadget.id] = newGadget;
         this.loadedGadgets++;
       }
+
+      success();
              
-      success(); 
-      this.renderGadgets(function() {}); 
+      this.renderGadgets(_.bind(function() { 
+        this.notify('dataSetChanged'); 
+      },this)); 
 
     }, this);
     
@@ -375,8 +378,8 @@ UW.Dashboard = function(container, dashboardUrl){
       id = dashboardState.id;
       this.initCommunications(id);
 
-      if(dashboardState.dataSets){
-        this.loadDataSets(dashboardState.dataSets, loadGadgets);
+      if(dashboardModel.at('dataSets').get()){
+        this.loadDataSets(dashboardModel.at('dataSets').get(), loadGadgets);
       }
       else {
         loadGadgets();
@@ -385,10 +388,12 @@ UW.Dashboard = function(container, dashboardUrl){
     }
   };
 
-  this.loadRemoteDataSet = function(url, success, error){
+  this.fetchDataSet = function(url, success, error){
     var successLoadingDataSet = function(data){
-      this.loadDataSet(JSON.parse(data));
-      success();
+      addDataSet(JSON.parse(data));
+      if (success) {
+        success();
+      }
     };
     UW.ajax({
       "url" : url,
@@ -397,31 +402,33 @@ UW.Dashboard = function(container, dashboardUrl){
     });   
   }
   
-  this.loadDataSet = function(data, silent) {
-    addDataSet(data);
-    if (!silent) {
-      this.notify('dataSetLoaded', data);
-    }
+  this.loadDataSet = function(id) {
+    dashboardModel.submitOp({
+      p : ['dataSets' , id],
+      oi : {
+        "id" : id,
+        "url" : '/dataSet/' + id,
+        "modifiers" : {}
+      }
+    });
   }
 
-  this.unloadDataSet = function(id, silent) {
-     if (!silent) {
-      this.notify('dataSetUnloaded', id); 
-    }
+  this.unloadDataSet = function(id) {
+    dashboardModel.submitOp({
+      p : ['dataSets' , id],
+      od : null
+    });
   }
 
   this.loadDataSets = function(dataSets, success, error){
     var remainingDataSets = 0;
-    var successLoadingDataSet = function (data) {
-      var dataSetJSON = JSON.parse(data);
-      var newDataSet;
-      dataSetJSON.modifiers = dataSets[dataSetJSON.id].modifiers || {};
-      this.loadDataSet(dataSetJSON, true);
+    var succesFetchingDataSet = _.bind(function (data) {
       remainingDataSets--;
       if(remainingDataSets === 0){
         success();
       }
-    } 
+    }, this);
+
     var dataSetId;
     for (dataSetId in dataSets) {
       if (dataSets.hasOwnProperty(dataSetId)) {
@@ -435,11 +442,7 @@ UW.Dashboard = function(container, dashboardUrl){
 
     for (dataSetId in dataSets) {
       if (dataSets.hasOwnProperty(dataSetId)) {
-        UW.ajax({
-          "url" : "/dataSet/" + dataSetId,
-          "type" : "get",
-          "success" : _.bind(successLoadingDataSet ,this)
-        });    
+        this.fetchDataSet(dataSets[dataSetId].url, succesFetchingDataSet);
       }
     }
     

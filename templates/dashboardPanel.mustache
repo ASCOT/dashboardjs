@@ -12,7 +12,6 @@
     <script src="/modernizr.custom.80028.js"></script>
     <script src="/underscore.js" type="text/javascript"></script>
     <script src="/backbone.js" type="text/javascript"></script>
-    <script src="/chat.js" type="text/javascript"></script>
     <script src="/faye/faye.js" type="text/javascript"></script>
     <script src="/logs.js" type="text/javascript"></script>
     <script src="/util.js" type="text/javascript"></script>
@@ -24,8 +23,8 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="/share/share.js"></script>
     <script src="/share/json.js"></script>
-    <script src="/dashboard.js" type="text/javascript"></script>
     <script src="/xhr.js" type="text/javascript"></script> 
+    <script src="/dashboard.js" type="text/javascript"></script>
     
     <script type="text/javascript">
 
@@ -99,7 +98,7 @@
       if (url) {
         $('#spinnerLoadingDataset').toggle();
         $('#loadDataset').toggle();
-        ASCOT.dashboard.loadRemoteDataSet($('#datasetURL').val(), successLoading);
+        ASCOT.dashboard.fetchDataSet($('#datasetURL').val(), successLoading);
       }
     }
 

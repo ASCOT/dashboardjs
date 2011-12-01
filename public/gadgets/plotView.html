@@ -6,10 +6,6 @@
 <meta http-equiv="Pragma" content="no-cache">
 <title>Plot View</title>
 
-<!-- chart dependencies -->
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js" type="text/javascript"></script>
-<script src="/util.js" type="text/javascript"></script> 
-<script src="/highcharts.src.js" type="text/javascript"></script>
 
 <!-- ASCOT Basic Style Sheets -->
 <link href="/css/reset.css" rel="stylesheet" type="text/css">
@@ -21,6 +17,33 @@ td{
   padding: 5px;
 }
 </style>
+
+</head>
+<body>
+<div id="content">
+  <div>Dataset: <select id="selectDatasetName"></select></div>
+  <div id="divSelectDataset" style="display: inline"> 
+    X Axis: <input id="invertXAxisButton" type="button" title="Invert X Axis" value=">"></input> <select id="selectXAxis"></select>
+     Y Axis: <input id="invertYAxisButton" type="button" title="Invert Y Axis" value="^"></input> <select id="selectYAxis"></select>
+     <input id="plotButton" type="button" value="Plot"/>
+  </div>
+  <div id="divPlotToolbar" style="display: inline">
+    <form name="formSelectZoom">
+      <div id="divSelectZoom" style="padding: 5px">
+        Selection Color: <select id="selectColor"></select>
+        <input type="radio" id="radioSelect" name="radSelectZoom" value="select" checked="checked" /><label for="radSelect">Select</label>
+        <input type="radio" id="radioZoom" name="radSelectZoom" value="zoom" /><label for="radZoom">Zoom</label>
+        <input type="checkbox" id="checkVerboseInfo" value="0"/><label for="checkVerboseInfo">Verbose Info</label> 
+      </div>
+    </form>
+  </div>
+  <div id="divPlot" style="display: none"></div>
+</div>
+
+<!-- chart dependencies -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js" type="text/javascript"></script>
+<script src="/util.js" type="text/javascript"></script> 
+<script src="/highcharts.src.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 
@@ -275,7 +298,7 @@ function updateSelectedPoints() {
   var point;
 
   if(plot == null)
-    return;	
+    return; 
     
   plot.showLoading();
   // select or unselect all the points in the chart to change the way they look
@@ -387,7 +410,7 @@ function showPlot(show) {
   else {
     $('#divPlot').css('display', 'hidden');
   }
-	gadget.resize();
+  gadget.resize();
 }
     
 function syncPlot(plotOptions){
@@ -433,26 +456,5 @@ function invertY(){
 }
       
 </script>
-</head>
-<body>
-<div id="content">
-  <div>Dataset: <select id="selectDatasetName"></select></div>
-  <div id="divSelectDataset" style="display: inline"> 
-    X Axis: <input id="invertXAxisButton" type="button" title="Invert X Axis" value=">"></input> <select id="selectXAxis"></select>
-     Y Axis: <input id="invertYAxisButton" type="button" title="Invert Y Axis" value="^"></input> <select id="selectYAxis"></select>
-     <input id="plotButton" type="button" value="Plot"/>
-  </div>
-  <div id="divPlotToolbar" style="display: inline">
-    <form name="formSelectZoom">
-      <div id="divSelectZoom" style="padding: 5px">
-        Selection Color: <select id="selectColor"></select>
-        <input type="radio" id="radioSelect" name="radSelectZoom" value="select" checked="checked" /><label for="radSelect">Select</label>
-        <input type="radio" id="radioZoom" name="radSelectZoom" value="zoom" /><label for="radZoom">Zoom</label>
-        <input type="checkbox" id="checkVerboseInfo" value="0"/><label for="checkVerboseInfo">Verbose Info</label> 
-      </div>
-    </form>
-  </div>
-  <div id="divPlot" style="display: none"></div>
-</div>
 </body>
 </html>
