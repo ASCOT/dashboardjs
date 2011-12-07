@@ -126,8 +126,7 @@ if (!UW) var UW={};
     },
     
     setRecords: function(attributes, ids, silent){
-
-      var modifiers = {};
+      var modifiers = [];
 
       if(ids === undefined){
         return;
@@ -145,9 +144,12 @@ if (!UW) var UW={};
 
       if (!silent) {
         for (var currentAttribute in attributes) {
-          modifiers[currentAttribute] = this.modifiers[currentAttribute];
+          if (attributes.hasOwnProperty(currentAttribute)) {
+            this.modifiers[currentAttribute].name = currentAttribute
+            modifiers.push(this.modifiers[currentAttribute]);
+          }
         }
-        this.trigger('changed', { "event": 'dataSetChanged', "id" : this.id, "modifiers" : modifiers });
+        this.trigger('changed', { "event": 'dataSetChanged', "id" : this.id, "modifiers" : JSON.parse(JSON.stringify(modifiers)) });
       }
     },
   

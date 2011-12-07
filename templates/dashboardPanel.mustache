@@ -21,8 +21,8 @@
     <script src="/dataSet.js" type="text/javascript"></script> 
     <script src="/renderer.js" type="text/javascript"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/share/share.js"></script>
-    <script src="/share/json.js"></script>
+    <script src="/share/share.uncompressed.js"></script>
+    <script src="/share/json.uncompressed.js"></script>
     <script src="/xhr.js" type="text/javascript"></script> 
     <script src="/dashboard.js" type="text/javascript"></script>
     
@@ -87,6 +87,10 @@
       //displayNote('ALERT');
       //showPopUp('popUp');
       ASCOT.dashboard.save(succesSaved);
+    }
+
+    function undo() {
+      ASCOT.dashboard.undo();
     }
 
     function loadDataset(){
@@ -275,7 +279,7 @@
               <nav class="header">
                 <div class="buttonGroup">
                   <ul>
-                    <li class="left" ><a href="#" title="undo" onClick="">Undo</a></li>
+                    <li class="left" ><a href="#" title="undo" onClick="undo()">Undo</a></li>
                     <li class="right"><a href="#" title="redo" onClick="">Redo</a></li>
                   </ul>
                 </div>

@@ -54,10 +54,12 @@ UW.Dashboard = function(container, dashboardUrl){
     }
     newDataSet.bind('changed', _.bind(function(data) {
       if (data && data.modifiers) {
-        dashboardModel.submitOp({
-          p : ['dataSets', data.id, 'modifiers'],
-          oi : data.modifiers
-        });
+        for (var i = 0; i < data.modifiers.length; ++i) {
+          dashboardModel.submitOp({
+            p : ['dataSets', data.id, 'modifiers', data.modifiers[i].name],
+            oi : data.modifiers[i]
+          });
+        }
       }
       dashboard.trigger('dataSetChanged', {});
     },dashboard));
@@ -182,6 +184,10 @@ UW.Dashboard = function(container, dashboardUrl){
             }, this)
       );  			
   };
+
+  this.undo = function(callback) {
+    dashboardModel.undo();
+  }
 
   this.createDataSet = function(name, source, query, success, error, staticData){
     var createDataSetSuccess = function(response){
