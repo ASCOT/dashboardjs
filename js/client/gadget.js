@@ -38,6 +38,17 @@ UW.Gadget = Backbone.View.extend({
       this.loadState(this.model.toJSON());
     }
   },
+
+  setState : function(attributes) {
+    var currentState = (this.dashboardModel.at('gadgets').get())[this.id];
+    if (currentState) {
+      for (var attribute in attributes) {
+        if (attributes.hasOwnProperty(attribute)) {
+          currentState[attribute] = attributes[attribute];
+        }
+      }
+    }
+  },
   
   bind: function(property, trigger){
     //model.bind('change:' + property, trigger);

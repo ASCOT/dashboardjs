@@ -35,7 +35,6 @@ if (!UW) var UW={};
       this.columns = {};
       this.visible = true;
       this.indices = {};
-      this.modifiers = {};
       if (dataSetJSON) {
         this.name = dataSetJSON.name;
         this.id = dataSetJSON.id;
@@ -73,60 +72,70 @@ if (!UW) var UW={};
       return this.records.push(record);
     },
 
-    applyModifiers: function(modifiersJSON, silent){
-      for (var attribute in modifiersJSON) {
-        if (modifiersJSON.hasOwnProperty(attribute)) {
-          this.applyModifier(attribute, modifiersJSON[attribute]);
+    applyModifiers: function(modifiers, silent){
+      var current;
+      if (modifiers.length > 0) {
+        for (var i = 0; i < modifiers.length; ++i) {
+          this.applyModifier(modifiers[i]);
         }
-      }
-      if(!silent){
-        this.trigger('changed');
+        if (!silent) {
+          this.trigger('changed');
+        }
       }
     },
 
-    applyModifier : function(attribute, modifierJSON){
-      var newModifier = new UW.DataSetModifier(attribute, modifierJSON);
-      this.modifiers[attribute] = newModifier;
+    applyModifier : function(modifier){
+      var field = modifier.field;
+      var attribute = {};
+      if (field) {
+        for (var value in modifier) {
+          if (value === "field") {
+            continue;
+          }
+          attribute[field] = value;
+          this.setRecords(attribute, modifier[value], true);
+        } 
+      }
     },
-    
+
     setAllRecords: function(attributes, silent){
+      var modifiers = [];
       if(!attributes){
         return;
       }
-      var modifiers = {};
       for(var i=0; i < this.records.length; ++i){
-        this.setRecords(attributes, i, true);
+        modifiers = this.setRecords(attributes, i, true);
       }
       if(!silent){
-        for (var currentAttribute in attributes) {
-          modifiers[currentAttribute] = this.modifiers[currentAttribute];
-        }
         this.trigger('changed', { "event": 'dataSetChanged', "id" : this.id, "modifiers" : modifiers });
       }
     },
     
     getAttributeValues: function(attribute){
-      var modifier = this.modifiers[attribute];
-      if(!modifier){
-        return [];
+      var index = this.indices[attribute];
+      var values = [];
+      if(index){
+        for(var value in index) {
+          values.push(value);
+        }  
       }
-      else{
-        return modifier.getKeys();
-      }
+      return values;
     },
     
     getRecordsIndicesWithAttribute: function(attribute, value){
-      var modifier = this.modifiers[attribute];
-       if(!modifier){
-          return [];
+      var index = this.indices[attribute];
+      var recordsIndices = [];
+      if(index && index[value]){
+        for(var i = 0; i < index[value].length; ++i) {
+          recordsIndices.push(index[value][i]); 
         }
-        else{
-          return modifier.getTargetIndices(value);
-        }
+      }
+      return recordsIndices;
     },
     
     setRecords: function(attributes, ids, silent){
       var modifiers = [];
+      var modifier;
 
       if(ids === undefined){
         return;
@@ -145,31 +154,47 @@ if (!UW) var UW={};
       if (!silent) {
         for (var currentAttribute in attributes) {
           if (attributes.hasOwnProperty(currentAttribute)) {
-            this.modifiers[currentAttribute].name = currentAttribute
-            modifiers.push(this.modifiers[currentAttribute]);
+            modifier = _.extend({}, this.indices[currentAttribute]);
+            modifier.field = currentAttribute;
+            modifiers.push(modifier);
           }
         }
-        this.trigger('changed', { "event": 'dataSetChanged', "id" : this.id, "modifiers" : JSON.parse(JSON.stringify(modifiers)) });
+        this.trigger('changed', { "event": 'dataSetChanged', "id" : this.id, "modifiers" : modifiers });
       }
+
+      return modifiers;
     },
   
     setRecord: function (attributes, id) {
-      var record = this.getRecord(id);
-      var modifier;
-      var newValue;
+      var record = this.records[id];
       var oldValue;
-      
+      var newValue;
+      var index;
+
       if (!attributes || !record) return this;
       
       for (var attr in attributes) {
+        oldValue = record[attr];
         newValue = attributes[attr];
-        if (!this.modifiers[attr]) {
-          this.modifiers[attr] = new UW.DataSetModifier(attr);
+        record[attr] = attributes[attr];
+        
+        // Update index
+
+        // Add new value
+        index = this.indices[attr] = this.indices[attr] || {};
+        index[newValue] = index[newValue] || [];
+        index[newValue].push(id);
+
+        // Remove old value from index
+        if (oldValue) {
+          for (var i = 0; i < index[oldValue].length; ++i) {
+            if (index[oldValue][i] === id){
+              index[oldValue].splice(i,1);
+              break;
+            }
+          }
         }
-        oldValue = this.modifiers[attr].getModifier(id) || record[attr];
-        if (!_.isEqual(newValue, oldValue)) {
-           this.modifiers[attr].applyModifier(newValue, id);      
-        }
+
       }
       
     },
@@ -182,10 +207,6 @@ if (!UW) var UW={};
       return this.id;
     },
 
-    getModifiers: function(){
-      return this.modifiers;
-    },
-    
     getColumns: function(){
       return extractKeys(this.columns);
     },
@@ -197,15 +218,7 @@ if (!UW) var UW={};
     },
     
     getRecord: function(id){
-      var record = _.extend({}, this.records[id]);
-      var recordModifier;
-      for(var attribute in this.modifiers){
-        recordModifier = this.modifiers[attribute].getModifier(id);
-        if(recordModifier != undefined){
-          record[attribute] = recordModifier;
-        }
-      }
-      return record;
+      return _.extend({}, this.records[id]);
     },
     
     getRecordsJSON: function(){

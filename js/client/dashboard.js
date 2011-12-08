@@ -56,8 +56,8 @@ UW.Dashboard = function(container, dashboardUrl){
       if (data && data.modifiers) {
         for (var i = 0; i < data.modifiers.length; ++i) {
           dashboardModel.submitOp({
-            p : ['dataSets', data.id, 'modifiers', data.modifiers[i].name],
-            oi : data.modifiers[i]
+            p : ['dataSets', data.id, 'modifiers', 0],
+            li : data.modifiers[i]
           });
         }
       }
@@ -82,7 +82,11 @@ UW.Dashboard = function(container, dashboardUrl){
   
   this.init = function(callback) {
     var stateLoaded = _.bind(function(state) { this.inflateState(state, callback); },this)
-    var gadgetsLoaded = _.bind(function(gadgets) { gadgetsInfo = gadgets; this.loadState(stateLoaded); },this);
+    var gadgetsLoaded = _.bind(function(gadgets) { 
+      gadgetsInfo = gadgets; 
+      this.loadState(stateLoaded); 
+    }, this);
+
     this.loadGadgets(gadgetsLoaded);
     this.onNotification('dataSetLoaded', addDataSet)
     this.onNotification('dataSetUnloaded', removeDataSet)
@@ -109,17 +113,24 @@ UW.Dashboard = function(container, dashboardUrl){
   this.loadState = function(callback){
     var dashboardModelChanged = _.bind(function (op) {
       var communications = bayeuxClient;
+      var modifiers;
       if (communications) {
         if (op[0].p[0] === 'comments') {
           this.notify("commentPublished", op[0].li, { 'self' : true });
         }
         if (op[0].p[0] === 'dataSets') {
-          if (!op[0].oi) {
+          if (!op[0].oi && op[0].p.length === 2) {
             removeDataSet(op[0].p[1]);
             return;
           }
           if (op[0].p[2] === 'modifiers') {
-            loadedDataSets[op[0].p[1]].applyModifiers(op[0].oi);
+            if (op[0].li) {
+              loadedDataSets[op[0].p[1]].applyModifiers([op[0].li]);
+            }
+            if (op[0].ld) {
+              modifiers = (dashboardModel.at('dataSets').get())[op[0].p[1]].modifiers;
+              loadedDataSets[op[0].p[1]].applyModifiers(modifiers);
+            }
             return;
           }
           if (loadedDataSets[op[0].oi.id] === undefined) {
@@ -129,23 +140,34 @@ UW.Dashboard = function(container, dashboardUrl){
         }
       }
     }, this);
+
+    var state;
     var onDocOpened =  function(error, doc) {
         var that = this;
+        var gadgets = {};
+        var currentGadget;
         dashboardModel = doc;
         dashboardModel.on('change', dashboardModelChanged);
         if (dashboardModel.created) {
+          for (var i = 0; i < state.gadgets.length; ++i) {
+            currentGadget = state.gadgets[i];
+            gadgets[currentGadget.id] = currentGadget.state;
+          }
           dashboardModel.submitOp([
             {
               p : [],
               oi : { 
-                dataSets : {},
-                comments : []
+                "gadgets" : gadgets,
+                "dataSets" : {},
+                "comments" : [],
               }
             }
           ])
         }
     };
+
     var sharejsTest = function(result){
+      state = JSON.parse(result);
       sharejs.open('dashboardModel', 'json', 
         function(error, doc) {
           onDocOpened(error, doc);
@@ -172,6 +194,7 @@ UW.Dashboard = function(container, dashboardUrl){
     // Adding reference to the gadget in the global scope of the iframe. The user can have access to the object.
 		var newGadget = new UW.Gadget({ model: gadgetState });
     newGadget.dashboard = this;
+    newGadget.dashboardModel = dashboardModel;
     gadgets[newGadget.id] = newGadget;
     gadgetModels.add(gadgetState, {silent: true});		  
   };
@@ -357,7 +380,7 @@ UW.Dashboard = function(container, dashboardUrl){
         newGadget.id = gadgetInstanceInfo.id;
         newGadget.gadgetInfoId = gadgetInstanceInfo.gadgetInfoId;    
         newGadget.dashboard = this;
-        newGadget.url = '/gadgets/' + gadgetsInfo[newGadget.gadgetInfoId].fileName
+        newGadget.url = '/gadgets/' + gadgetsInfo[newGadget.gadgetInfoId].fileName;
         gadgets[newGadget.id] = newGadget;
         this.loadedGadgets++;
       }
@@ -414,7 +437,7 @@ UW.Dashboard = function(container, dashboardUrl){
       oi : {
         "id" : id,
         "url" : '/dataSet/' + id,
-        "modifiers" : {}
+        "modifiers" : []
       }
     });
   }

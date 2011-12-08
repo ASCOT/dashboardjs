@@ -52,6 +52,12 @@ gadget.loadState = function(state){
   flySpeed = state.flySpeed;
 };
 
+gadget.update = function(newState) {
+  if (newState) {
+    moveMap({"longitude" : longitude, "latitude" : latitude});
+  }
+}
+
 // callback on successful creation of ge plugin instance
 function success(instance) {
   googleEarthInstance = instance;

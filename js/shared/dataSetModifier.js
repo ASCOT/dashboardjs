@@ -24,9 +24,10 @@ if (!UW) var UW={};
     _ = this._;
   }
     
-  UW.DataSetModifier = function(name, modifierJSON){
+  UW.DataSetModifier = function(modifierJSON){
     this.initialize();
     if (modifierJSON) {
+      this.field = modifierJSON.field || "undefined";
       this.values = modifierJSON.values || {};
       this.indices = modifierJSON.indices || {};
     }
@@ -36,8 +37,8 @@ if (!UW) var UW={};
     
     id: _.uniqueId('dsm'),
     
-    initialize: function(name){
-      this.name = name;
+    initialize: function(field){
+      this.field = field;
       this.values = {};
       this.indices = {};
     },
