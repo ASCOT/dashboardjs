@@ -39,15 +39,26 @@ UW.Gadget = Backbone.View.extend({
     }
   },
 
-  setState : function(attributes) {
-    var currentState = (this.dashboardModel.at('gadgets').get())[this.id];
-    if (currentState) {
-      for (var attribute in attributes) {
-        if (attributes.hasOwnProperty(attribute)) {
-          currentState[attribute] = attributes[attribute];
+  setState : function(state) {
+    var currentState = (this.dashboardModel.at('gadgets').get())[this.id].state;
+    var newState = {};
+
+    newState.oldState = {};
+    if (state) {
+      for (var attribute in state) {
+        if (state.hasOwnProperty(attribute)) {
+          newState[attribute] = state[attribute];
+          if (currentState) {
+          newState.oldState[attribute] = currentState[attribute];
+          }
         }
       }
     }
+    
+    this.dashboardModel.submitOp({
+      p : ['gadgets' , this.id, 'state'],
+      oi : newState
+    });
   },
   
   bind: function(property, trigger){

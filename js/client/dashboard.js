@@ -115,6 +115,14 @@ UW.Dashboard = function(container, dashboardUrl){
       var communications = bayeuxClient;
       var modifiers;
       if (communications) {
+        if (op[0].p[0] === 'gadgets') {
+          if (op[0].oi) {
+            gadgets[op[0].p[1]].update(op[0].oi);
+          }
+          if (op[0].od) {
+            gadgets[op[0].p[1]].update(op[0].od.oldState);
+          }
+        }
         if (op[0].p[0] === 'comments') {
           this.notify("commentPublished", op[0].li, { 'self' : true });
         }
@@ -151,7 +159,9 @@ UW.Dashboard = function(container, dashboardUrl){
         if (dashboardModel.created) {
           for (var i = 0; i < state.gadgets.length; ++i) {
             currentGadget = state.gadgets[i];
-            gadgets[currentGadget.id] = currentGadget.state;
+            gadgets[currentGadget.id] = {};
+            gadgets[currentGadget.id].id = currentGadget.id;
+            gadgets[currentGadget.id].state = currentGadget.state;
           }
           dashboardModel.submitOp([
             {
@@ -380,6 +390,7 @@ UW.Dashboard = function(container, dashboardUrl){
         newGadget.id = gadgetInstanceInfo.id;
         newGadget.gadgetInfoId = gadgetInstanceInfo.gadgetInfoId;    
         newGadget.dashboard = this;
+        newGadget.dashboardModel = dashboardModel;
         newGadget.url = '/gadgets/' + gadgetsInfo[newGadget.gadgetInfoId].fileName;
         gadgets[newGadget.id] = newGadget;
         this.loadedGadgets++;

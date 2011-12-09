@@ -68,7 +68,19 @@ gadget.loadState = function(state){
 };
 
 var populateDataSetList = function(){
-  populateSelect('selectDataSetName', gadget.dashboard.getDataSetList(), selectedDataSetId);
+  var dataSetList = gadget.dashboard.getDataSetList();
+  if (dataSetList.length === 0) {
+    if (table) {
+      table.destroy();
+    }
+    $("#content").css('display', 'none');
+    //$("#content").css('height', $('#divTable')[0].offsetHeight + 40);
+    gadget.resize();
+  } else {
+    $("#content").css('display', 'block');
+    gadget.resize();
+    populateSelect('selectDataSetName', gadget.dashboard.getDataSetList(), selectedDataSetId);
+  } 
 };
 
 function updateTable() {
@@ -108,7 +120,6 @@ function updateTable() {
   }
   table = new YAHOO.widget.DataTable(tableDiv, columns, data, tableConfig);
   table.subscribe("postRenderEvent", function(){
-    //$("#content")[0].style.height = $('#divTable')[0].offsetHeight + 450;
     $("#content").css('height', $('#divTable')[0].offsetHeight + 40);
     gadget.resize();
   }); 

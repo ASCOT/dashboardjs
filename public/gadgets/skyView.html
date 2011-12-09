@@ -31,7 +31,7 @@ google.load("earth", "1");
 google.setOnLoadCallback();
 
 gadget.init = function(callback){ 
-  gadget.onNotification('centerOfCoordinatesChanged', moveMap);
+  gadget.onNotification('centerOfCoordinatesChanged', recenterSky);
   gadget.onNotification('dataSetChanged', redrawAll);
   google.earth.createInstance('content', success, failure);
   callback();
@@ -54,8 +54,15 @@ gadget.loadState = function(state){
 
 gadget.update = function(newState) {
   if (newState) {
-    moveMap({"longitude" : longitude, "latitude" : latitude});
+    moveMap({"longitude" : newState.longitude, "latitude" : newState.latitude});
   }
+}
+
+function recenterSky(coordinates){
+  gadget.setState({
+    "longitude" : coordinates.longitude,
+    "latitude" : coordinates.latitude
+  });
 }
 
 // callback on successful creation of ge plugin instance
