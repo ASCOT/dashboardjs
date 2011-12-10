@@ -19,8 +19,9 @@ UW.GadgetsCollection = Backbone.Collection.extend({
 }); 
 
 // The constructor takes the DOM element where the dashboard will be rendered
-UW.Dashboard = function(container, dashboardUrl){
+UW.Dashboard = function(_id, container, dashboardUrl){
   
+  // Dashboard id
   var id;  
   // Renders the gadgets
   var renderer;
@@ -111,6 +112,7 @@ UW.Dashboard = function(container, dashboardUrl){
   };
 
   this.loadState = function(callback){
+
     var dashboardModelChanged = _.bind(function (op) {
       var communications = bayeuxClient;
       var modifiers;
@@ -179,7 +181,7 @@ UW.Dashboard = function(container, dashboardUrl){
 
     var sharejsTest = function(result){
       state = JSON.parse(result);
-      sharejs.open('dashboardModel', 'json', 
+      sharejs.open('dashboard' + state.id, 'json', 
         function(error, doc) {
           onDocOpened(error, doc);
           callback(result);
@@ -191,6 +193,7 @@ UW.Dashboard = function(container, dashboardUrl){
        type: 'GET',
        success: sharejsTest
      });
+
    };
 
    this.setContainer = function(container){

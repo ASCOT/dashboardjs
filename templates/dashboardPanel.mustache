@@ -72,7 +72,7 @@
     };
 
     var initDashboard = function() {
-      ASCOT.dashboard = new UW.Dashboard();
+      ASCOT.dashboard = new UW.Dashboard(dashboardId);
       ASCOT.dashboard.setContainer($("#" + 'dashboardPanel').get(0));
       ASCOT.dashboard.setUrl(resourceUrl + '/' + dashboardId);
       ASCOT.dashboard.init(finishedLoading);
