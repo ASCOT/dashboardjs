@@ -17,9 +17,6 @@ function parseURL(data) {
 function populateSelect(selectName, options, selectedOption) { 
   var select = $("#" + selectName);
   var currentSelection = $("#" + selectName + " option:selected").val();
-  if (options.length === 0) {
-    return;
-  }
   select.find('option').remove().end();
   $.each(options, function() {
     var newOption;
@@ -42,7 +39,6 @@ function populateSelect(selectName, options, selectedOption) {
   if (!selectedOption && !currentSelection) {
     select.find('option:first').attr('selected',true);
   }
-
   select.change();
 }
 

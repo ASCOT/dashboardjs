@@ -45,7 +45,7 @@ var table;
 
 // Creates gadget object
 gadget.init = function(callback){ 
-  gadget.onNotification('dataSetChanged', populateDataSetList);  
+  gadget.onNotification('dataSetChanged', update);  
   // add colors to the select box (pass the select Name and color array)
   $('#selectDataSetName').change( function(){
     if(this.selectedIndex != -1){
@@ -67,21 +67,16 @@ gadget.loadState = function(state){
   populateDataSetList();
 };
 
-var populateDataSetList = function(){
+function update(){
   var dataSetList = gadget.dashboard.getDataSetList();
-  if (dataSetList.length === 0) {
-    if (table) {
-      table.destroy();
-    }
-    $("#content").css('display', 'none');
-    //$("#content").css('height', $('#divTable')[0].offsetHeight + 40);
+  if (dataSetList.length > 0) {
+    populateSelect('selectDataSetName', dataSetList, selectedDataSetId);
+  }
+  else { // I no datasets we return to default 
+    $("#content").css('height', 0);
     gadget.resize();
-  } else {
-    $("#content").css('display', 'block');
-    gadget.resize();
-    populateSelect('selectDataSetName', gadget.dashboard.getDataSetList(), selectedDataSetId);
-  } 
-};
+  }
+}
 
 function updateTable() {
   var tableDiv = "divTable";
@@ -109,7 +104,7 @@ function updateTable() {
   width = document.getElementById(tableDiv).offsetWidth;
   data.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
   tableConfig = {
-    paginator: new YAHOO.widget.Paginator({ rowsPerPage: 12}),
+    paginator: new YAHOO.widget.Paginator({ rowsPerPage: 12 }),
     width: width+"px",
     height: "400px",
     draggableColumns: true 
@@ -123,8 +118,6 @@ function updateTable() {
     $("#content").css('height', $('#divTable')[0].offsetHeight + 40);
     gadget.resize();
   }); 
-  //YAHOO.util.Event.addListener(table, "paginatorChange", );
-  gadget.resize();
   
 }
 

@@ -74,7 +74,7 @@ var selectionObject;
 
 // Gadget intialization
 gadget.init = function(callback){
-  gadget.onNotification('dataSetChanged', redrawAll);  
+  gadget.onNotification('dataSetChanged', update);  
   gadget.onNotification('plotRendered', syncPlot);
   gadget.onNotification('axisInverted', invertAxis);
   
@@ -117,7 +117,6 @@ gadget.init = function(callback){
   $('#invertXAxisButton').click(invertX);
   $('#invertYAxisButton').click(invertY);
   $('#plotButton').click(plotData);
-  plot = new Highcharts.Chart(chartOptions);     
   callback();
 }
 
@@ -151,7 +150,7 @@ gadget.loadState = function(state){
   selectedColor = state.selectedColor || "";
   selectedDataSet = state.selectedDataSet || "";
   populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"], selectedColor);
-  redrawAll();
+  update();
 
 };
 
@@ -257,15 +256,29 @@ function plotData(){
   }
 } 
                                                                         
-function redrawAll(){
+function update(){
   var columnNames = [];
-  populateSelect('selectDatasetName', gadget.dashboard.getDataSetList(), selectedDataSetName);
-  if(selectedDataSet){
-    columnNames = selectedDataSet.getColumns();
-    populateSelect("selectXAxis", columnNames, selectedXAxis);
-    populateSelect("selectYAxis", columnNames, selectedYAxis);
+  var dataSetsList = gadget.dashboard.getDataSetList();
+
+  if (dataSetsList.length > 0) {
+    populateSelect('selectDatasetName', gadget.dashboard.getDataSetList(), selectedDataSetName);
+    if(selectedDataSet){
+      columnNames = selectedDataSet.getColumns();
+      populateSelect("selectXAxis", columnNames, selectedXAxis);
+      populateSelect("selectYAxis", columnNames, selectedYAxis);
+    }
+    drawPlot();
   }
-  drawPlot();
+  else {
+    if (plot) {
+      plot.destroy();
+      plot = undefined;
+      populateSelect("selectXAxis", []);
+      populateSelect("selectYAxis", []);
+      populateSelect("selectDatasetName", []);
+      showPlot(false);
+    }
+  }
 }
   
 function setSelectedByMinMax(obj) {
@@ -352,6 +365,10 @@ function drawPlot() {
   if (selectedDataSetName ===  "" || selectedXAxis === "" || selectedYAxis === "") {
     return;
   }
+
+  if (!plot) {
+    plot = new Highcharts.Chart(chartOptions);     
+  }
   plot.setTitle({ text: selectedDataSetName });
   
   if (plot.xAxis[0] && plot.yAxis[0]) {
@@ -408,7 +425,7 @@ function showPlot(show) {
     $('#divPlot').css('display', 'block');
   }
   else {
-    $('#divPlot').css('display', 'hidden');
+    $('#divPlot').css('display', 'none');
   }
   gadget.resize();
 }

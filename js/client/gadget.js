@@ -48,16 +48,14 @@ UW.Gadget = Backbone.View.extend({
       for (var attribute in state) {
         if (state.hasOwnProperty(attribute)) {
           newState[attribute] = state[attribute];
-          if (currentState) {
-          newState.oldState[attribute] = currentState[attribute];
-          }
         }
       }
     }
-    
+
     this.dashboardModel.submitOp({
       p : ['gadgets' , this.id, 'state'],
-      oi : newState
+      oi : newState,
+      od : currentState
     });
   },
   

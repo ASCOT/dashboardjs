@@ -118,9 +118,10 @@ UW.Dashboard = function(container, dashboardUrl){
         if (op[0].p[0] === 'gadgets') {
           if (op[0].oi) {
             gadgets[op[0].p[1]].update(op[0].oi);
-          }
-          if (op[0].od) {
-            gadgets[op[0].p[1]].update(op[0].od.oldState);
+          } else {
+            if (op[0].od) {            
+              gadgets[op[0].p[1]].update(op[0].od);
+            }
           }
         }
         if (op[0].p[0] === 'comments') {
@@ -220,6 +221,10 @@ UW.Dashboard = function(container, dashboardUrl){
 
   this.undo = function(callback) {
     dashboardModel.undo();
+  }
+
+  this.redo = function(callback) {
+    dashboardModel.redo();
   }
 
   this.createDataSet = function(name, source, query, success, error, staticData){

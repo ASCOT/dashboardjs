@@ -93,6 +93,10 @@
       ASCOT.dashboard.undo();
     }
 
+    function redo() {
+      ASCOT.dashboard.redo();
+    }
+
     function loadDataset(){
       var successLoading = function(){
         $('#spinnerLoadingDataset').toggle();
@@ -280,7 +284,7 @@
                 <div class="buttonGroup">
                   <ul>
                     <li class="left" ><a href="#" title="undo" onClick="undo()">Undo</a></li>
-                    <li class="right"><a href="#" title="redo" onClick="">Redo</a></li>
+                    <li class="right"><a href="#" title="redo" onClick="redo()">Redo</a></li>
                   </ul>
                 </div>
                 <div class="buttonGroup">
