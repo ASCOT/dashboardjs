@@ -6,6 +6,7 @@ var _ = require('underscore');
 var express = require('express');
 var sharejs = require('../share/').server;
 var faye = require('faye');
+var async = require('async');
 
 // Local Modules
 var dashboardsManager = require('./js/server/dashboardsManager');
@@ -17,7 +18,8 @@ var app = express.createServer();
 
 // Share JS
 var options = {
-  db: {type: 'none'},
+  rest: { path : '/dashboard/:name/state'},
+  db: { type: 'none'},
   auth: function(client, action) {
     // This auth handler rejects any ops bound for docs starting with 'readonly'.
     if (action.name === 'submit op' && action.docName.match(/^readonly/)) {
@@ -34,11 +36,27 @@ try {
   options.db = {type: 'redis'};
 } catch (e) {}
 
-//console.log("ShareJS example server v" + sharejs.version);
-//console.log("Options: ", options);
 
 // Attach the sharejs REST and Socket.io interfaces to the server
 sharejs.attach(app, options);
+
+var createDashboard = function(dashboardObj, callback) {
+  //var initDashboard = function() {
+  //  app.model.add(dashboardObj.id, callback, dashboardObj);
+  //}
+  var data = {};
+  data.snapshot = dashboardObj;
+  app.model.create(dashboardObj.id, 'json', data, callback);
+}
+
+async.forEach(
+  dashboardsManager.all, 
+  createDashboard,
+  function(err) {
+    if (!err) {
+      console.log("Dashboards initialized!")
+    }  
+  });
   
 adapter = new faye.NodeAdapter({ mount: '/faye', timeout: 45 });
 adapter.attach(app)
@@ -112,9 +130,9 @@ app.post('/forkdashboard/:id', function(req, res){
   }
 });
 
-app.get('/dashboard/:id/state', function(req, res){
-  res.send(JSON.stringify(dashboardsManager.find(req.params.id)));
-});
+//app.get('/dashboard/:id/state', function(req, res){
+//  res.send(JSON.stringify(dashboardsManager.find(req.params.id)));
+//});
 
 app.get('/dataSet/:id', function(req, res){
   var dataSetFound = function (dataSet) {

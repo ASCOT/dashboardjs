@@ -160,8 +160,8 @@ UW.Dashboard = function(_id, container, dashboardUrl){
         dashboardModel = doc;
         dashboardModel.on('change', dashboardModelChanged);
         if (dashboardModel.created) {
-          for (var i = 0; i < state.gadgets.length; ++i) {
-            currentGadget = state.gadgets[i];
+          for (var i = 0; i < state.gadgetsOrder.length; ++i) {
+            currentGadget = state.gadgets[state.gadgetsOrder[i]];
             gadgets[currentGadget.id] = {};
             gadgets[currentGadget.id].id = currentGadget.id;
             gadgets[currentGadget.id].state = currentGadget.state;
@@ -179,12 +179,11 @@ UW.Dashboard = function(_id, container, dashboardUrl){
         }
     };
 
-    var sharejsTest = function(result){
-      state = JSON.parse(result);
-      sharejs.open('dashboard' + state.id, 'json', 
+    var sharejsTest = function(state){
+      sharejs.open(state.id, 'json', 
         function(error, doc) {
           onDocOpened(error, doc);
-          callback(result);
+          callback(state);
         }
     )};
 
@@ -310,8 +309,8 @@ UW.Dashboard = function(_id, container, dashboardUrl){
       }
     }
 
-    for (var i = 0; i < dashboardState.gadgets.length; ++i) {
-      currentGadget = dashboardState.gadgets[i];
+    for (var i = 0; i < dashboardState.gadgetsOrder.length; ++i) {
+      currentGadget = dashboardState.gadgets[dashboardState.gadgetsOrder[i]];
       currentGadget.state = gadgets[currentGadget.id].saveState();
     }
 
@@ -386,13 +385,13 @@ UW.Dashboard = function(_id, container, dashboardUrl){
       });  
   };
   
-  this.inflateState = function(dashboardStateJSON, success, error) {  
+  this.inflateState = function(dashboardState, success, error) {  
     var newGadget;
     var newGadgetModel;
     var gadgetInstanceInfo;
     var loadGadgets = _.bind(function(){ 
-      for(var i=0; i < dashboardState.gadgets.length; ++i){
-        gadgetInstanceInfo = dashboardState.gadgets[i];
+      for(var i=0; i < dashboardState.gadgetsOrder.length; ++i){
+        gadgetInstanceInfo = dashboardState.gadgets[dashboardState.gadgetsOrder[i]];
         newGadgetModel = new UW.GadgetModel(gadgetInstanceInfo.state);
         newGadget = new UW.Gadget({model: newGadgetModel});
         newGadget.id = gadgetInstanceInfo.id;
@@ -412,7 +411,7 @@ UW.Dashboard = function(_id, container, dashboardUrl){
 
     }, this);
     
-    if(!dashboardStateJSON)
+    if(!dashboardState)
       return;
     
     if(id){
@@ -420,7 +419,6 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     }
     else{
     
-      dashboardState = JSON.parse(dashboardStateJSON);
       renderer = new UW.Renderer(domContainer, dashboardState.numberOfColumns);
       
       id = dashboardState.id;

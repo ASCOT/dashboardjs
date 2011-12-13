@@ -2,57 +2,85 @@ var dataSetsManager = require("./dataSetsManager");
 
 var dashboards = [
 
-  { id: 0,
+  { id: '0',
     author: 'UW',
-    numberOfColumns: 2, 
-    gadgets: [ {"id":"skyView", "gadgetInfoId": "skyView", state: {"longitude":-47.17500000000001,"latitude":11.8,"flySpeed":1}},
-               {"id":"nameResolver", "gadgetInfoId": "nameResolver"},
-               {"id":"dataSetSelector", "gadgetInfoId": "dataSetSelector"},
-               {"id":"dataInquirer", "gadgetInfoId": "dataInquirer"},
-               {"id":"tableView", "gadgetInfoId": "tableView"},
-               {"id":"plotView", "gadgetInfoId": "plotView"} ]
+    numberOfColumns: 2,
+    gadgetsOrder: [ "skyView", "nameResolver", "dataSetSelector", "dataInquirer", "tableView", "plotView"], 
+    gadgets: {
+      "skyView" : { "id" : "skyView", "gadgetInfoId" : "skyView", state: { "longitude" : -47.17500000000001, "latitude" : 11.8, "flySpeed" : 1}},
+      "nameResolver" :  { "id" : "nameResolver", "gadgetInfoId" : "nameResolver"},
+      "dataSetSelector" : { "id" : "dataSetSelector", "gadgetInfoId" : "dataSetSelector"},
+      "dataInquirer" : { "id" : "dataInquirer", "gadgetInfoId" : "dataInquirer"},
+      "tableView" : { "id" : "tableView", "gadgetInfoId" : "tableView"},
+      "plotView" :  {"id" : "plotView", "gadgetInfoId" : "plotView"} 
+    },
+    dataSets: {},
+    comments: []
   },
-  { id: 1,
+  { id: '1',
     author: 'GalaxyZOO',
     numberOfColumns: 2, 
-    gadgets: [ {"id":"skyView", "gadgetInfoId": "skyView", state: {"longitude":-47.17500000000001,"latitude":11.8,"flySpeed":1}},
-               {"id":"nameResolver", "gadgetInfoId": "nameResolver"},
-               {"id":"dataSetSelector", "gadgetInfoId": "dataSetSelector"},
-               {"id":"dataInquirer", "gadgetInfoId": "dataInquirer"},
-               {"id":"tableView", "gadgetInfoId": "tableView"} ]
+    gadgetsOrder: [ "skyView", "nameResolver", "dataSetSelector", "dataInquirer", "tableView"], 
+    gadgets: {
+      "skyView" : { "id" : "skyView", "gadgetInfoId" : "skyView", state: { "longitude" : -47.17500000000001, "latitude" : 11.8, "flySpeed" : 1}},
+      "nameResolver" :  { "id" : "nameResolver", "gadgetInfoId" : "nameResolver"},
+      "dataSetSelector" : { "id" : "dataSetSelector", "gadgetInfoId" : "dataSetSelector"},
+      "dataInquirer" : { "id" : "dataInquirer", "gadgetInfoId" : "dataInquirer"},
+      "tableView" : { "id" : "tableView", "gadgetInfoId" : "tableView"}
+    },
+    dataSets: {},
+    comments: []
   },
-  { id: 2,
+  { id: '2',
     author: 'GalaxyZOO',
     numberOfColumns: 2, 
-    gadgets: [ {"id":"skyView", "gadgetInfoId": "skyView", state: {"longitude":-47.17500000000001,"latitude":11.8,"flySpeed":1}},
-               {"id":"nameResolver", "gadgetInfoId": "nameResolver"},
-               {"id":"dataSetSelector", "gadgetInfoId": "dataSetSelector"} ]
+    gadgetsOrder: [ "skyView", "nameResolver", "dataSetSelector"], 
+    gadgets: {
+      "skyView" : { "id" : "skyView", "gadgetInfoId" : "skyView", state: { "longitude" : -47.17500000000001, "latitude" : 11.8, "flySpeed" : 1}},
+      "nameResolver" :  { "id" : "nameResolver", "gadgetInfoId" : "nameResolver"},
+      "dataSetSelector" : { "id" : "dataSetSelector", "gadgetInfoId" : "dataSetSelector"}
+    },
+    dataSets: {},
+    comments: []
   },
-  { id: 3,
+  { id: '3',
     author: 'Spencer',
     name: 'fitsViewer',
     numberOfColumns: 1, 
-    gadgets: [ {"id":"fitsViewer", "gadgetInfoId": "fitsViewer"},
-               {"id":"asciiFileLoader", "gadgetInfoId": "asciiFileLoader"},
-               {"id":"dataInquirer", "gadgetInfoId": "dataInquirer"},
-               {"id":"scalableScatter", "gadgetInfoId": "scalableScatter"} ]
+    gadgetsOrder: [ "skyView", "nameResolver", "dataSetSelector", "dataInquirer", "tableView"], 
+    gadgets: {
+      "fitsViewer" : { "id" : "fitsViewer", "gadgetInfoId" : "fitsViewer"},
+      "asciiFileLoader" : { "id" : "asciiFileLoader", "gadgetInfoId" : "asciiFileLoader"},
+      "dataInquirer" :  { "id" : "dataInquirer", "gadgetInfoId" : "dataInquirer"},
+      "scalableScatter" : {"id" : "scalableScatter", "gadgetInfoId" : "scalableScatter"} 
+    },
+    dataSets: {},
+    comments: []
   },
-  { id: 4,
+  { id: '4',
     author: 'Spencer',
     name: 'ScatterPlotHistogramAndASCIILoader',
     numberOfColumns: 2, 
-    gadgets: [ {"id":"asciiFileLoader", "gadgetInfoId": "asciiFileLoader"},
-               {"id":"nameResolver", "gadgetInfoId": "nameResolver"},
-               {"id":"dataSetSelector", "gadgetInfoId": "dataSetSelector"},
-               {"id":"dataInquirer", "gadgetInfoId": "dataInquirer"},
-               {"id":"tableView", "gadgetInfoId": "tableView"},
-               {"id":"scalableScatter", "gadgetInfoId": "scalableScatter"},
-               {"id":"histogramView", "gadgetInfoId": "histogramView"} ]
+    gadgetsOrder: [ "asciiFileLoader", "nameResolver", "dataSetSelector", "dataInquirer", "tableView", "scalableScatter", "histogramView"], 
+    gadgets: {
+      "asciiFileLoader" : {"id" : "asciiFileLoader", "gadgetInfoId" : "asciiFileLoader"},
+      "nameResolver" :  { "id" : "nameResolver", "gadgetInfoId" : "nameResolver"},
+      "dataSetSelector" : { "id" : "dataSetSelector", "gadgetInfoId" : "dataSetSelector"},
+      "dataInquirer" : { "id" : "dataInquirer", "gadgetInfoId" : "dataInquirer"},
+      "tableView" : { "id" : "tableView", "gadgetInfoId" : "tableView"},
+      "scalableScatter" :  { "id" : "scalableScatter", "gadgetInfoId" : "scalableScatter"},
+      "histogramView" : { "id" : "histogramView", "gadgetInfoId" : "histogramView"}
+    },
+    dataSets: {},
+    comments: []
   },
-  { id : 5,
+  { id : '5',
     author : 'Diego',
     numberOfColumns : 1,
-    gadgets: [ {"id":"newFitsViewer1","gadgetInfoId":"newFitsViewer"}],
+    gadgetsOrder: ["newFitsViewer1"], 
+    gadgets: { "newFitsViewer1" : {"id" : "newFitsViewer1", "gadgetInfoId" : "newFitsViewer"} },
+    dataSets: {},
+    comments: []
   }];
 
 module.exports.all = dashboards;
