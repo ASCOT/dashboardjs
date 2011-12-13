@@ -2,8 +2,7 @@ var dataSetsManager = require("./dataSetsManager");
 
 var dashboards = [
 
-  { id: '0',
-    author: 'UW',
+  { author: 'UW',
     numberOfColumns: 2,
     gadgetsOrder: [ "skyView", "nameResolver", "dataSetSelector", "dataInquirer", "tableView", "plotView"], 
     gadgets: {
@@ -17,8 +16,7 @@ var dashboards = [
     dataSets: {},
     comments: []
   },
-  { id: '1',
-    author: 'GalaxyZOO',
+  { author: 'GalaxyZOO',
     numberOfColumns: 2, 
     gadgetsOrder: [ "skyView", "nameResolver", "dataSetSelector", "dataInquirer", "tableView"], 
     gadgets: {
@@ -31,8 +29,7 @@ var dashboards = [
     dataSets: {},
     comments: []
   },
-  { id: '2',
-    author: 'GalaxyZOO',
+  { author: 'GalaxyZOO',
     numberOfColumns: 2, 
     gadgetsOrder: [ "skyView", "nameResolver", "dataSetSelector"], 
     gadgets: {
@@ -43,8 +40,7 @@ var dashboards = [
     dataSets: {},
     comments: []
   },
-  { id: '3',
-    author: 'Spencer',
+  { author: 'Spencer',
     name: 'fitsViewer',
     numberOfColumns: 1, 
     gadgetsOrder: [ "skyView", "nameResolver", "dataSetSelector", "dataInquirer", "tableView"], 
@@ -57,8 +53,7 @@ var dashboards = [
     dataSets: {},
     comments: []
   },
-  { id: '4',
-    author: 'Spencer',
+  { author: 'Spencer',
     name: 'ScatterPlotHistogramAndASCIILoader',
     numberOfColumns: 2, 
     gadgetsOrder: [ "asciiFileLoader", "nameResolver", "dataSetSelector", "dataInquirer", "tableView", "scalableScatter", "histogramView"], 
@@ -74,8 +69,7 @@ var dashboards = [
     dataSets: {},
     comments: []
   },
-  { id : '5',
-    author : 'Diego',
+  { author : 'Diego',
     numberOfColumns : 1,
     gadgetsOrder: ["newFitsViewer1"], 
     gadgets: { "newFitsViewer1" : {"id" : "newFitsViewer1", "gadgetInfoId" : "newFitsViewer"} },

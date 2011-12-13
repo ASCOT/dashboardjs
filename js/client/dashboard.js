@@ -330,7 +330,7 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     };
 
     UW.ajax({
-      "url" : "/forkdashboard/" + dashboardState.id,
+      "url" : "/forkdashboard/" + dashboardModel.at('id').get(),
       "type" : "post",
       "success" : successFork
     }); 

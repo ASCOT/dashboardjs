@@ -7,6 +7,7 @@ var express = require('express');
 var sharejs = require('../share/').server;
 var faye = require('faye');
 var async = require('async');
+require('util');
 
 // Local Modules
 var dashboardsManager = require('./js/server/dashboardsManager');
@@ -15,6 +16,8 @@ var gadgets = require('./public/gadgets/gadgetsInfo');
 var xhr = require("./js/shared/xhr");
 
 var app = express.createServer();
+
+var dashboardId = 0;
 
 // Share JS
 var options = {
@@ -41,12 +44,11 @@ try {
 sharejs.attach(app, options);
 
 var createDashboard = function(dashboardObj, callback) {
-  //var initDashboard = function() {
-  //  app.model.add(dashboardObj.id, callback, dashboardObj);
-  //}
   var data = {};
+  dashboardObj.id = dashboardId.toString();
   data.snapshot = dashboardObj;
   app.model.create(dashboardObj.id, 'json', data, callback);
+  dashboardId++;
 }
 
 async.forEach(
@@ -122,12 +124,23 @@ app.post('/dashboard/:id', function(req, res){
 });
 
 app.post('/forkdashboard/:id', function(req, res){
-  var dashboardCopied = function(dashboardId){
-    res.send(dashboardId.toString());
-  }
-  if (req.params.id) {
-    dashboardsManager.copy(req.params.id, dashboardCopied);
-  }
+  var data = {};
+  async.waterfall([
+    function(callback) {
+      if (req.params.id) {
+        app.model.getSnapshot(req.params.id, callback); 
+      }
+    },
+    function(dashboard, callback) {
+      data.snapshot = JSON.parse(JSON.stringify(dashboard.snapshot));
+      data.snapshot.id = dashboardId.toString();
+      app.model.create(data.snapshot.id, 'json', data, callback);
+      dashboardId++;
+    },
+    function() {
+      res.send(data.snapshot.id);
+    }
+  ]);  
 });
 
 //app.get('/dashboard/:id/state', function(req, res){
