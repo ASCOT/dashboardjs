@@ -28,14 +28,13 @@ UW.Dashboard = function(_id, container, dashboardUrl){
   // List of gadgets
   var gadgets = {}; 
   // Represents the state of the dashboard that will be saved to and load from the server
-  var dashboardState;
-  var loadedDataSets = {};
   
+  var loadedDataSets = {};
+  var dashboardModel; 
+
   var gadgetsInfo;
   var dashboard = this;
-   
-  var dashboardModel; 
-  
+     
   var bayeuxClient;
   var bayeuxClientId;
   
@@ -285,42 +284,6 @@ UW.Dashboard = function(_id, container, dashboardUrl){
       dataSetsIds.push({"id" : id, "text" : loadedDataSets[id].name});
     }
     return dataSetsIds;
-  };
-
-  this.save = function(success, error){
-   
-    var currentDataSet;
-    var currentGadget;
-    var successSaveState = function() {
-      console.log("State Saved");
-      success();
-    };
-
-    dashboardState.comments = dashboardModel.at('comments');
-
-    dashboardState.dataSets = {};
-    for (var id in loadedDataSets) {
-      if(loadedDataSets.hasOwnProperty(id)){
-        currentDataSet = loadedDataSets[id];
-        dashboardState.dataSets[id] = { 
-          "id" : id,
-          "modifiers" : currentDataSet.getModifiers()
-        };
-      }
-    }
-
-    for (var i = 0; i < dashboardState.gadgetsOrder.length; ++i) {
-      currentGadget = dashboardState.gadgets[dashboardState.gadgetsOrder[i]];
-      currentGadget.state = gadgets[currentGadget.id].saveState();
-    }
-
-    UW.ajax({
-      "url" : url,
-      "type" : "post",
-      "data" : JSON.stringify(dashboardState),
-      "success" : _.bind(successSaveState, this)
-    }); 
-
   };
 
   this.fork = function(success, error){

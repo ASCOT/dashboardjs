@@ -274,8 +274,16 @@
               <nav class="header">
                 <div class="buttonGroup">
                   <ul>
-                    <li class="left" ><a href="#" title="undo" onClick="undo()">Undo</a></li>
-                    <li class="right"><a href="#" title="redo" onClick="redo()">Redo</a></li>
+                    <li class="left" >
+                      <a href="#" title="undo" class="undoredo undoButton" onClick="undo()">
+                        <span class="icon"></span>
+                      </a>
+                    </li>
+                    <li class="right">
+                      <a href="#" title="redo" class="undoredo redoButton" onClick="redo()">
+                        <span class="icon"></span>
+                      </a>
+                    </li>
                   </ul>
                 </div>
                 <div class="buttonGroup">

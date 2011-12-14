@@ -53,7 +53,8 @@ curl -v -H "Content-Type: application/json" -X POST -d '{"name": "Stars", "recor
 
 - Create data set by providing query
 
-curl -v -H "Content-Type: application/json" -X POST -d '{"name": "Stars", "source": "sdss", "query":"SELECT TOP 500 objid, ra, dec, modelMag_u, modelMag_g, modelMag_r, modelMag_i, modelMag_z, (modelMag_u - modelMag_g) as u_g, (modelMag_g - modelMag_r) as g_r, (modelMag_r - modelMag_i) as r_i, (modelMag_i - modelMag_z) as i_z from Star where ra between 132.765732 and 132.884267 and dec between 11.756152 and 11.843848 and modelMag_g > -9999 ORDER BY modelMag_g ASC"}' http://localhost/dataSet/
+
+
 
 Delicious AJAX library that works on both node.js server and browser. In the browser it detects cross domain requests and then it falls back into iframe proxy method.
 

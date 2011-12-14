@@ -205,6 +205,36 @@ header nav a{
   -webkit-transition: border-color .218s;
 }
 
+header nav a.undoredo{
+  display: inline-block;
+  height: 16px;
+  width: 30px;
+  vertical-align: middle;
+}
+
+header nav a.undoButton{
+  background: url('/images/undoArrow.png') center no-repeat, -webkit-linear-gradient(top, #ece9e9 0%, #d8d7da 100%);
+  background: url('/images/undoArrow.png') center no-repeat, -moz-linear-gradient(top, #ece9e9 0%, #d8d7da 100%);  
+ 
+}
+
+header nav a.undoButton:active{
+  background: url('/images/undoArrow.png') center no-repeat, -webkit-linear-gradient(top, #d8d7da 0%, #ece9e9 100%);;
+  background: url('/images/undoArrow.png') center no-repeat, -moz-linear-gradient(top, #d8d7da 0%, #ece9e9 100%);  
+ 
+}
+
+header nav a.redoButton{
+  background: url('/images/redoArrow.png') center no-repeat, -webkit-linear-gradient(top, #ece9e9 0%, #d8d7da 100%);
+  background: url('/images/redoArrow.png') center no-repeat, -moz-linear-gradient(top, #ece9e9 0%, #d8d7da 100%);
+}
+
+header nav a.redoButton:active{
+  background: url('/images/redoArrow.png') center no-repeat, -webkit-linear-gradient(top, #d8d7da 0%, #ece9e9 100%);
+  background: url('/images/redoArrow.png') center no-repeat, -moz-linear-gradient(top, #d8d7da 0%, #ece9e9 100%);
+}
+
+
 header nav a:hover{
   text-decoration: none;
   color: black;
@@ -218,6 +248,19 @@ header nav a:active{
   -webkit-box-shadow: 0 1px 0 rgba(255, 255, 255, .4), 0 1px 1px rgba(0, 0, 0, 0.6) inset;
   box-shadow: 0 1px 0 rgba(255, 255, 255, .4), 0 1px 1px rgba(0, 0, 0, 0.6) inset;
   text-decoration: none;
+}
+
+header nav a span.icon{
+  width: 18px;
+  height: 22px;
+}
+
+header nav a.undoButton span.icon{
+  background: url('/images/undoArrow.png') 0 0 no-repeat;  
+}
+
+header nav a.redoButton span.icon{
+  background: url('/images/redoArrow.png') 0 0 no-repeat;  
 }
 
 header nav li.right{
