@@ -150,8 +150,7 @@ module.exports.createDataSet = function(dataSetInfo, callback) {
   var records = dataSetInfo.records;
   var staticData = dataSetInfo.staticData;
   var successRecordsRetrieval = function(records){
-    id = addDataSet({'id': id, 'name': name, 'records': records});
-    module.exports.find(id, callback);
+    callback(addDataSet({'id': id, 'name': name, 'records': records}));
   }
 
   if(id && dataSets[id]){
@@ -175,13 +174,8 @@ module.exports.createDataSet = function(dataSetInfo, callback) {
       if (staticData) {
         retrieveRecords(sourceId, query, successRecordsRetrieval);
       } else {
-        id = addDataSet({'id': id, 'name': name, 'source': sourceId, 'query': query});
-        module.exports.find(id, callback);
+        callback(addDataSet({'id': id, 'name': name, 'source': sourceId, 'query': query}));
       }
     }
   }
 }
-
-
-  
-  

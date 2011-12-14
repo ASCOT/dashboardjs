@@ -1,25 +1,20 @@
-// Node Modules dependencies
-var http = require('http');
-var url = require('url');
-var exec = require('child_process').exec;
-var _ = require('underscore');
+// NPM dependencies
 var express = require('express');
 var sharejs = require('../share/').server;
 var faye = require('faye');
-var async = require('async');
-require('util');
 
 // Local Modules
-var dashboardsManager = require('./js/server/dashboardsManager');
-var dataSetsManager = require('./js/server/dataSetsManager');
-var gadgets = require('./public/gadgets/gadgetsInfo');
+var DashboardManager = require('./js/server/dashboardsManager');
+var DataSetsManager = require('./js/server/dataSetsManager');
+var GadgetsManager = require('./public/gadgets/gadgetsInfo');
 var xhr = require("./js/shared/xhr");
 
 var app = express.createServer();
+var dashboardsManager;
+var dataSetsManager;
+var gadgetsManager;
 
-var dashboardId = 0;
-
-// Share JS
+// Share JS options
 var options = {
   rest: { path : '/dashboard/:name/state'},
   db: { type: 'none'},
@@ -43,26 +38,10 @@ try {
 // Attach the sharejs REST and Socket.io interfaces to the server
 sharejs.attach(app, options);
 
-var createDashboard = function(dashboardObj, callback) {
-  var data = {};
-  dashboardObj.id = dashboardId.toString();
-  data.snapshot = dashboardObj;
-  app.model.create(dashboardObj.id, 'json', data, callback);
-  dashboardId++;
-}
+// Faye adapter for pub/sub of dashboards
+var adapter = new faye.NodeAdapter({ mount: '/faye', timeout: 45 });
+adapter.attach(app);
 
-async.forEach(
-  dashboardsManager.all, 
-  createDashboard,
-  function(err) {
-    if (!err) {
-      console.log("Dashboards initialized!")
-    }  
-  });
-  
-adapter = new faye.NodeAdapter({ mount: '/faye', timeout: 45 });
-adapter.attach(app)
- 
 // Configuration
 app.configure(function(){
   app.set('views', __dirname + '/templates');
@@ -83,6 +62,8 @@ app.configure('production', function(){
   app.use(express.errorHandler()); 
 });
 
+dashboardsManager = new DashboardManager(app, app.model); 
+
 app.get('/xhrProxy/:request', function(req, res){
   var options = {
     url: req.params.request,
@@ -92,66 +73,17 @@ app.get('/xhrProxy/:request', function(req, res){
   xhr.ajax(options); 
 });
 
-app.get('/dashboard/gadgets/', function(req, res){
-  res.send(JSON.stringify(dashboardsManager.find(req.params.id)));
-});
 
 app.get('/gadgets/', function(req, res){
-  res.send(gadgets.all);
+  res.send(GadgetsManager.all);
 });
 
-app.get('/dashboard/:id', function(req, res){
-  res.render("dashboardPanel", {
-    locals: {
-      id: req.params.id,
-      resourceUrl: '"/dashboard"'
-    }
-  });
-});
-
-app.post('/dashboard/', function(req, res){
-  var configuration = req.body || undefined;
-  var dashboardCreated = function(dashboardId){
-    res.send(dashboardId.toString());
-  }
-  dashboardsManager.create(configuration, dashboardCreated);
-});
-
-app.post('/dashboard/:id', function(req, res){
-  var state = req.body || undefined;
-  dashboardsManager.set(req.params.id, state);
-  res.send("Dashboard saved");
-});
-
-app.post('/forkdashboard/:id', function(req, res){
-  var data = {};
-  async.waterfall([
-    function(callback) {
-      if (req.params.id) {
-        app.model.getSnapshot(req.params.id, callback); 
-      }
-    },
-    function(dashboard, callback) {
-      data.snapshot = JSON.parse(JSON.stringify(dashboard.snapshot));
-      data.snapshot.id = dashboardId.toString();
-      app.model.create(data.snapshot.id, 'json', data, callback);
-      dashboardId++;
-    },
-    function() {
-      res.send(data.snapshot.id);
-    }
-  ]);  
-});
-
-//app.get('/dashboard/:id/state', function(req, res){
-//  res.send(JSON.stringify(dashboardsManager.find(req.params.id)));
-//});
 
 app.get('/dataSet/:id', function(req, res){
   var dataSetFound = function (dataSet) {
     res.send(JSON.stringify(dataSet));
   };
-  dataSetsManager.find(req.params.id, dataSetFound);
+  DataSetsManager.find(req.params.id, dataSetFound);
 });  
 
 app.post('/dataSet/', function(req, res){
@@ -160,7 +92,7 @@ app.post('/dataSet/', function(req, res){
   var dataSetCreated = function(dataSet){
     res.send(JSON.stringify(dataSet));
   }
-  dataSetsManager.createDataSet(queryInfo, dataSetCreated);
+  DataSetsManager.createDataSet(queryInfo, dataSetCreated);
 });           
 
 if (!module.parent) {

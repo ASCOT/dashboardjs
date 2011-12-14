@@ -1,7 +1,9 @@
 var dataSetsManager = require("./dataSetsManager");
+var async = require('async');
 
-var dashboards = [
+var idCounter = 0;
 
+var defaultDashboards = [
   { author: 'UW',
     numberOfColumns: 2,
     gadgetsOrder: [ "skyView", "nameResolver", "dataSetSelector", "dataInquirer", "tableView", "plotView"], 
@@ -75,100 +77,164 @@ var dashboards = [
     gadgets: { "newFitsViewer1" : {"id" : "newFitsViewer1", "gadgetInfoId" : "newFitsViewer"} },
     dataSets: {},
     comments: []
-  }];
-
-module.exports.all = dashboards;
+  }
+];
 
 var defaultGadgetsSet = {skyView: { number: 1 }, nameResolver: { number: 1 }, dataSetSelector: { number: 1 }, dataInquirer: { number: 1 }, tableView: { number: 1 }, plotView: { number: 1 }};
 
-function clone(obj) {
-  if (null == obj || "object" != typeof obj) return obj;
-  var copy = obj.constructor();
-  for (var attr in obj) {
-      if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
-  }
-  return copy;
-}
+module.exports = function(app, model) {
 
-
-module.exports.find = function(id) {
-  id = parseInt(id, 10);
-  return dashboards[id];
-}
-
-module.exports.set = function(id, dashboard) {
-  id = parseInt(id, 10);
-  dashboards[id] = dashboard;
-};
-
-module.exports.length = function() {
-  return dashboards.length;
-};
-
-module.exports.create = function(configuration, callback) {
-  var gadgets = configuration? configuration.gadgets || defaultGadgetsSet: defaultGadgetsSet;
-  var i;
-  var newDashboardId = dashboards.length;  
-  var newDashboard = {
-      id: newDashboardId,
-      author: 'UW',
-      numberOfColumns: 2,  
-      gadgets: [],
-      dataSets: []
-  };
-  var dataSetsInfo = configuration? configuration.dataSets: undefined;  
-  var currentDataSet = dataSetsInfo? dataSetsInfo.length : 0;
-  var remainingDataSets = dataSetsInfo? dataSetsInfo.length : 0;
-  var newGadget;
-  
-  var dataSetLoaded = function(dataSetId){
-    var dataSet = { "id" : dataSetId, "modifiers" : [] };
-    newDashboard.dataSets.push(dataSet);
-    remainingDataSets--;
-    if(remainingDataSets == 0){
-      dashboards.push(newDashboard);
-      callback(newDashboardId);
+  var createDashboard = function(dashboardObj, callback) {
+    var data = {};
+    var dashboardCreated = function() {
+      callback(dashboardObj.id);  
     }
+    dashboardObj.id = idCounter.toString();
+    data.snapshot = dashboardObj;
+    model.create(dashboardObj.id, 'json', data, callback);
+    idCounter++;
+  }
+
+  var cloneObject = function(obj) {
+    if (null == obj || "object" != typeof obj) return obj;
+    var copy = obj.constructor();
+    for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
+    }
+    return copy;
   }
     
-  for(id in gadgets){
-    i = gadgets[id].number;
-    for(i; i>0; --i){
-      newGadget = {};
-      newGadget['id'] = id + i;
-      newGadget['gadgetInfoId'] = id;
-      if(gadgets[id].state){
-        newGadget['state'] = gadgets[id].state;
+  var parseConfiguration = function(configuration, callback) {
+    var i;
+    var newDashboard = {
+        author: 'UW',
+        numberOfColumns: 2,
+        gadgetsOrder : [],  
+        gadgets: {},
+        dataSets: {},
+        comments: []
+    };
+
+    var gadgets = (configuration && configuration.gadgets) || defaultGadgetsSet;
+    var dataSets = (configuration && configuration.dataSets) || [];  
+    var currentDataSet = dataSets.length;
+    var newGadget;
+    
+    var dataSetsLoaded = function(err, dataSetsIds){ 
+      var newDataSet;
+      var i = 0; 
+      if (!err) {
+        while (i < dataSetsIds.length) {
+          dataSet = { "id" : dataSetsIds[i], "modifiers" : [] };
+          newDashboard.dataSets[dataSet.id] = dataSet;  
+          i += 1; 
+        }
+        callback(newDashboard);
       }
-      newDashboard.gadgets.push(newGadget);
+    };
+      
+    // Expand list of gadgets  
+    for(id in gadgets){
+      if (gadgets.hasOwnProperty(id)) {
+        i = gadgets[id].number;
+        for(i; i>0; --i){
+          newGadget = {};
+          newGadget['id'] = id + i;
+          newGadget['gadgetInfoId'] = id;
+          if(gadgets[id].state){
+            newGadget['state'] = gadgets[id].state;
+          }
+          newDashboard.gadgets[newGadget.id] = newGadget;
+          newDashboard.gadgetsOrder.push(newGadget.id);
+        }
+      }
     }
-  }
 
-  if(currentDataSet){
-    while(currentDataSet--){
-      dataSetsManager.createDataSet(dataSetsInfo[currentDataSet], dataSetLoaded);
+    // Load Data Sets
+    async.map(
+      dataSets,
+      function(dataSetInfo, callback){
+        dataSetsManager.createDataSet(dataSetInfo, 
+        function(id) {
+          callback(null, id);
+        }
+      );
+      },
+      dataSetsLoaded
+    );
+
+  };
+
+  async.forEach(
+    defaultDashboards, 
+    createDashboard,
+    function(err) {
+      if (!err) {
+        console.log("Dashboards initialized!");
+      }  
     }
-  }
-  else{
-    dashboards.push(newDashboard);
-    callback(newDashboardId);
-  }
-};
+  );
 
-module.exports.copy = function(id, success, error){
-  var dashboardConfiguration = clone(dashboards[id]);
-  if (dashboardConfiguration) {
-    dashboards.push(dashboardConfiguration);
-    dashboards[dashboards.length - 1].id = dashboards.length - 1;
-    success(dashboards.length - 1);
-  } else {
-    error();
-  }
-};
+  //// REST API ////
 
-module.exports.insert = function(dashboard) {
-  var id = dashboards.length + 1;
-  dashboard.attrs.id = id;
-  dashboards[id - 1] = dashboard;
-  return id;
-}
+  app.get('/dashboard/gadgets/', function(req, res){
+    res.send(JSON.stringify(dashboardsManager.find(req.params.id)));
+  });
+
+  app.get('/dashboard/:id', function(req, res){
+    res.render("dashboardPanel", {
+      locals: {
+        id: req.params.id,
+        resourceUrl: '"/dashboard"'
+      }
+    });
+  });
+
+  app.post('/dashboard/', function(req, res){
+    var configuration = req.body || undefined;
+    async.waterfall([
+      function(callback) {
+        parseConfiguration(configuration, 
+          function(dashboard) {
+            callback(null, dashboard);
+          });
+      },
+      function(dashboard, callback){
+        createDashboard(dashboard, 
+          function() {
+            callback(null, dashboard.id);
+          });
+      },
+      function(dashboardId, callback){
+        res.send(dashboardId.toString());
+      }
+    ]);
+  });
+
+  app.post ('/dashboard/:id', function(req, res){
+    var state = req.body || undefined;
+    dashboardsManager.set(req.params.id, state);
+    res.send("Dashboard saved");
+  });
+
+  app.post('/forkdashboard/:id', function(req, res){
+      var data = {};
+      async.waterfall([
+      function(callback) {
+        if (req.params.id) {
+          app.model.getSnapshot(req.params.id, callback); 
+        }
+      },
+      function(dashboard, callback) {
+        data.snapshot = cloneObject(dashboard.snapshot);
+        data.snapshot.id = idCounter.toString();
+        app.model.create(data.snapshot.id, 'json', data, callback);
+        idCounter++;
+      },
+      function() {
+        res.send(data.snapshot.id);
+      }
+    ]);  
+  });
+
+};

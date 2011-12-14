@@ -80,15 +80,6 @@
       return ASCOT.dashboard;
     };
 
-    function saveDashboard() {
-      var succesSaved = function(){
-        displayNote('The dashboard has been saved');
-      };
-      //displayNote('ALERT');
-      //showPopUp('popUp');
-      ASCOT.dashboard.save(succesSaved);
-    }
-
     function undo() {
       ASCOT.dashboard.undo();
     }
@@ -285,11 +276,6 @@
                   <ul>
                     <li class="left" ><a href="#" title="undo" onClick="undo()">Undo</a></li>
                     <li class="right"><a href="#" title="redo" onClick="redo()">Redo</a></li>
-                  </ul>
-                </div>
-                <div class="buttonGroup">
-                  <ul>
-                    <li><a href="#" title="saveDashboard" onClick="saveDashboard()">Save</a></li>
                   </ul>
                 </div>
                 <div class="buttonGroup">

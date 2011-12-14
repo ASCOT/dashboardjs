@@ -488,7 +488,7 @@ UW.Dashboard = function(_id, container, dashboardUrl){
 
     for (dataSetId in dataSets) {
       if (dataSets.hasOwnProperty(dataSetId)) {
-        this.fetchDataSet(dataSets[dataSetId].url, succesFetchingDataSet);
+        this.fetchDataSet(/dataSet/ + dataSetId, succesFetchingDataSet);
       }
     }
     
