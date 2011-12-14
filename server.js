@@ -88,9 +88,8 @@ app.get('/dataSet/:id', function(req, res){
 
 app.post('/dataSet/', function(req, res){
   var queryInfo = req.body || undefined;
-  console.log("DATASET : " + req.body);
-  var dataSetCreated = function(dataSet){
-    res.send(JSON.stringify(dataSet));
+  var dataSetCreated = function(datasetId){
+    res.send(JSON.stringify(datasetId));
   }
   DataSetsManager.createDataSet(queryInfo, dataSetCreated);
 });           

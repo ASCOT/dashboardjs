@@ -94,17 +94,16 @@ var createDataSet = function() {
   var dataSource = $("#selectCatalog option:selected").text();
 
   var createDataSetSuccess = function(newDataSetId) {
-    var newDataSet = gadget.dashboard.getDataSet(newDataSetId);
-    var numberOfRows = newDataSet.length();
-    if (numberOfRows === 0) {
+    //var numberOfRows = newDataSet.length();
+    //if (numberOfRows === 0) {
       // the special case answer is that no rows were returned
-      showStatus(ICON_URL_ERROR, 'No objects from ' + $("#selectCatalog option:selected").text() + ' catalog');
-      return;
-    }
-    newDataSet.setAllRecords({'color' : 'grey'}, true);
-    newDataSet.setAllRecords({'visible' : true});
+    //  showStatus(ICON_URL_ERROR, 'No objects from ' + $("#selectCatalog option:selected").text() + ' catalog');
+    //  return;
+    //}
+    //newDataSet.setAllRecords({'color' : 'grey'}, true);
+    //newDataSet.setAllRecords({'visible' : true});
     // indicate status to user
-    showStatus(ICON_URL_SUCCESS, "Returned " + numberOfRows + " records.");
+    showStatus(ICON_URL_SUCCESS);
     gadget.resize();
   };
 
@@ -154,12 +153,13 @@ var setQueryText = function(buttonNumber) {
 
 function showStatus(iconUrl, text){
   var statusDiv = $('#divStatusText')[0];
+  text = text || "DataSet Loaded";
   var status = text; 
   if (iconUrl !== "") {
     status = '<img id="imgStatus" style="vertical-align:middle;" src="' + iconUrl + '" /> ' + "<span style='vertical-align:middle;'>" + text + "</span>";
   } 
-  statusDiv.innerHTML = status;
   statusDiv.style.visibility = 'inline';
+  statusDiv.innerHTML = status;
 }
 
 function setViewPortBounds(newBounds) {

@@ -229,11 +229,9 @@ UW.Dashboard = function(_id, container, dashboardUrl){
   }
 
   this.createDataSet = function(name, source, query, success, error, staticData){
-    var createDataSetSuccess = function(response){
-      var dataSetJSON = JSON.parse(response);
-      addDataSet(dataSetJSON, true);
-      this.loadDataSet(dataSetJSON.id);
-      success(dataSetJSON.id);
+    var createDataSetSuccess = function(dataSetId){
+      this.loadDataSet(dataSetId);
+      success(dataSetId);
     }
     var queryData = { 
       "name" : name,
