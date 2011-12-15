@@ -10,12 +10,11 @@ var UW = UW || {};
 
 UW.Gadget = Backbone.View.extend({
   
+
   // Default load/save state methods. 
   // The user must define these functions.
   loadState: function(state) {},
-  
-  saveState: function() { return {}; },
-  
+    
   onNotification: function(notification, callback){
     var gadgetId = this.id;
     var newCallback = function(notificationObject){
@@ -40,10 +39,9 @@ UW.Gadget = Backbone.View.extend({
   },
 
   setState : function(state) {
-    var currentState = (this.dashboardModel.at('gadgets').get())[this.id].state;
-    var newState = {};
+    var currentState = (this.dashboardModel.at('gadgets').get())[this.id].state || {};
+    var newState = JSON.parse(JSON.stringify(currentState));
 
-    newState.oldState = {};
     if (state) {
       for (var attribute in state) {
         if (state.hasOwnProperty(attribute)) {
@@ -55,8 +53,9 @@ UW.Gadget = Backbone.View.extend({
     this.dashboardModel.submitOp({
       p : ['gadgets' , this.id, 'state'],
       oi : newState,
-      od : currentState
+      od : JSON.parse(JSON.stringify(currentState))
     });
+
   },
   
   bind: function(property, trigger){

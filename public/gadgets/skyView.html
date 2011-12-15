@@ -13,6 +13,7 @@
 </head>
 <body>
 	<div id="content" style="width: 100%; height: 600px"></div>
+</body>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js"></script>
 <script src="http://google.com/jsapi?key=ABQIAAAAVGHgv2pouycqhAw5tCmtChR1aol8vC9LmxJ_-IIqPo0vb4nybRTh6avLgiFPsdQwzEmpcYDE1DLlcA" type="text/javascript"></script>
 <script> 
@@ -36,15 +37,6 @@ gadget.init = function(callback){
   google.earth.createInstance('content', success, failure);
   callback();
 }
-
-gadget.saveState = function(){
-  return { 
-    'longitude': longitude,
-    'latitude': latitude,
-    'flySpeed': flySpeed,
-    'viewportBounds': viewportBounds
-  }
-};
 
 gadget.loadState = function(state){
   longitude = state.longitude;
@@ -260,7 +252,5 @@ function clearTimerArray(timers){
     }
   }
 }
-
 </script>
-</body>
 </html>

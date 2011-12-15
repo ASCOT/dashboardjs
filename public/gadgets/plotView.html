@@ -24,8 +24,7 @@ td{
   <div>Dataset: <select id="selectDatasetName"></select></div>
   <div id="divSelectDataset" style="display: inline"> 
     X Axis: <input id="invertXAxisButton" type="button" title="Invert X Axis" value=">"></input> <select id="selectXAxis"></select>
-     Y Axis: <input id="invertYAxisButton" type="button" title="Invert Y Axis" value="^"></input> <select id="selectYAxis"></select>
-     <input id="plotButton" type="button" value="Plot"/>
+    Y Axis: <input id="invertYAxisButton" type="button" title="Invert Y Axis" value="^"></input> <select id="selectYAxis"></select>
   </div>
   <div id="divPlotToolbar" style="display: inline">
     <form name="formSelectZoom">
@@ -39,7 +38,7 @@ td{
   </div>
   <div id="divPlot" style="display: none"></div>
 </div>
-
+</body>
 <!-- chart dependencies -->
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js" type="text/javascript"></script>
 <script src="/util.js" type="text/javascript"></script> 
@@ -67,16 +66,14 @@ var selectedDataSetName = "";
 var selectedXAxis = "";
 var selectedYAxis = "";
 var selectedColor = "unselected";
-var selectedDataSet = "";
+var selectedDataSet;
 var selectionObject;
-
+var loadingState = false;
 //Load gadget state
 
 // Gadget intialization
 gadget.init = function(callback){
-  gadget.onNotification('dataSetChanged', update);  
-  gadget.onNotification('plotRendered', syncPlot);
-  gadget.onNotification('axisInverted', invertAxis);
+  gadget.onNotification('dataSetChanged', loadDataSet);  
   
   $("#checkVerboseInfo").change( function(){
     verboseTooltip = $("#checkVerboseInfo").get(0).checked;
@@ -92,68 +89,114 @@ gadget.init = function(callback){
         populateSelect("selectXAxis", columnNames, selectedXAxis);
         populateSelect("selectYAxis", columnNames, selectedYAxis);
       }
+      if (!loadingState) {
+        gadget.setState({ 'selectDatasetName' : selectDatasetName });
+      }
     }    
   });
   
   $('#selectXAxis').change( function(){
     if(this.selectedIndex != -1){
       selectedXAxis = $(this).find('option:selected').val();
+      if (!loadingState) {
+        gadget.setState({ 'selectedXAxis' : selectedXAxis });
+      }
     }
   });
   
   $('#selectYAxis').change( function(){
     if(this.selectedIndex != -1){
       selectedYAxis = $(this).find('option:selected').val();
+      if (!loadingState) {
+        gadget.setState({ 'selectedYAxis' : selectedYAxis });
+      }
     }
   });
   
   $('#selectColor').change( function(){
-    if(this.selectedIndex != -1){
+    if(this.selectedIndex != -1 && !loadingState){
       selectedColor = $(this).find('option:selected').val();
+      if (!loadingState) {
+        gadget.setState({ 'selectedColor' : selectedColor });
+      }
     }
   });  
-  populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"], selectedColor);
     
-  $('#invertXAxisButton').click(invertX);
-  $('#invertYAxisButton').click(invertY);
-  $('#plotButton').click(plotData);
+  $('#invertXAxisButton').click( function(){
+    if (loadingState) {
+      return;
+    }
+    axisInverted.x = !axisInverted.x;
+    gadget.setState({ 
+      axisInverted : {
+      x : axisInverted.x,
+    }});
+  });
+
+  $('#invertYAxisButton').click( function(){
+    if (loadingState) {
+      return;
+    }
+    axisInverted.y = !axisInverted.y;
+    gadget.setState({ 
+      axisInverted : {
+      y : axisInverted.y,
+    }});
+  });
+
   callback();
 }
 
-gadget.saveState = function(){
-  return { 
-    'axisInverted': axisInverted,
-    'verboseTooltip': verboseTooltip,
-    'selectedDataSetName': selectedDataSetName,
-    'selectedXAxis': selectedXAxis,
-    'selectedYAxis': selectedYAxis,
-    'selectedColor': selectedColor
-  }
-};
-
 gadget.loadState = function(state){
   
-  if (state.axisInverted.x) {
-    invertX();
-  }
-  
-  if (state.axisInverted.y) {
-    invertY();
+  var selectedDataSetNameChanged = state.selectedDataSetName 
+    && selectedDataSetName
+    && (selectedDataSetName !== state.selectedDataSetName);
+
+  var dataSetList = gadget.dashboard.getDataSetList();
+
+  loadingState = true;
+
+  axisInverted.x = state.axisInverted && state.axisInverted.x;
+  axisInverted.y = state.axisInverted && 
+  state.axisInverted.y;
+
+  if (axisInverted.x) {
+    $('#invertXAxisButton').get(0).value = '>';
+  } else {
+    $('#invertXAxisButton').get(0).value = '<';
   }
 
-  verboseTooltip = state.verboseTooltip || false;
+  if (axisInverted.y) {
+    $('#invertYAxisButton').get(0).value = 'v';
+  } else {
+    $('#invertYAxisButton').get(0).value = '^';
+  }
+
+  verboseTooltip = state.verboseTooltip || verboseTooltip || false;
   $("#checkVerboseInfo").get(0).checked = verboseTooltip;
 
-  selectedDataSetName = state.selectedDataSetName || "";
-  selectedXAxis = state.selectedXAxis || false;
-  selectedYAxis = state.selectedYAxis || false;
-  selectedColor = state.selectedColor || "";
-  selectedDataSet = state.selectedDataSet || "";
-  populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"], selectedColor);
-  update();
+  selectedDataSetName = state.selectedDataSetName || selectedDataSetName || "";
+  selectedXAxis = state.selectedXAxis || selectedXAxis || false;
+  selectedYAxis = state.selectedYAxis || selectedYAxis || false;
+  selectedColor = state.selectedColor || selectedColor || "unselect";
+  
+  if (selectedDataSetNameChanged || (!selectedDataSet && dataSetList.length)) {
+    loadDataSet();
+  }
+  else {
+    $("#selectXAxis option[value=" + selectedXAxis +"]").get(0).selected = true;
+    $("#selectYAxis option[value=" + selectedYAxis +"]").get(0).selected = true;
+    $("#selectColor option[value=" + selectedColor +"]").get(0).selected = true;
+    $("#selectDatasetName option:contains(" + selectedDataSetName  + ")").get(0).selected = true;
+    drawPlot();
+  }
+
+  loadingState = false;
 
 };
 
+gadget.update = gadget.loadState;
 
 // Highcharts plot options
 var chartOptions = {
@@ -244,7 +287,6 @@ function generateToolTip(xValue, yValue, pointId) {
   }
 }
 
-
 function plotData(){
   if (selectedDataSetName ===  "" || selectedXAxis === "" || selectedYAxis === "") {
     alert("Choose a dataset, x axis, and y axis");
@@ -256,9 +298,11 @@ function plotData(){
   }
 } 
                                                                         
-function update(){
+function loadDataSet(){
   var columnNames = [];
   var dataSetsList = gadget.dashboard.getDataSetList();
+
+  populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"], selectedColor);
 
   if (dataSetsList.length > 0) {
     populateSelect('selectDatasetName', gadget.dashboard.getDataSetList(), selectedDataSetName);
@@ -330,6 +374,7 @@ function updateSelectedPoints() {
     }
   }
   plot.hideLoading();
+
 }
 
 // Colors a selected point on chart by the color name
@@ -377,9 +422,9 @@ function drawPlot() {
   }
 
   // Set Data + Axis labels + Redraw
-  if(plot.xAxis[0].axisTitle && plot.xAxis[0].axisTitle){
-     $(plot.xAxis[0].axisTitle.element).text(selectedXAxis);
-     $(plot.yAxis[0].axisTitle.element).text(selectedYAxis);
+  if(plot.xAxis[0].axisTitle && plot.yAxis[0].axisTitle){
+    $(plot.xAxis[0].axisTitle.element).text(selectedXAxis);
+    $(plot.yAxis[0].axisTitle.element).text(selectedYAxis);
   }
   else{
     plot.series[0].xAxis.options.title.text = selectedXAxis;
@@ -428,50 +473,6 @@ function showPlot(show) {
     $('#divPlot').css('display', 'none');
   }
   gadget.resize();
-}
-    
-function syncPlot(plotOptions){
-  
-  $('#selectDatasetName option[value=' + plotOptions.dataSetName + ']').attr('selected', 'selected');
-  $('#selectDatasetName').change();
-  $('#selectXAxis option[value=' + plotOptions.xAxis + ']').attr('selected', 'selected');
-  $('#selectYAxis option[value=' + plotOptions.yAxis + ']').attr('selected', 'selected');
-  $('#selectColor option[value=' + plotOptions.color + ']').attr('selected', 'selected');
-  $('#selectColor').change();
-  $('#selectXAxis').change();
-  $('#selectYAxis').change();
-  drawPlot();
-  
-}    
-    
-function invertAxis(axis){
-  if(axis === "x")
-    axisInverted.x = !axisInverted.x;
-  else
-    axisInverted.y = !axisInverted.y;
-  drawPlot();
-}          
-
-function invertX(){
-  var value = $('#invertXAxisButton').get(0).value; 
-  if (value === '>') {
-    $('#invertXAxisButton').get(0).value = '<';
-  } else {
-    $('#invertXAxisButton').get(0).value = '>';
-  }
-  gadget.notify('axisInverted',"x", {'private': true})
-}
-
-function invertY(){
-  var value = $('#invertYAxisButton').get(0).value; 
-   if (value === '^') {
-     $('#invertYAxisButton').get(0).value = ('v');
-   } else {
-     $('#invertYAxisButton').get(0).value = ('^');
-   }
-  gadget.notify('axisInverted',"y",  {'private': true})
-}
-      
+}            
 </script>
-</body>
 </html>

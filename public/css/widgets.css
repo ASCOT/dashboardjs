@@ -19,7 +19,6 @@ input, textarea {
   margin: 5px 10px 5px 0px; 
   padding: 5px 10px 5px 10px;
   font-size: 12px;
-  border: 1px solid #DDD;
   border-top-color: #CCC;
   border-bottom-color: #EAEAEA;
   -webkit-border-radius: 5px;
@@ -29,6 +28,24 @@ input, textarea {
   font-weight: normal;
   background-color: white;  
   border: 1px solid #CACACA;
+
+  transition: border-color 0.1s;
+  -moz-transition: border-color 0.1s; /* Firefox 4 */
+  -webkit-transition: border-color 0.1s; /* Safari and Chrome */
+  -o-transition: border-color 0.1s; /* Opera */
+}
+
+textarea {
+  /* To give the same inset shadows as input[type='text'] */
+  /* 
+    Hack to make the same size as text inputs,
+    since their native border isn't taken into
+    account when calculating width.
+  */
+  resize : none;
+  -moz-box-shadow : 0px 0px 1px rgba(0,0,0,0.2) inset;
+  -webkit-box-shadow : 0px 0px 1px rgba(0,0,0,0.2) inset;
+  box-shadow : 0px 0px 1px rgba(0,0,0,.2) inset;
 }
 
 input.big{
@@ -125,17 +142,9 @@ input[type="button"]:active,[type="submit"]:active {
   background: -moz-linear-gradient(linear, 0% 40%, 0% 70%, from(rgb(241, 241, 241)), to(rgb(245, 245, 245)));
 }
 
-textarea {
-  /* To give the same inset shadows as input[type='text'] */
-  /* 
-    Hack to make the same size as text inputs,
-    since their native border isn't taken into
-    account when calculating width.
-  */
-  resize: none;
-  -moz-box-shadow: 0px 0px 1px rgba(0,0,0,0.2) inset;
-  -webkit-box-shadow: 0px 0px 1px rgba(0,0,0,0.2) inset;
-  box-shadow: 0px 0px 1px rgba(0,0,0,.2) inset;
+input:focus, textarea:focus{
+  border : 1px solid #6d9df7;
+  outline: none;
 }
 
 select {
