@@ -65,7 +65,7 @@ var verboseTooltip = false;
 var selectedDataSetName = "";
 var selectedXAxis = "";
 var selectedYAxis = "";
-var selectedColor = "unselected";
+var selectedColor = "unselect";
 var selectedDataSet;
 var selectionObject;
 var loadingState = false;
@@ -73,7 +73,7 @@ var loadingState = false;
 
 // Gadget intialization
 gadget.init = function(callback){
-  gadget.onNotification('dataSetChanged', loadDataSet);  
+  gadget.onNotification('dataSetChanged', gadget.update);  
   
   $("#checkVerboseInfo").change( function(){
     verboseTooltip = $("#checkVerboseInfo").get(0).checked;
@@ -90,7 +90,7 @@ gadget.init = function(callback){
         populateSelect("selectYAxis", columnNames, selectedYAxis);
       }
       if (!loadingState) {
-        gadget.setState({ 'selectDatasetName' : selectDatasetName });
+        gadget.setState({ 'selectDatasetName' : selectedDataSetName });
       }
     }    
   });
@@ -116,9 +116,9 @@ gadget.init = function(callback){
   $('#selectColor').change( function(){
     if(this.selectedIndex != -1 && !loadingState){
       selectedColor = $(this).find('option:selected').val();
-      if (!loadingState) {
-        gadget.setState({ 'selectedColor' : selectedColor });
-      }
+      //if (!loadingState) {
+      //  gadget.setState({ 'selectedColor' : selectedColor });
+      //}
     }
   });  
     
@@ -149,46 +149,59 @@ gadget.init = function(callback){
 
 gadget.loadState = function(state){
   
-  var selectedDataSetNameChanged = state.selectedDataSetName 
-    && selectedDataSetName
-    && (selectedDataSetName !== state.selectedDataSetName);
-
+  var selectedDataSetNameChanged = false;
   var dataSetList = gadget.dashboard.getDataSetList();
 
-  loadingState = true;
+  if (state) {
+    selectedDataSetNameChanged = state.selectedDataSetName 
+      && selectedDataSetName
+      && (selectedDataSetName !== state.selectedDataSetName);
 
-  axisInverted.x = state.axisInverted && state.axisInverted.x;
-  axisInverted.y = state.axisInverted && 
-  state.axisInverted.y;
+    loadingState = true;
 
-  if (axisInverted.x) {
-    $('#invertXAxisButton').get(0).value = '>';
-  } else {
-    $('#invertXAxisButton').get(0).value = '<';
-  }
+    axisInverted.x = state.axisInverted && state.axisInverted.x;
+    axisInverted.y = state.axisInverted && 
+    state.axisInverted.y;
 
-  if (axisInverted.y) {
-    $('#invertYAxisButton').get(0).value = 'v';
-  } else {
-    $('#invertYAxisButton').get(0).value = '^';
-  }
+    if (axisInverted.x) {
+      $('#invertXAxisButton').get(0).value = '>';
+    } else {
+      $('#invertXAxisButton').get(0).value = '<';
+    }
 
-  verboseTooltip = state.verboseTooltip || verboseTooltip || false;
-  $("#checkVerboseInfo").get(0).checked = verboseTooltip;
+    if (axisInverted.y) {
+      $('#invertYAxisButton').get(0).value = 'v';
+    } else {
+      $('#invertYAxisButton').get(0).value = '^';
+    }
 
-  selectedDataSetName = state.selectedDataSetName || selectedDataSetName || "";
-  selectedXAxis = state.selectedXAxis || selectedXAxis || false;
-  selectedYAxis = state.selectedYAxis || selectedYAxis || false;
-  selectedColor = state.selectedColor || selectedColor || "unselect";
+    verboseTooltip = state.verboseTooltip || verboseTooltip || false;
+    $("#checkVerboseInfo").get(0).checked = verboseTooltip;
+
+    selectedDataSetName = state.selectedDataSetName || selectedDataSetName || "";
+    selectedXAxis = state.selectedXAxis || selectedXAxis || false;
+    selectedYAxis = state.selectedYAxis || selectedYAxis || false;
+    selectedColor = state.selectedColor || selectedColor || "unselect";
+  }  
   
-  if (selectedDataSetNameChanged || (!selectedDataSet && dataSetList.length)) {
+  if (selectedDataSetNameChanged || 
+      (!selectedDataSet && dataSetList.length) ||
+      $("#selectDatasetName option").length != dataSetList.length) {
     loadDataSet();
   }
   else {
-    $("#selectXAxis option[value=" + selectedXAxis +"]").get(0).selected = true;
-    $("#selectYAxis option[value=" + selectedYAxis +"]").get(0).selected = true;
-    $("#selectColor option[value=" + selectedColor +"]").get(0).selected = true;
-    $("#selectDatasetName option:contains(" + selectedDataSetName  + ")").get(0).selected = true;
+    if (selectedXAxis) {
+      $("#selectXAxis option[value=" + selectedXAxis +"]").get(0).selected = true;
+    }
+    if (selectedYAxis) {
+      $("#selectYAxis option[value=" + selectedYAxis +"]").get(0).selected = true;
+    }
+    if (selectedColor) {
+      $("#selectColor option[value=" + selectedColor +"]").get(0).selected = true;
+    }
+    if (selectedDataSetName) {
+      $("#selectDatasetName option:contains(" + selectedDataSetName  + ")").get(0).selected = true;
+    }
     drawPlot();
   }
 
