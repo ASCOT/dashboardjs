@@ -144,6 +144,9 @@ input[type="button"]:active,[type="submit"]:active {
 
 input:focus, textarea:focus{
   border : 1px solid #6d9df7;
+  -moz-box-shadow : 0px 0px 1px rgba(0,0,0,0.2) inset;
+  -webkit-box-shadow : 0px 0px 1px rgba(0,0,0,0.2) inset;
+  box-shadow : 0px 0px 1px rgba(0,0,0,.2) inset;
   outline: none;
 }
 

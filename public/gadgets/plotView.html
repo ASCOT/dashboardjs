@@ -78,50 +78,7 @@ gadget.init = function(callback){
   $("#checkVerboseInfo").change( function(){
     verboseTooltip = $("#checkVerboseInfo").get(0).checked;
   });
-  
-  // add colors to the select box (pass the select Name and color array)
-  $('#selectDatasetName').change( function(){
-    if(this.selectedIndex != -1){
-      selectedDataSetName = $(this).find('option:selected').text();
-      selectedDataSet = gadget.dashboard.getDataSet($(this).val());
-      if(selectedDataSet){
-        columnNames = selectedDataSet.getColumns();
-        populateSelect("selectXAxis", columnNames, selectedXAxis);
-        populateSelect("selectYAxis", columnNames, selectedYAxis);
-      }
-      if (!loadingState) {
-        gadget.setState({ 'selectDatasetName' : selectedDataSetName });
-      }
-    }    
-  });
-  
-  $('#selectXAxis').change( function(){
-    if(this.selectedIndex != -1){
-      selectedXAxis = $(this).find('option:selected').val();
-      if (!loadingState) {
-        gadget.setState({ 'selectedXAxis' : selectedXAxis });
-      }
-    }
-  });
-  
-  $('#selectYAxis').change( function(){
-    if(this.selectedIndex != -1){
-      selectedYAxis = $(this).find('option:selected').val();
-      if (!loadingState) {
-        gadget.setState({ 'selectedYAxis' : selectedYAxis });
-      }
-    }
-  });
-  
-  $('#selectColor').change( function(){
-    if(this.selectedIndex != -1 && !loadingState){
-      selectedColor = $(this).find('option:selected').val();
-      //if (!loadingState) {
-      //  gadget.setState({ 'selectedColor' : selectedColor });
-      //}
-    }
-  });  
-    
+
   $('#invertXAxisButton').click( function(){
     if (loadingState) {
       return;
@@ -157,8 +114,6 @@ gadget.loadState = function(state){
       && selectedDataSetName
       && (selectedDataSetName !== state.selectedDataSetName);
 
-    loadingState = true;
-
     axisInverted.x = state.axisInverted && state.axisInverted.x;
     axisInverted.y = state.axisInverted && 
     state.axisInverted.y;
@@ -184,32 +139,105 @@ gadget.loadState = function(state){
     selectedColor = state.selectedColor || selectedColor || "unselect";
   }  
   
-  if (selectedDataSetNameChanged || 
-      (!selectedDataSet && dataSetList.length) ||
-      $("#selectDatasetName option").length != dataSetList.length) {
-    loadDataSet();
-  }
-  else {
-    if (selectedXAxis) {
-      $("#selectXAxis option[value=" + selectedXAxis +"]").get(0).selected = true;
-    }
-    if (selectedYAxis) {
-      $("#selectYAxis option[value=" + selectedYAxis +"]").get(0).selected = true;
-    }
-    if (selectedColor) {
-      $("#selectColor option[value=" + selectedColor +"]").get(0).selected = true;
-    }
-    if (selectedDataSetName) {
-      $("#selectDatasetName option:contains(" + selectedDataSetName  + ")").get(0).selected = true;
-    }
-    drawPlot();
-  }
+  loadDataSet();
 
-  loadingState = false;
+  // if (selectedDataSetNameChanged || 
+  //     (!selectedDataSet && dataSetList.length) ||
+  //     $("#selectDatasetName option").length != dataSetList.length) {
+  //       loadDataSet();
+  // }
+  // else {
+  //   if (selectedXAxis) {
+  //     $("#selectXAxis option[value=" + selectedXAxis +"]").get(0).selected = true;
+  //   }
+  //   if (selectedYAxis) {
+  //     $("#selectYAxis option[value=" + selectedYAxis +"]").get(0).selected = true;
+  //   }
+  //   if (selectedColor) {
+  //     $("#selectColor option[value=" + selectedColor +"]").get(0).selected = true;
+  //   }
+  //   if (selectedDataSetName) {
+  //     $("#selectDatasetName option:contains(" + selectedDataSetName  + ")").get(0).selected = true;
+  //   }
+  //   drawPlot();
+  // }
 
 };
 
 gadget.update = gadget.loadState;
+
+function loadDataSet(){
+  var dataSetsList = gadget.dashboard.getDataSetList();
+
+  if (dataSetsList.length > 0) {
+    populateSelects();
+    drawPlot();
+  }
+  else {
+    if (plot) {
+      plot.destroy();
+      plot = undefined;
+      populateSelect("selectXAxis", []);
+      populateSelect("selectYAxis", []);
+      populateSelect("selectDatasetName", []);
+      showPlot(false);
+    }
+  }
+}
+
+function populateSelects() {
+  var columnNames = [];
+
+  // Removing callbacks
+  $('#selectDatasetName').unbind('change');
+  $('#selectXAxis').unbind('change');
+  $('#selectYAxis').unbind('change');
+  $('#selectColor').unbind('change');      
+  
+  selectedColor = populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"], selectedColor).val();
+  selectedDataSetName = populateSelect('selectDatasetName', gadget.dashboard.getDataSetList(), selectedDataSetName);
+  selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetName.val());
+  selectedDataSetName = selectedDataSetName.text();
+  columnNames = selectedDataSet.getColumns();
+  selectedXAxis = populateSelect("selectXAxis", columnNames, selectedXAxis).val();
+  selectedYAxis = populateSelect("selectYAxis", columnNames, selectedYAxis).val();
+
+  // add colors to the select box (pass the select Name and color array)
+  $('#selectDatasetName').bind('change', function(){
+    if(this.selectedIndex != -1){
+      selectedDataSetName = $(this).find('option:selected').text();
+      selectedDataSet = gadget.dashboard.getDataSet($(this).val());
+      if(selectedDataSet){
+        columnNames = selectedDataSet.getColumns();
+        populateSelect("selectXAxis", columnNames, selectedXAxis);
+        populateSelect("selectYAxis", columnNames, selectedYAxis);
+      }
+      gadget.setState({ 'selectDatasetName' : selectedDataSetName });
+    }    
+  });
+  
+  $('#selectXAxis').bind('change', function(){
+    if(this.selectedIndex != -1){
+      selectedXAxis = $(this).find('option:selected').val();
+      gadget.setState({ 'selectedXAxis' : selectedXAxis });
+    }
+  });
+  
+  $('#selectYAxis').bind('change', function(){
+    if(this.selectedIndex != -1){
+      selectedYAxis = $(this).find('option:selected').val();
+      gadget.setState({ 'selectedYAxis' : selectedYAxis });
+    }
+  });
+  
+  $('#selectColor').bind('change', function(){
+    if(this.selectedIndex != -1 && !loadingState){
+      selectedColor = $(this).find('option:selected').val();
+      gadget.setState({ 'selectedColor' : selectedColor });
+    }
+  });    
+
+};
 
 // Highcharts plot options
 var chartOptions = {
@@ -311,32 +339,7 @@ function plotData(){
   }
 } 
                                                                         
-function loadDataSet(){
-  var columnNames = [];
-  var dataSetsList = gadget.dashboard.getDataSetList();
 
-  populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"], selectedColor);
-
-  if (dataSetsList.length > 0) {
-    populateSelect('selectDatasetName', gadget.dashboard.getDataSetList(), selectedDataSetName);
-    if(selectedDataSet){
-      columnNames = selectedDataSet.getColumns();
-      populateSelect("selectXAxis", columnNames, selectedXAxis);
-      populateSelect("selectYAxis", columnNames, selectedYAxis);
-    }
-    drawPlot();
-  }
-  else {
-    if (plot) {
-      plot.destroy();
-      plot = undefined;
-      populateSelect("selectXAxis", []);
-      populateSelect("selectYAxis", []);
-      populateSelect("selectDatasetName", []);
-      showPlot(false);
-    }
-  }
-}
   
 function setSelectedByMinMax(obj) {
   var data = plot.get(obj.seriesId).data;

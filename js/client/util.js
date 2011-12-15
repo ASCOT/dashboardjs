@@ -31,15 +31,19 @@ function populateSelect(selectName, options, selectedOption) {
     }
     if (newOption.text() === selectedOption) {
       newOption.attr('selected',true);    
-    } else if (newOption.val() === currentSelection) {
+    } else if (newOption.val() === currentSelection && !selectedOption) {
       newOption.attr('selected',true);    
-    } 
+    } else{
+      newOption.attr('selected',false);    
+    }
   });
 
   if (!selectedOption && !currentSelection) {
     select.find('option:first').attr('selected',true);
   }
-  select.change();
+
+  return select.find('option:selected');
+
 }
 
 function extractKeys(obj){
