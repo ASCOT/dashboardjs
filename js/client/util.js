@@ -29,9 +29,9 @@ function populateSelect(selectName, options, selectedOption) {
         newOption.val(this.toString()).text(this.toString());
         select.append(newOption);
     }
-    if (newOption.text() === selectedOption) {
+    if (newOption.text() === selectedOption || newOption.val() === selectedOption) {
       newOption.attr('selected',true);    
-    } else if (newOption.val() === currentSelection && !selectedOption) {
+    } else if ((newOption.val() === currentSelection || newOption.text() === currentSelection) && !selectedOption) {
       newOption.attr('selected',true);    
     } else{
       newOption.attr('selected',false);    

@@ -24,12 +24,21 @@ UW.Renderer = function(pTarget, numberOfColumns){
   
   this.renderGadget = function(gadget, callback){
 
-    var succesCallBack = function(id) { return function() { autoResize(id); gadget.inflateState(); callback(); } }(gadget.id);
-    var initGadget = function(){ gadget.init(succesCallBack); };
     var iframeContainer = document.createElement('div');
     var gadgetFrame = document.createElement('div');
     var gadgetIframe = document.createElement('iframe');
+    var succesCallBack = function(id) { 
+      return function() { 
+              var frame = gadgetFrame;
+              autoResize(id); 
+              gadget.inflateState();
+              frame.style.opacity = "1";  
+              callback(); 
+            } 
+    }(gadget.id);
     
+    var initGadget = function(){ gadget.init(succesCallBack); };
+
     gadgetIframe.src = gadget.url; 
     gadgetIframe.frameBorder = 'no';
     gadgetIframe.scrolling = 'no';
@@ -47,7 +56,9 @@ UW.Renderer = function(pTarget, numberOfColumns){
     
     layoutManager.addElement(gadgetFrame);
     
-    gadget.resize = function() { autoResize(this.id); };
+    gadget.resize = function() { 
+      autoResize(this.id); 
+    };
     gadgetIframe.contentWindow.gadget = gadget;
     
   };

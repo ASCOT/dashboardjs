@@ -10,6 +10,31 @@
 <link href="/css/reset.css" rel="stylesheet" type="text/css">
 <link href="/css/text.css" rel="stylesheet" type="text/css"> 
 <link href="/css/widgets.css" rel="stylesheet" type="text/css"> 
+</head>
+<body>
+<div id="content" class="extraPadding">
+	<div id="divViewPortBounds" style="float: right">
+	    <div><b>Viewport Bounds</b></div>
+	    <div id="spViewportBounds" class="info"></div>
+	</div>
+	<div id="divQuery">
+	    Dataset Name: <input id="txtDatasetName" type="text" name="dataSetName" />
+	</div>
+	<div id="divQueryButtons" style="margin-top: 10px; margin-bottom: 10px;"></div>
+	<div id="divCatalog">
+		Catalog:  <select id="selectCatalog"></select>
+	</div>
+	<div id="divQueryBox" style="width : 96%; margin-top: 10px;">
+		Query String: 
+    <div><textarea id="txtQueryString" rows="5" style="width : 100%"></textarea></div>
+  </div>
+  <div>
+		<input id="btGetData" onclick="createDataSet();" type="button" value="Submit" style="margin-left: 0px"/> 
+		<input type="button" value="LSST Query" onclick="makeSQLRequest();"> 
+		<div id="divStatusText" style="display: inline;"></div> 
+	</div>
+</div>
+</body>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js" type="text/javascript"></script>
 <script src="/util.js" type="text/javascript"></script> 
 
@@ -183,33 +208,5 @@ function populateSelect(selectName, options) {
   $("#" + selectName).html(html);
   $("#" + selectName + "option[value=" + currentSelection + "]").attr("selected", true);  
 }
-
 </script>
-</head>
-<body>
-<div id="content" class="extraPadding">
-	<div id="divViewPortBounds" style="float: right">
-	    <div><b>Viewport Bounds</b></div>
-	    <div id="spViewportBounds" class="info"></div>
-	</div>
-	<div id="divQuery">
-	    Dataset Name: <input id="txtDatasetName" type="text" name="dataSetName" />
-	</div>
-	<div id="divQueryButtons" style="margin-top: 10px; margin-bottom: 10px;"></div>
-	<div id="divCatalog">
-		Catalog:  <select id="selectCatalog"></select>
-	</div>
-	<div id="divQueryBox" style="width:100%; margin-top: 10px;">
-		Query String: 
-		<br/> 
-    <div>
-		  <textarea id="txtQueryString" rows="5" style="width: 100%"></textarea>
-    </div>
-		<br/>
-		<input id="btGetData" onclick="createDataSet();" type="button" value="Submit"/> 
-		<input type="button" value="LSST Query" onclick="makeSQLRequest();"> 
-		<div id="divStatusText" style="display: inline; margin-left: 10px"></div> 
-	</div>
-</div>
-</body>
 </html>

@@ -28,7 +28,7 @@ td{
   </div>
   <div id="divPlotToolbar" style="display: inline">
     <form name="formSelectZoom">
-      <div id="divSelectZoom" style="padding: 5px">
+      <div id="divSelectZoom">
         Selection Color: <select id="selectColor"></select>
         <input type="radio" id="radioSelect" name="radSelectZoom" value="select" checked="checked" /><label for="radSelect">Select</label>
         <input type="radio" id="radioZoom" name="radSelectZoom" value="zoom" /><label for="radZoom">Zoom</label>
@@ -80,24 +80,16 @@ gadget.init = function(callback){
   });
 
   $('#invertXAxisButton').click( function(){
-    if (loadingState) {
-      return;
-    }
-    axisInverted.x = !axisInverted.x;
     gadget.setState({ 
       axisInverted : {
-      x : axisInverted.x,
+      x : !axisInverted.x,
     }});
   });
 
   $('#invertYAxisButton').click( function(){
-    if (loadingState) {
-      return;
-    }
-    axisInverted.y = !axisInverted.y;
     gadget.setState({ 
       axisInverted : {
-      y : axisInverted.y,
+      y : !axisInverted.y,
     }});
   });
 
@@ -106,14 +98,7 @@ gadget.init = function(callback){
 
 gadget.loadState = function(state){
   
-  var selectedDataSetNameChanged = false;
-  var dataSetList = gadget.dashboard.getDataSetList();
-
   if (state) {
-    selectedDataSetNameChanged = state.selectedDataSetName 
-      && selectedDataSetName
-      && (selectedDataSetName !== state.selectedDataSetName);
-
     axisInverted.x = state.axisInverted && state.axisInverted.x;
     axisInverted.y = state.axisInverted && 
     state.axisInverted.y;
@@ -138,35 +123,12 @@ gadget.loadState = function(state){
     selectedYAxis = state.selectedYAxis || selectedYAxis || false;
     selectedColor = state.selectedColor || selectedColor || "unselect";
   }  
-  
-  loadDataSet();
-
-  // if (selectedDataSetNameChanged || 
-  //     (!selectedDataSet && dataSetList.length) ||
-  //     $("#selectDatasetName option").length != dataSetList.length) {
-  //       loadDataSet();
-  // }
-  // else {
-  //   if (selectedXAxis) {
-  //     $("#selectXAxis option[value=" + selectedXAxis +"]").get(0).selected = true;
-  //   }
-  //   if (selectedYAxis) {
-  //     $("#selectYAxis option[value=" + selectedYAxis +"]").get(0).selected = true;
-  //   }
-  //   if (selectedColor) {
-  //     $("#selectColor option[value=" + selectedColor +"]").get(0).selected = true;
-  //   }
-  //   if (selectedDataSetName) {
-  //     $("#selectDatasetName option:contains(" + selectedDataSetName  + ")").get(0).selected = true;
-  //   }
-  //   drawPlot();
-  // }
-
+  updateGUI();
 };
 
 gadget.update = gadget.loadState;
 
-function loadDataSet(){
+function updateGUI(){
   var dataSetsList = gadget.dashboard.getDataSetList();
 
   if (dataSetsList.length > 0) {
@@ -209,32 +171,31 @@ function populateSelects() {
       selectedDataSet = gadget.dashboard.getDataSet($(this).val());
       if(selectedDataSet){
         columnNames = selectedDataSet.getColumns();
-        populateSelect("selectXAxis", columnNames, selectedXAxis);
-        populateSelect("selectYAxis", columnNames, selectedYAxis);
+        selectedXAxis = populateSelect("selectXAxis", columnNames, selectedXAxis).val();
+        selectedYAxis = populateSelect("selectYAxis", columnNames, selectedYAxis).val();
       }
-      gadget.setState({ 'selectDatasetName' : selectedDataSetName });
+      gadget.setState({ 
+        'selectedDataSetName' : selectedDataSetName,
+        'selectedXAxis' : selectedXAxis,
+        'selectedYAxis' : selectedYAxis
+      });
     }    
   });
   
   $('#selectXAxis').bind('change', function(){
     if(this.selectedIndex != -1){
-      selectedXAxis = $(this).find('option:selected').val();
-      gadget.setState({ 'selectedXAxis' : selectedXAxis });
+      gadget.setState({ 'selectedXAxis' : $(this).find('option:selected').val() });
     }
   });
   
   $('#selectYAxis').bind('change', function(){
     if(this.selectedIndex != -1){
-      selectedYAxis = $(this).find('option:selected').val();
-      gadget.setState({ 'selectedYAxis' : selectedYAxis });
+      gadget.setState({ 'selectedYAxis' : $(this).find('option:selected').val() });
     }
   });
   
   $('#selectColor').bind('change', function(){
-    if(this.selectedIndex != -1 && !loadingState){
-      selectedColor = $(this).find('option:selected').val();
-      gadget.setState({ 'selectedColor' : selectedColor });
-    }
+    selectedColor =  $(this).find('option:selected').val();
   });    
 
 };
@@ -254,7 +215,7 @@ var chartOptions = {
           selectionObject = {'seriesId': 'series1', 'xMin': selectionEvent.xAxis[0].min, 'xMax':  selectionEvent.xAxis[0].max, 
                               'yMin': selectionEvent.yAxis[0].min, 'yMax':  selectionEvent.yAxis[0].max, color: selectedColor};
           // We make this call ashyncronous and the plot gives the impression of being more responsive
-          setTimeout(function() { setSelectedByMinMax(selectionObject) }, 1);
+          setSelectedByMinMax(selectionObject);
         }
       }
     }
@@ -344,22 +305,21 @@ function plotData(){
 function setSelectedByMinMax(obj) {
   var data = plot.get(obj.seriesId).data;
   var selectedIds = [];  
-  var selectedMarkerColor = obj.color; 
   var point;
-  var color;
   var i;
 
   for (i=0, len=data.length; i<len; i++){ 
     point = data[i];
     if (point.x <= obj.xMax && point.x >= obj.xMin && point.y <= obj.yMax && point.y >= obj.yMin) {
-      selectedIds.push(point.id);             
+      selectedIds.push(point.id);
+      colorChartPoint(point, selectedColor);         
     }
   }
+
   // update the dataset with the selected points 
   // set dataset points colors in bulk
   if(selectedIds.length > 0){
-    color = (selectedMarkerColor === "unselect") ? "grey" : selectedMarkerColor;
-    selectedDataSet.setRecords({'color': color}, selectedIds); 
+    setTimeout(function() { selectedDataSet.setRecords({'color': selectedColor}, selectedIds); }, .1);
   }
    
 }

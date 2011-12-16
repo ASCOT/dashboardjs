@@ -61,7 +61,9 @@ UW.Dashboard = function(_id, container, dashboardUrl){
           });
         }
       }
-      dashboard.trigger('dataSetChanged', {});
+      else {
+        dashboard.trigger('dataSetChanged', {});
+      }
     },dashboard));
     if(!silent) {
       dashboard.trigger('dataSetChanged', {});

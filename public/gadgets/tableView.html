@@ -45,38 +45,33 @@ var table;
 
 // Creates gadget object
 gadget.init = function(callback){ 
-  gadget.onNotification('dataSetChanged', update);  
+  gadget.onNotification('dataSetChanged', gadget.update);  
   // add colors to the select box (pass the select Name and color array)
   $('#selectDataSetName').change( function(){
     if(this.selectedIndex != -1){
       selectedDataSetId = this[this.selectedIndex].value;
-      updateTable();
+      gadget.setState({'selectedDataSetId' : selectedDataSetId});
     }
   });
  callback();
 }
 
-gadget.saveState = function(){
-  return { 
-    'selectedDataSetId': selectedDataSetId
-  }
-};
-
 gadget.loadState = function(state){
-  selectedDataSetId = state.selectedDataSetId || "";
-  populateDataSetList();
-};
-
-function update(){
   var dataSetList = gadget.dashboard.getDataSetList();
+  if (state) {
+    selectedDataSetId = state.selectedDataSetId || selectedDataSetId;
+  }
   if (dataSetList.length > 0) {
-    populateSelect('selectDataSetName', dataSetList, selectedDataSetId);
+    selectedDataSetId = populateSelect('selectDataSetName', dataSetList, selectedDataSetId).val();
+    updateTable();
   }
   else { // I no datasets we return to default 
     $("#content").css('height', 0);
     gadget.resize();
   }
-}
+};
+
+gadget.update = gadget.loadState; 
 
 function updateTable() {
   var tableDiv = "divTable";

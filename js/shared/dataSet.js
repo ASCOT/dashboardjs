@@ -75,7 +75,7 @@ if (!UW) var UW={};
     applyModifiers: function(modifiers, silent){
       var current;
       if (modifiers.length > 0) {
-        for (var i = 0; i < modifiers.length; ++i) {
+        for (var i = modifiers.length-1; i >= 0; --i) {
           this.applyModifier(modifiers[i]);
         }
         if (!silent) {
@@ -163,6 +163,7 @@ if (!UW) var UW={};
       }
 
       return modifiers;
+      
     },
   
     setRecord: function (attributes, id) {
