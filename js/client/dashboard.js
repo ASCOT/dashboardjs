@@ -245,7 +245,7 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     
     UW.ajax({
       "url" : "/dataSet/",
-      "type" : "post",
+      "type" : "POST",
       "data" : JSON.stringify(queryData),
       "success" : _.bind(createDataSetSuccess, this)
     });    

@@ -14,16 +14,18 @@
 <script src="/gfx/gfx.js" type="text/javascript" charset="utf-8"></script>
 <script src="/gfx/gfx.cube.js" type="text/javascript" charset="utf-8"></script>
 
+<script src="/xhr.js" type="text/javascript" charset="utf-8"></script>
+
 <script type="text/javascript">
 
 var gadgets;
 var selectedGadgets = {};
 
 function requestNewDashboard(configuration){
-  $.ajax({
-    url: '/dashboard/',
-    type: 'POST',
-    data: JSON.stringify(configuration),
+  UW.ajax({
+    "url": "/dashboard/",
+    "type": "POST",
+    "data": JSON.stringify(configuration),
     success: function(newId) { document.location.href = "/dashboard/" + newId; }
   });
 }
