@@ -2,77 +2,77 @@ var gadgets = {
   asciiFileLoader: {
     name: "ASCII File Loader",
     fileName: "asciiDataLoader.html",
-    description: "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum",
+    description: "Load data into ASCOT from local text files.",
     author: "Spencer Wallace - spencerw@email.arizona.edu",
     version: "0.1"
   },
   dataInquirer: { 
     name: "Data Inquirer",
     fileName: "dataInquirer.html",
-    description: "Connect to remote databases to download data via SQL queries.",
+    description: "Create DataSets from queries to web services and remote databases.",
     author: "Ian Smith - imsmith@uw.edu",
     version: "0.1" 
   },
   dataSetSelector: {
      name: "DataSet Selector",
      fileName: "dataSetSelector.html",
-     description: "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum",
+     description: "Change the visibility of DataSets.",
      author: "Ian Smith - imsmith@uw.edu",
      version: "0.1"
    },
   fitsViewer: {
     name: "FITS Viewer",
     fileName: "FITSViewer_PDR.html",
-    description: "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum",
+    description: "Display and interact with FITS files.",
     author: "Spencer Wallace - spencerw@email.arizona.edu",
     version: "0.1"
   },
   histogramView: {
     name: "Histogram",
     fileName: "histogramView.html",
-    description: "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum",
+    description: "Create interactive histograms from DataSets.",
     author: "Ian Smith - imsmith@uw.edu",
     version: "0.1"
   },
   nameResolver: {
     name: "Name Resolver",
     fileName: "nameResolver.html",
-    description: "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum",
+    description: "Resolve a celestial object name into its coordinates.",
     author: "Ian Smith - imsmith@uw.edu",
     version: "0.1"
   },
   plotView: {
     name: "Scatter Plot",
     fileName: "plotView.html",
-    description: "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum",
+    description: "Create interactive scatter plots from DataSets.",
     author: "Ian Smith - imsmith@uw.edu",
     version: "0.1"
   },
   scalableScatter: {
     name: "ScalableScatter",
     fileName: "scalableScatter.html",
-    description: "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum",
+    description: "Create interactive density plots from DataSets. Useful for visualizing many thousands of points.",
     author: "Spencer Wallace - spencerw@email.arizona.edu",
     version: "0.1"
   },
   skyView: {
     name: "Sky Viewer",
     fileName: "skyView.html",
-    description: "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum",
+    description: "Pan, zoom, and plot points across the sky with the Google Earth plugin.",
     author: "Ian Smith - imsmith@uw.edu",
     version: "0.1"
   },
   tableView: { 
     name: "Table",
     fileName: "tableView.html",
-    description: "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum",
+    description: "Display DataSets as a table with movable and sortable columns.",
     author: "Ian Smith - imsmith@uw.edu",
     version: "0.1"
   },
   newFitsViewer: { 
     name: "fitsjs",
     fileName: "newFitsViewer.html",
-    description: "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum",
+    description: "Display and interact with FITS files.",
     author: "Diego Marcos - diego.marcos@gmail.com",
     version: "0.1"
   }
