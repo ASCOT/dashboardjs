@@ -263,7 +263,7 @@
         '<span class="dataSetLabel">Name: <strong>' + ASCOT.dashboard.getDataSet(dataSetList[i].id).name + '</strong></span>' +
         '<span class="dataSetLabel">Author: <strong>Anonymous</strong></span>' +
         '<span class="dataSetLabel">Records: <strong>' + ASCOT.dashboard.getDataSet(dataSetList[i].id).length() + '</strong></span>' +
-        '<span class="dataSetLabel">Url: <a href="http://localhost/dataset/' + dataSetList[i].id + '">http://localhost/dataset/' + dataSetList[i].id + '</a></span>';
+        '<span class="dataSetLabel">Url: <a href=' + document.location.origin + '/dataset/' + dataSetList[i].id + '">http://localhost/dataset/' + dataSetList[i].id + '</a></span>';
 
       dataSetInfo.appendChild(unloadButton)
       dataSetEntry.appendChild(dataSetInfo);

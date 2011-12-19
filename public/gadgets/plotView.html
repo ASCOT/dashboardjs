@@ -81,7 +81,8 @@ gadget.init = function(callback){
   $('#invertXAxisButton').click( function(){
     gadget.setState({ 
       axisInverted : {
-      x : !axisInverted.x,
+        x : !axisInverted.x,
+        y : axisInverted.y
     }});
   });
 
@@ -89,6 +90,7 @@ gadget.init = function(callback){
     gadget.setState({ 
       axisInverted : {
       y : !axisInverted.y,
+      x : axisInverted.x
     }});
   });
 
@@ -99,8 +101,7 @@ gadget.loadState = function(state){
   
   if (state) {
     axisInverted.x = state.axisInverted && state.axisInverted.x;
-    axisInverted.y = state.axisInverted && 
-    state.axisInverted.y;
+    axisInverted.y = state.axisInverted && state.axisInverted.y;
 
     if (axisInverted.x) {
       $('#invertXAxisButton').get(0).value = '>';
@@ -109,9 +110,9 @@ gadget.loadState = function(state){
     }
 
     if (axisInverted.y) {
-      $('#invertYAxisButton').get(0).value = 'v';
-    } else {
       $('#invertYAxisButton').get(0).value = '^';
+    } else {
+      $('#invertYAxisButton').get(0).value = 'v';
     }
 
     verboseTooltip = state.verboseTooltip || verboseTooltip || false;
