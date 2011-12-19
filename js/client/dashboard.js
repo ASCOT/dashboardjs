@@ -49,8 +49,10 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     var newDataSet = new UW.DataSet(data);
     var id = newDataSet.id;
     loadedDataSets[id] = newDataSet;
+    var modifiers;
     if ((dashboardModel.at('dataSets').get())[id]) {
-      loadedDataSets[id].applyModifiers((dashboardModel.at('dataSets').get())[id].modifiers);
+      modifiers = (dashboardModel.at('dataSets').get())[id].modifiers || [];
+      loadedDataSets[id].applyModifiers(modifiers);
     }
     newDataSet.bind('changed', _.bind(function(data) {
       if (data && data.modifiers) {
