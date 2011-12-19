@@ -20,16 +20,18 @@ function populateSelect(selectName, options, selectedOption) {
   select.find('option').remove().end();
   $.each(options, function() {
     var newOption;
-    if (isObject(this) && toString.call(this) !== '[object String]') {
+    if (isObject(this) && 
+        toString.call(this) !== '[object String]' &&
+        toString.call(this) !== '[object Number]') {
         newOption = $("<option />")
         newOption.val(this.id).text(this.text);
         select.append(newOption);
     } else {
         newOption = $("<option />")
-        newOption.val(this.toString()).text(this.toString());
+        newOption.val(this).text(this.toString());
         select.append(newOption);
     }
-    if (newOption.text() === selectedOption || newOption.val() === selectedOption) {
+    if (newOption.text() === selectedOption.toString() || newOption.val() === selectedOption.toString()) {
       newOption.attr('selected',true);    
     } else if ((newOption.val() === currentSelection || newOption.text() === currentSelection) && !selectedOption) {
       newOption.attr('selected',true);    
