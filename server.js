@@ -1,6 +1,6 @@
 // NPM dependencies
 var express = require('express');
-var sharejs = require('../share/').server;
+var sharejs = require('../ShareJgit/').server;
 var faye = require('faye');
 
 // Local Modules
