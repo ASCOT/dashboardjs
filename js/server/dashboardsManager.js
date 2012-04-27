@@ -80,7 +80,7 @@ var defaultDashboards = [
   }
 ];
 
-var defaultGadgetsSet = {skyView: { number: 1 }, nameResolver: { number: 1 }, dataSetSelector: { number: 1 }, dataInquirer: { number: 1 }, tableView: { number: 1 }, plotView: { number: 1 }};
+var defaultGadgetsSet = {fitsViewer: { number: 1 }};
 
 module.exports = function(app, model) {
 
@@ -108,7 +108,7 @@ module.exports = function(app, model) {
     var i;
     var newDashboard = {
         author: 'UW',
-        numberOfColumns: 2,
+        numberOfColumns: 1,
         gadgetsOrder : [],  
         gadgets: {},
         dataSets: {},

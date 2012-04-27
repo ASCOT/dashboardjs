@@ -20,13 +20,6 @@ var gadgets = {
      author: "Ian Smith - imsmith@uw.edu",
      version: "0.1"
    },
-  fitsViewer: {
-    name: "FITS Viewer",
-    fileName: "FITSViewer_PDR.html",
-    description: "Display and interact with FITS files.",
-    author: "Spencer Wallace - spencerw@email.arizona.edu",
-    version: "0.1"
-  },
   histogramView: {
     name: "Histogram",
     fileName: "histogramView.html",
@@ -69,11 +62,11 @@ var gadgets = {
     author: "Ian Smith - imsmith@uw.edu",
     version: "0.1"
   },
-  newFitsViewer: { 
-    name: "fitsjs",
-    fileName: "newFitsViewer.html",
-    description: "Display and interact with FITS files.",
-    author: "Diego Marcos - diego.marcos@gmail.com",
+  fitsViewer: { 
+    name: "Fits Viewer",
+    fileName: "fitsViewer.html",
+    description: "Display and interact with fits files.",
+    author: "Diego Marcos - diego.marcos@gmail.com, Spencer Wallace - spencerw@email.arizona.edu",
     version: "0.1"
   }
 }
