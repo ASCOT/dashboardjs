@@ -80,7 +80,7 @@ var defaultDashboards = [
   }
 ];
 
-var defaultGadgetsSet = {fitsViewer: { number: 1 }};
+var defaultGadgetsSet = {fitsViewer: { number: 1 }, dataInquirer: { number: 1}};
 
 module.exports = function(app, model) {
 
