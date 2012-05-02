@@ -1,0 +1,505 @@
+<!-- Author: Spencer Wallace (spencerw@email.arizona.edu) -->
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Pragma" content="no-cache">
+<title>Fits Viewer</title>
+
+<!-- ASCOT Basic Style Sheets -->
+<link href="/css/reset.css" rel="stylesheet" type="text/css">
+<link href="/css/text.css" rel="stylesheet" type="text/css"> 
+<link href="/css/widgets.css" rel="stylesheet" type="text/css"> 
+<link href="/css/fitsViewer.css" rel="stylesheet" type="text/css">
+</head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script src="/jquery.ui.slider.js" type="text/javascript"></script>
+<script src="/require.js" type="text/javascript"></script>
+<script src="/glfx.js" type="text/javascript"></script>
+<script src="/pngParser.js" type="text/javascript"></script>
+<script src="/fits.js" type="text/javascript"></script>
+<script src="/canvasAnnotator.js" type="text/javascript"></script>
+<script>
+
+var imageFiles = [{ path: '/images/stsci_dss_001.fits',
+                  name: 'stsci_dss_001.fits' }];
+
+var sliders = [{name : 'brightness', label : 'Brightness', min : -1, max : 1, value : 0, step : 0.01 },
+               {name : 'contrast', label : 'Contrast', min : -1, max : 1, value : 0, step : 0.01 }];
+
+var options;
+
+var annotator;
+var fitsCanvas;
+var showAnnotations = true;
+
+var mouseDown = false;
+var prevSelectedIndex = -1;
+var dragStart = {x: '', y: ''};
+var editContext;
+var EDIT_TYPE = {ADD: 1, REMOVE: 2, ZOOM: 3, PAN: 4};
+var ANNO_TYPE = {RECT: 1, CIRCLE: 2, POLY: 3};
+var COORD_TYPE = {PIXEL: 1, WCS: 2};
+var selectedCoordType = COORD_TYPE.WCS;
+var selectedEditType = EDIT_TYPE.ADD;
+var selectedAnnoType = ANNO_TYPE.CIRCLE;
+var polyCreateList = []
+
+  // create HR object
+gadget.init = function(finishedLoading){
+	initViewer();
+	var editCanvas = document.getElementById('editCanvas');
+	editContext = editCanvas.getContext('2d');
+	editContext.globalAlpha = 0.5;
+	editContext.fillStyle = '#FFFFFF';
+  finishedLoading();
+};
+
+var initViewer = function() {
+require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(fits, PNGParser, BinaryAjax, canvasAnnotator) {
+    var dropbox = document.getElementById('dropbox');
+    fitsCanvas = document.getElementById('fitsCanvas');
+    var canvasArea = document.getElementById('canvasArea');
+    annotator = canvasAnnotator;
+    
+    var loadImage = function() {
+      var extensionExpr = /.*\.([^.]+)$/
+      var imageFile = $(this).val();
+      var imageType = (imageFile.match(extensionExpr))[1];
+      BinaryAjax(imageFile, function(oHTTP) {
+        fits.renderImage(oHTTP.responseText, fitsCanvas, renderSuccess);
+      });
+    };
+
+    options = $("#imagesList");
+    $.each(imageFiles, function() {
+      options.append($("<option />").val(this.path).text(this.name));
+    }); 
+
+    var tbody = $('#slidersList')[0];
+    // Add a row for each slider
+    for (var i = 0; i < this.sliders.length; i++) {
+      var slider = this.sliders[i];
+      $('<tr><th>' + slider.label.replace(/ /g, '&nbsp;') + ':</th><td><div id="slider' + i + '"></div></td></tr>').appendTo(tbody);
+      var onchange = (function(this_, slider) {
+          return function(event, ui) {
+            this_[slider.name] = ui.value;
+            fits.filters.brightnessContrast(this_.brightness , this_.contrast);
+          };  
+      })(this, slider);
+      $('#slider' + i).slider({
+          slide: onchange,
+          change: onchange,
+          min: slider.min,
+          max: slider.max,
+          value: slider.value,
+          step: slider.step
+      });
+      this[slider.name] = slider.value;
+    }
+
+    options.change(loadImage);
+
+    dropbox.addEventListener("dragenter", noopHandler, false);
+    dropbox.addEventListener("dragexit", noopHandler, false);
+    dropbox.addEventListener("dragover", noopHandler, false);
+    dropbox.addEventListener("drop", drop, false);
+    
+		canvasArea.addEventListener('mousedown', handleMousedown, false);
+		canvasArea.addEventListener('mouseup', handleMouseup, false);
+		canvasArea.addEventListener('mousemove', handleMousemove, false);
+		canvasArea.addEventListener('mousewheel', handleMousewheel, false);
+
+    var noopHandler = function(evt) {
+     evt.stopPropagation();
+     evt.preventDefault();
+    };
+
+    var drop = function(evt) {
+     var files = evt.dataTransfer.files;
+     var count = files.length;
+     evt.stopPropagation();
+     evt.preventDefault();
+     // Only call the handler if 1 or more files was dropped.
+     if (count > 0) {
+       document.getElementById("dropLabel").innerHTML = "Processing " + files[0].name;
+       renderFile(files[0]);
+      }
+    };
+
+    var renderSuccess = function(fitsHeader){
+      document.getElementById('dropLabel').style.display = 'none'; 
+      //document.getElementById('loadingBar').style.display = 'none'; 
+      fitsCanvas.style.display = 'inline-block';
+      
+      annotator.init(document.getElementById('annotationCanvas'),fitsHeader);
+       
+    	var circlePos = canvasAnnotator.wcs2pix(241.1766,10.102814);
+  		canvasAnnotator.addCircleRegion({'xPos': circlePos.x, 'yPos': circlePos.y, 'radius': 10, label: "circle"});
+  		document.getElementById("annoSelect").add(new Option("circle", "0"), null);
+  		
+  		var rectCorner1 = canvasAnnotator.wcs2pix(241.14284,10.097803);
+  		var rectCorner2 = canvasAnnotator.wcs2pix(241.10768,10.055799);
+  		canvasAnnotator.addRectRegion({'xPos': rectCorner1.x, 'yPos': rectCorner1.y, 
+  																	 'width': rectCorner2.x-rectCorner1.x, 'height': rectCorner2.y-rectCorner1.y, 
+  																	 'label': "rectangle"});
+  		document.getElementById("annoSelect").add(new Option("rectangle", "0"), null);
+  		
+  		
+  		var polyPoint1 = canvasAnnotator.wcs2pix(241.14991,10.038203);
+  		var polyPoint2 = canvasAnnotator.wcs2pix(241.11599,10.038834);
+  		var polyPoint3 = canvasAnnotator.wcs2pix(241.09425,10.019755);
+  		var polyPoint4 = canvasAnnotator.wcs2pix(241.11591,10.007677);
+  		var polyPoint5 = canvasAnnotator.wcs2pix(241.15262,10.008678);
+  		var labelPos = canvasAnnotator.wcs2pix(241.10089,10.007713);
+  		canvasAnnotator.addPolyRegion({'vertices': [[polyPoint1.x,polyPoint1.y],
+  																								[polyPoint2.x,polyPoint2.y],
+  																								[polyPoint3.x,polyPoint3.y],
+  																								[polyPoint4.x,polyPoint4.y],
+  																								[polyPoint5.x,polyPoint5.y]], 
+  																	 'label': "polygon", 'labelXPos': labelPos.x, 'labelYPos': labelPos.y});
+  		document.getElementById("annoSelect").add(new Option("polygon", "0"), null);
+  		
+      annotator.draw();
+    };
+
+    renderFile = function(file){
+      document.getElementById('dropLabel').innerHTML = 'Loading file...';
+      //document.getElementById('loadingBar').style.display = 'block'; 
+      //canvas.setAttribute('width',this.width);
+      //canvas.setAttribute('height',this.height);
+      //canvas.setAttribute('id',this.id);
+      fits.renderImage(file, fitsCanvas, renderSuccess);	
+    };
+
+    // fits.onHoverPixelChanged = function(pixelInfo){
+    //   var x = document.getElementById("xCoordinate");
+    //   var y = document.getElementById("yCoordinate");
+    //   var value = document.getElementById("pixelValue");
+    //   x.innerHTML = pixelInfo.x;
+    //   y.innerHTML = pixelInfo.y;
+    //   value.innerHTML = pixelInfo.value;
+    // };
+
+  });
+}
+
+gadget.saveState = function(){};
+gadget.loadState = function(state){};
+
+// Event handlers for the canvases
+
+var handleMousedown = function(e) {
+	// Send event to fits image canvas
+	if (selectedEditType == EDIT_TYPE.PAN) {
+		var evObj = document.createEvent('MouseEvents');
+		evObj.initMouseEvent( 'mousedown', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
+		fitsCanvas.dispatchEvent(evObj);
+	}
+
+	mouseDown = true;
+	if (selectedEditType == EDIT_TYPE.ADD) {
+		dragStart = {x: e.offsetX, y: e.offsetY};
+	}
+	annotator.handleMousedown(e);
+}
+
+var handleMouseup = function(e) {
+	// Send event to fits image canvas
+	var evObj = document.createEvent('MouseEvents');
+	evObj.initMouseEvent( 'mouseup', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
+	fitsCanvas.dispatchEvent(evObj);
+
+	mouseDown = false;
+	if (selectedEditType == EDIT_TYPE.ADD) {
+		editContext.clearRect(0,0,640,480);
+		var start = annotator.cursorToPixel(dragStart.x, dragStart.y);
+		var end = annotator.cursorToPixel(e.offsetX, e.offsetY);
+		if (selectedAnnoType == ANNO_TYPE.RECT) {
+			annotator.addRectRegion({'xPos':start.x, 'yPos': start.y, 
+  												 		 'width': end.x-start.x, 'height': end.y-start.y, 
+  														 'label': "rect"});
+ 			document.getElementById("annoSelect").add(new Option("rect", "0"), null);
+		}
+		else if (selectedAnnoType == ANNO_TYPE.CIRCLE) {
+			annotator.addCircleRegion({'xPos': start.x, 'yPos': start.y, 'radius': Math.abs(end.x-start.x), label: "another"});
+			document.getElementById("annoSelect").add(new Option("circle", "0"), null);
+		}
+	}
+	annotator.handleMouseup(e);
+}
+
+var handleMousewheel = function(e) {
+	// Send event to fits image canvas
+	var evObj = document.createEvent('MouseEvents');
+	evObj.initMouseEvent( 'mousewheel', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
+	evObj.wheelDelta = e.wheelDelta;
+	fitsCanvas.dispatchEvent(evObj);
+	var zoomIn = false;
+	if (e.wheelDelta > 0)
+		zoomIn = true;
+	annotator.zoom(e.offsetX, e.offsetY, zoomIn);
+}
+
+var handleMousemove = function(e) {
+	// Send event to fits image canvas
+	var evObj = document.createEvent('MouseEvents');
+	evObj.initMouseEvent( 'mousemove', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
+	fitsCanvas.dispatchEvent(evObj);
+
+	if (mouseDown) {
+		if (selectedEditType == EDIT_TYPE.ADD) {
+			editContext.clearRect(0,0,640,480);
+			if (selectedAnnoType == ANNO_TYPE.RECT)
+				editContext.fillRect(dragStart.x, dragStart.y, e.offsetX-dragStart.x, e.offsetY-dragStart.y);
+			else if (selectedAnnoType == ANNO_TYPE.CIRCLE) {
+				editContext.beginPath();
+				editContext.arc(dragStart.x	, dragStart.y, Math.abs(e.offsetX-dragStart.x), 0, 2 * Math.PI, false);
+				editContext.fill();
+			}
+		}
+		else if (selectedEditType == EDIT_TYPE.PAN)
+			annotator.handleMousemovePan(e);
+	}
+	else
+		annotator.handleMousemove(e);
+}
+  
+// HTML controls
+
+var clickRadioAdd = function() {
+	document.getElementById("removeControls").style.display = "none";
+	document.getElementById("addControls").style.display = "block";
+	selectedEditType = EDIT_TYPE.ADD;
+	
+	switch (selectedAnnoType) {
+		case ANNO_TYPE.CIRCLE:
+			document.getElementById("circleControls").style.display = "block";
+			break;
+		case ANNO_TYPE.RECT:
+			document.getElementById("rectControls").style.display = "block";
+			break;
+		case ANNO_TYPE.POLY:
+			document.getElementById("polyControls").style.display = "block";
+			break;
+	}
+}
+
+var clickRadioRemove = function() {
+	document.getElementById("addControls").style.display = "none";
+	document.getElementById("removeControls").style.display = "block";
+	document.getElementById("polyControls").style.display = "none";
+	selectedEditType = EDIT_TYPE.REMOVE;
+}
+
+var clickRadioPan = function() {
+	selectedEditType = EDIT_TYPE.PAN;
+}
+
+var clickRadioCircle = function() {
+	document.getElementById("rectControls").style.display = "none";
+	document.getElementById("circleControls").style.display = "block";
+	document.getElementById("polyControls").style.display = "none";
+	selectedAnnoType = ANNO_TYPE.CIRCLE;
+}
+
+var clickRadioRect = function() {
+	document.getElementById("rectControls").style.display = "block";
+	document.getElementById("circleControls").style.display = "none";
+	document.getElementById("polyControls").style.display = "none";
+	selectedAnnoType = ANNO_TYPE.RECT;
+}
+
+var clickRadioPoly = function() {
+	document.getElementById("rectControls").style.display = "none";
+	document.getElementById("circleControls").style.display = "none";
+	document.getElementById("polyControls").style.display = "block";
+	selectedAnnoType = ANNO_TYPE.POLY;
+}
+
+var clickRadioPix = function() {
+	selectedCoordType = COORD_TYPE.PIX;
+}
+
+var clickRadioWCS = function() {
+	selectedCoordType = COORD_TYPE.WCS;
+}
+
+var clickRemovalSelection = function() {
+	var selectedIndex = document.getElementById("annoSelect").selectedIndex+1;
+	if (prevSelectedIndex != -1)
+		annotator.revertColor(prevSelectedIndex);
+	annotator.colorAnnotation(selectedIndex, "#FF0000");
+	prevSelectedIndex = selectedIndex;
+}
+
+var clickShowAnnotations = function() {
+	if (showAnnotations) {
+		annotator.hideAnnotations();
+		showAnnotations = false;
+	}
+	else {
+		annotator.showAnnotations();
+		showAnnotations = true;
+	}
+}
+
+var addPolyPoint = function() {
+	var coordA = document.getElementById("polyPosA").value;
+	var coordB = document.getElementById("polyPosB").value;
+	var str = "(" + coordA + ", " + coordB + ")";
+	document.getElementById("polyPointsSelect").add(new Option(str, "0"), null);
+	polyCreateList.push([coordA, coordB]);
+}
+
+var removeSelectedPolyPoint = function() {
+	var list = document.getElementById("polyPointsSelect");
+	var selectedId = list.selectedIndex;
+	if (selectedId != -1) {
+		list.remove(selectedId);
+	}
+	polyCreateList.splice(selectedId,1);
+}
+
+var removeAnnotations = function() {
+	var numAnnos = document.getElementById("annoSelect").length;
+	var list = document.getElementById("annoSelect");
+	for (var i = 0; i < numAnnos; i++) {
+		annotator.removeAnnotation(0);
+		list.remove(0);
+	}
+}
+
+var removeSelectedAnnotation = function () {
+	var list = document.getElementById("annoSelect");
+	var selectedId = list.selectedIndex;
+	if (selectedId != -1) {
+		annotator.removeAnnotation(selectedId);
+		list.remove(selectedId);
+	}
+}
+
+// Called when the user clicks 'create' for a circle annotation
+var createCircleAnno = function() {
+	var coordA = document.getElementById('circlePosA').value;
+	var coordB = document.getElementById('circlePosB').value;
+	var radius = document.getElementById('circleRadius').value;
+	var label = document.getElementById('circleLabel').value;
+	
+	var circlePos;
+	if (selectedCoordType == COORD_TYPE.WCS)
+		circlePos = annotator.wcs2pix(coordA,coordB);
+	else
+		circlePos = {"x": parseFloat(coordA), "y": parseFloat(coordB)};
+	annotator.addCircleRegion({'xPos': circlePos.x, 'yPos': circlePos.y, 'radius': parseFloat(radius), label: label});
+	document.getElementById("annoSelect").add(new Option(label, "0"), null);
+}
+
+var createRectAnno = function() {
+	var corner1A = document.getElementById('rectPosA').value;
+	var corner1B = document.getElementById('rectPosB').value;
+	var width = document.getElementById('rectWidth').value;
+	var height = document.getElementById('rectHeight').value;
+	var label = document.getElementById('rectLabel').value;
+
+	var corner1;
+	var corner2;
+	if (selectedCoordType == COORD_TYPE.WCS) {
+		corner1 = annotator.wcs2pix(corner1A,corner1B);
+		corner2 = annotator.wcs2pix(parseFloat(corner1A)+parseFloat(width),parseFloat(corner1B)+parseFloat(height));
+	}
+	else {
+		corner1 = {"x": parseFloat(corner1A), "y": parseFloat(corner1B)};
+		corner2 = {"x": parseFloat(corner1A)+parseFloat(width), "y": parseFloat(corner1B)+parseFloat(height)};
+	}
+	annotator.addRectRegion({'xPos': corner1.x, 'yPos': corner1.y, 
+  												 'width': corner2.x-corner1.x, 'height': corner2.y-corner1.y, 
+  												 'label': label});
+ 	document.getElementById("annoSelect").add(new Option(label, "0"), null);
+}
+
+var createPolyAnno = function() {
+	var list = document.getElementById("polyPointsSelect");
+	var polyPoints = [];
+	for (i in polyCreateList) {
+		list.remove(0);
+		var point = annotator.wcs2pix(polyCreateList[i][0], polyCreateList[i][1])
+		polyPoints.push([point.x, point.y]);
+	}
+	
+	polyCreateList = [];
+	
+	annotator.addPolyRegion({'vertices': polyPoints, 'label': "polygon", 'labelXPos': 0, 'labelYPos': 0});
+	document.getElementById("annoSelect").add(new Option("polygon", "0"), null);
+}
+
+</script>
+<body>
+	<div id="wrapper">
+				<div id="dropbox">
+					<div id="canvasArea" style="position: relative">
+						<canvas id="fitsCanvas" style="position: absolute; left: 0; top: 0; display: none; z-index:0" width="640" height="480"></canvas>
+						<canvas id="annotationCanvas" style="position: absolute; left: 0; top: 0; z-index: 1" width="640" height="480"></canvas>
+						<canvas id="editCanvas" style="position: absolute; left: 0; top: 0; z-index: 2" width="640" height="480"></canvas>
+					</div>
+					<div id="loadingBar" style="display: none"><img style="height: 19px; width: 107px" alt="dashboard loading" src='/images/loadingBar.gif'></div>  
+						<span id="dropLabel"></span>
+					</div>
+				</div>
+				<div id="fileChooser"><input type="file" onchange="renderFile(this.files[0])"></div>
+				<div id="annoControls">
+					Annotations
+					<input type="radio" value="add" id="editRad" name="editRad" checked="checked" onclick="clickRadioAdd();" /><label>Add</label>
+					<input type="radio" value="remove" id="editRad" name="editRad" onclick="clickRadioRemove();" /><label>Remove</label>
+					<input type="radio" value="pan" id="editRad" name="editRad" onclick="clickRadioPan();" /><label>Pan</label>
+					<hr>
+					<div id="addControls">
+						<input type="radio" value="circle" id="addTypeRad" name="addTypeRad" checked="checked" onclick="clickRadioCircle();" /><label>Circle</label>
+						<input type="radio" value="rect" id="addTypeRad" name="addTypeRad" onclick="clickRadioRect();" /><label>Rectangle</label>
+						<input type="radio" value="poly" id="addTypeRad" name="addTypeRad" onclick="clickRadioPoly();" /><label>Poly</label>
+						<div id="circleControls">
+							Radius: <input id="circleRadius" size=10 value="10"><br>
+							Position: (<input id="circlePosA" size=10 value="241.1766">, <input id="circlePosB" size=10 value="10.102814">)<br>
+							Label: <input id="circleLabel" size=10 value="circle"> <br>
+							<input type="button" value="Create" onclick="createCircleAnno();">
+						</div>
+						<div id="rectControls" style="display: none">
+							Position: (<input id="rectPosA" size=10 value="241.14284">, <input id="rectPosB" size=10 value="10.097803">)<br>
+							Width: <input id="rectWidth" size=10 value="0.03516">  Height: <input id="rectHeight" size=10 value="0.042004"><br>
+							Label: <input id="rectLabel" size=10 value="rectangle"> <br>
+							<input type="button" value="Create" onclick="createRectAnno();">
+						</div>
+						<div id="polyControls" style="display: none">
+							Position: (<input id="polyPosA" size=10 value="241.14284">, <input id="polyPosB" size=10 value="10.097803">)<br>
+							<select id="polyPointsSelect" size=5><br>
+							<input type="button" value="Add Point" onclick="addPolyPoint();">
+							<input type="button" value="Remove Point" onclick="removeSelectedPolyPoint();"><br>
+							<input type="button" value="Create" onclick="createPolyAnno();">
+						</div>
+						<hr>
+						Coordinate Type:
+						<input type="radio" value="pixels" id="coordTypeRad" name="coordTypeRad" onclick="clickRadioPix();" /><label>Pixels</label>
+						<input type="radio" value="wcs" id="coordTypeRad" name="coordTypeRad" checked="checked" onclick="clickRadioWCS();" /><label>WCS</label><br>
+						<input type="checkbox" name="showAnnotations" value="showAnnotations" checked="checked" onclick="clickShowAnnotations();" /><label>Show Annotations</label>
+					</div>
+					<div id="removeControls" style="display: none">
+						<select id="annoSelect" size="3" onchange="clickRemovalSelection();">
+						<input type="button" value="Remove All" onclick="removeAnnotations();">
+						<input type="button" value="Remove Selected" onclick="removeSelectedAnnotation();">
+					</div>
+				</div>
+			<!-- <div id="infobox">
+				X : <span id="xCoordinate"></span></br>
+				Y : <span id="yCoordinate"></span></br>
+				Pixel Value : <span id="pixelValue"></span></br>
+			</div>-->
+			<table id="slidersList">
+				<tbody>
+					<tr>
+					</tr>
+				</tbody>
+			</table>
+	</div>
+</body>
+
+</html>
