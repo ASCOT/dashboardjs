@@ -63,10 +63,19 @@ define('canvasAnnotator', ['/wcs.js'], function() {
 	var addCircleRegion = function(arg) {
 		var visible = true;
 		var textVisible = false;
-		idIndex++;
+		var useId;
+		var useColor;
 		
+		if (arg.id == undefined)
+			useId = ++idIndex;
+		else
+			useId = arg.id;
+		if (arg.color == undefined)
+			useColor = defaultColor
+		else
+			useColor = arg.color;
 		annotations.push({ 'type': 'circle',
-											 'id': idIndex,
+											 'id': useId,
 											 'visible': visible,
 											 'textVisible': textVisible,
 											 'xPos': arg.xPos,
@@ -75,8 +84,8 @@ define('canvasAnnotator', ['/wcs.js'], function() {
 											 'label': arg.label,
 											 'labelXPos': arg.xPos,
 											 'labelYPos': arg.yPos+arg.radius,
-											 'color': defaultColor,
-											 'prevColor': defaultColor });									 
+											 'color': useColor,
+											 'prevColor': useColor });									 
 		draw();
 		return idIndex;
 	}
@@ -385,6 +394,23 @@ define('canvasAnnotator', ['/wcs.js'], function() {
 		}
 	}
 	
+	// Select all annotations within the box defined by dragstart to dragend (in pixel coordinates)
+	// and give them the specified color. Returns the id of every annotation that was selected
+	var selectAnnotations = function(dragStart, dragEnd, color) {
+		var idList = []
+		for (i in annotations) {
+			if (annotations[i].xPos > dragStart.x && annotations[i].yPos > dragStart.y) {
+				if (annotations[i].xPos < dragEnd.x && annotations[i].yPos < dragEnd.y) {
+					var id = annotations[i].id;
+					colorAnnotation(id, color);
+					idList.push(id);
+				}
+			}
+		}
+		
+		return idList;
+	}
+	
 	var hideAnnotations = function() {
 		for (i in annotations) {
 			annotations[i].visible = false;
@@ -435,6 +461,7 @@ define('canvasAnnotator', ['/wcs.js'], function() {
 		'handleMousemovePan': handleMousemovePan,
 		'handleMousedown': handleMousedown,
 		'handleMouseup': handleMouseup,
-		'zoom': zoom
+		'zoom': zoom,
+		'selectAnnotations': selectAnnotations
 	};
 });

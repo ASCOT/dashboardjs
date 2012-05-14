@@ -27,6 +27,15 @@ var imageFiles = [{ path: '/images/stsci_dss_001.fits',
 var sliders = [{name : 'brightness', label : 'Brightness', min : -1, max : 1, value : 0, step : 0.01 },
                {name : 'contrast', label : 'Contrast', min : -1, max : 1, value : 0, step : 0.01 }];
 
+var DEFAULT_MARKER_COLOR = '#ffffff';
+var MARKER_COLOR = {
+  red: '#ff0000',
+  green: '#00ff00',
+  blue: '#0000ff',
+  yellow: '#dcdcff',
+  unselect: '#ffffff' 
+};  
+
 var options;
 
 var annotator;
@@ -37,13 +46,16 @@ var mouseDown = false;
 var prevSelectedIndex = -1;
 var dragStart = {x: '', y: ''};
 var editContext;
-var EDIT_TYPE = {ADD: 1, REMOVE: 2, ZOOM: 3, PAN: 4};
-var ANNO_TYPE = {RECT: 1, CIRCLE: 2, POLY: 3};
+var EDIT_TYPE = {ADD: 1, REMOVE: 2, ZOOM: 3, PAN: 4, SELECT: 5};
+var ANNO_TYPE = {RECT: 1, CIRCLE: 2, POLY: 3, DATA: 4};
 var COORD_TYPE = {PIXEL: 1, WCS: 2};
 var selectedCoordType = COORD_TYPE.WCS;
 var selectedEditType = EDIT_TYPE.ADD;
 var selectedAnnoType = ANNO_TYPE.CIRCLE;
 var polyCreateList = []
+
+var selectedDataSet = null;
+var selectedDataSetID = -1;
 
   // create HR object
 gadget.init = function(finishedLoading){
@@ -52,8 +64,58 @@ gadget.init = function(finishedLoading){
 	editContext = editCanvas.getContext('2d');
 	editContext.globalAlpha = 0.5;
 	editContext.fillStyle = '#FFFFFF';
+	
+  var colorSelect = document.getElementById("selectionColorSelect");
+  var items = ["red", "green", "blue", "yellow", "unselect"];
+  for (i in items) {
+  	var option = document.createElement("OPTION");
+  	option.text = items[i];
+  	option.value = items[i];
+  	colorSelect.options.add(option);
+  }
+	
+	gadget.onNotification('dataSetChanged', dataSetChanged);
   finishedLoading();
 };
+
+var dataSetChanged = function() {
+	// Fill up the dataset selection box and RA and dec select boxes
+	populateDataSetSelect();
+	//populateRADecSelect();
+	updateSelectedPoints();
+}
+
+var populateDataSetSelect = function() {
+	var el = document.getElementById("datasetNameSelect");
+	var items = gadget.dashboard.getDataSetList();
+	el.options.length = 0;
+	for (i in items) {
+		var option = document.createElement("OPTION");
+		option.text = items[i].text;
+		option.value = items[i].id;
+		el.options.add(option);
+	}
+	selectedDataSetId = parseInt(el.options[0].value);
+	selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetId);
+}
+
+/*var populateRADecSelect = function () {
+	var el1 = document.getElementById("RAFieldSelect");
+	var el2 = document.getElementById("DecFieldSelect");
+	var items = selectedDataSet.getColumns();
+	el1.options.length = 0;
+	el2.options.length = 0;
+	for (i in items) {
+		var option1 = document.createElement("OPTION");
+		var option2 = document.createElement("OPTION");
+		option1.text = items[i];
+		option2.text = items[i];
+		option1.value = items[i];
+		option2.value = items[i];
+		el1.options.add(option1);
+		el2.options.add(option2);
+	}
+}*/
 
 var initViewer = function() {
 require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(fits, PNGParser, BinaryAjax, canvasAnnotator) {
@@ -134,7 +196,7 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(fits
       
       annotator.init(document.getElementById('annotationCanvas'),fitsHeader);
        
-    	var circlePos = canvasAnnotator.wcs2pix(241.1766,10.102814);
+    	/*var circlePos = canvasAnnotator.wcs2pix(241.1766,10.102814);
   		canvasAnnotator.addCircleRegion({'xPos': circlePos.x, 'yPos': circlePos.y, 'radius': 10, label: "circle"});
   		document.getElementById("annoSelect").add(new Option("circle", "0"), null);
   		
@@ -158,7 +220,7 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(fits
   																								[polyPoint4.x,polyPoint4.y],
   																								[polyPoint5.x,polyPoint5.y]], 
   																	 'label': "polygon", 'labelXPos': labelPos.x, 'labelYPos': labelPos.y});
-  		document.getElementById("annoSelect").add(new Option("polygon", "0"), null);
+  		document.getElementById("annoSelect").add(new Option("polygon", "0"), null);*/
   		
       annotator.draw();
     };
@@ -187,6 +249,22 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(fits
 gadget.saveState = function(){};
 gadget.loadState = function(state){};
 
+var selectAnnotations = function(start, end) {
+	var selectEl = document.getElementById("selectionColorSelect");
+	var colorName = selectEl.options[selectEl.selectedIndex].value;
+	var idsToColor = annotator.selectAnnotations(start, end, MARKER_COLOR[colorName]);
+	setTimeout(function() { selectedDataSet.setRecords({'color': colorName}, idsToColor); }, .1);
+}
+
+var updateSelectedPoints = function() {
+ 	for (var i = 0; i < selectedDataSet.length(); i++) {
+ 		var color = MARKER_COLOR[selectedDataSet.getRecord(i).color];
+ 		var id = selectedDataSet.getRecord(i).id;
+ 		if (color != undefined)
+ 			annotator.colorAnnotation(id, color);
+ 	}
+}
+
 // Event handlers for the canvases
 
 var handleMousedown = function(e) {
@@ -198,7 +276,7 @@ var handleMousedown = function(e) {
 	}
 
 	mouseDown = true;
-	if (selectedEditType == EDIT_TYPE.ADD) {
+	if (selectedEditType == EDIT_TYPE.ADD || selectedEditType == EDIT_TYPE.SELECT) {
 		dragStart = {x: e.offsetX, y: e.offsetY};
 	}
 	annotator.handleMousedown(e);
@@ -226,10 +304,17 @@ var handleMouseup = function(e) {
 			document.getElementById("annoSelect").add(new Option("circle", "0"), null);
 		}
 	}
+	if (selectedEditType == EDIT_TYPE.SELECT) {
+		editContext.clearRect(0,0,640,480);
+		var start = annotator.cursorToPixel(dragStart.x, dragStart.y);
+		var end = annotator.cursorToPixel(e.offsetX, e.offsetY);
+		selectAnnotations(start, end);
+	}
 	annotator.handleMouseup(e);
 }
 
 var handleMousewheel = function(e) {
+	e.preventDefault();
 	// Send event to fits image canvas
 	var evObj = document.createEvent('MouseEvents');
 	evObj.initMouseEvent( 'mousewheel', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
@@ -248,11 +333,11 @@ var handleMousemove = function(e) {
 	fitsCanvas.dispatchEvent(evObj);
 
 	if (mouseDown) {
-		if (selectedEditType == EDIT_TYPE.ADD) {
+		if (selectedEditType == EDIT_TYPE.ADD || selectedEditType == EDIT_TYPE.SELECT) {
 			editContext.clearRect(0,0,640,480);
-			if (selectedAnnoType == ANNO_TYPE.RECT)
+			if (selectedAnnoType == ANNO_TYPE.RECT || selectedEditType == EDIT_TYPE.SELECT)
 				editContext.fillRect(dragStart.x, dragStart.y, e.offsetX-dragStart.x, e.offsetY-dragStart.y);
-			else if (selectedAnnoType == ANNO_TYPE.CIRCLE) {
+			else if (selectedAnnoType == ANNO_TYPE.CIRCLE && selectedEditType != EDIT_TYPE.SELECT) {
 				editContext.beginPath();
 				editContext.arc(dragStart.x	, dragStart.y, Math.abs(e.offsetX-dragStart.x), 0, 2 * Math.PI, false);
 				editContext.fill();
@@ -267,9 +352,18 @@ var handleMousemove = function(e) {
   
 // HTML controls
 
+var dataSetSelectChange = function() {
+	var el = document.getElementById("datasetNameSelect");
+	var selectedDatasetId = parseInt(el.options[el.selectedIndex].value);
+	selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetId);
+	populateRADecSelect();
+}
+
 var clickRadioAdd = function() {
 	document.getElementById("removeControls").style.display = "none";
 	document.getElementById("addControls").style.display = "block";
+	document.getElementById("polyControls").style.display = "none";
+	document.getElementById("selectControls").style.display = "none";
 	selectedEditType = EDIT_TYPE.ADD;
 	
 	switch (selectedAnnoType) {
@@ -289,6 +383,7 @@ var clickRadioRemove = function() {
 	document.getElementById("addControls").style.display = "none";
 	document.getElementById("removeControls").style.display = "block";
 	document.getElementById("polyControls").style.display = "none";
+	document.getElementById("selectControls").style.display = "none";
 	selectedEditType = EDIT_TYPE.REMOVE;
 }
 
@@ -296,10 +391,19 @@ var clickRadioPan = function() {
 	selectedEditType = EDIT_TYPE.PAN;
 }
 
+var clickRadioSelect = function() {
+	document.getElementById("removeControls").style.display = "none";
+	document.getElementById("addControls").style.display = "none";
+	document.getElementById("polyControls").style.display = "none";
+	document.getElementById("selectControls").style.display = "block";
+	selectedEditType = EDIT_TYPE.SELECT;
+}
+
 var clickRadioCircle = function() {
 	document.getElementById("rectControls").style.display = "none";
 	document.getElementById("circleControls").style.display = "block";
 	document.getElementById("polyControls").style.display = "none";
+	document.getElementById("datasetControls").style.display = "none";
 	selectedAnnoType = ANNO_TYPE.CIRCLE;
 }
 
@@ -307,6 +411,7 @@ var clickRadioRect = function() {
 	document.getElementById("rectControls").style.display = "block";
 	document.getElementById("circleControls").style.display = "none";
 	document.getElementById("polyControls").style.display = "none";
+	document.getElementById("datasetControls").style.display = "none";
 	selectedAnnoType = ANNO_TYPE.RECT;
 }
 
@@ -314,7 +419,16 @@ var clickRadioPoly = function() {
 	document.getElementById("rectControls").style.display = "none";
 	document.getElementById("circleControls").style.display = "none";
 	document.getElementById("polyControls").style.display = "block";
+	document.getElementById("datasetControls").style.display = "none";
 	selectedAnnoType = ANNO_TYPE.POLY;
+}
+
+var clickRadioDataset = function() {
+	document.getElementById("rectControls").style.display = "none";
+	document.getElementById("circleControls").style.display = "none";
+	document.getElementById("polyControls").style.display = "none";
+	document.getElementById("datasetControls").style.display = "block";
+	selectedAnnoType = ANNO_TYPE.DATA;
 }
 
 var clickRadioPix = function() {
@@ -433,6 +547,32 @@ var createPolyAnno = function() {
 	document.getElementById("annoSelect").add(new Option("polygon", "0"), null);
 }
 
+var addDataSetPoints = function() {
+	removeAnnotations();
+	var coordA;
+	var coordB;
+	//var raField = document.getElementById("RAFieldSelect");
+	//var decField = document.getElementById("DecFieldSelect");
+	
+	for (var i = 0; i < selectedDataSet.length(); i++) {
+    coordA = selectedDataSet.getRecord(i)["ra"]; 
+    coordA = /\./.test(coordA)? parseFloat(coordA) : coordA;
+    coordB = selectedDataSet.getRecord(i)["dec"];
+    coordB = /\./.test(coordB)? parseFloat(coordB) : coordB;
+    if (coordA !== NaN && coordB !== NaN) {
+    	var circlePos = annotator.wcs2pix(coordA, coordB);
+      annotator.addCircleRegion({'id': selectedDataSet.getRecord(i)["id"],
+                    						 'xPos': circlePos.x, 
+												         'yPos': circlePos.y,
+												         'color': MARKER_COLOR[selectedDataSet.getRecord(i).color],
+												         'radius': 3,
+												         'label': selectedDataSet.getRecord(i)["id"] });
+     document.getElementById("annoSelect").add(new Option("circle", "0"), null);
+    }
+  }
+}
+
+
 </script>
 <body>
 	<div id="wrapper">
@@ -452,11 +592,16 @@ var createPolyAnno = function() {
 					<input type="radio" value="add" id="editRad" name="editRad" checked="checked" onclick="clickRadioAdd();" /><label>Add</label>
 					<input type="radio" value="remove" id="editRad" name="editRad" onclick="clickRadioRemove();" /><label>Remove</label>
 					<input type="radio" value="pan" id="editRad" name="editRad" onclick="clickRadioPan();" /><label>Pan</label>
+					<input type="radio" value="select" id="editRad" name="editRad" onclick="clickRadioSelect();" /><label>Select</label>
 					<hr>
+					<div id="selectControls" style="display: none">
+						Color: <select id="selectionColorSelect"></select>
+					</div>
 					<div id="addControls">
 						<input type="radio" value="circle" id="addTypeRad" name="addTypeRad" checked="checked" onclick="clickRadioCircle();" /><label>Circle</label>
 						<input type="radio" value="rect" id="addTypeRad" name="addTypeRad" onclick="clickRadioRect();" /><label>Rectangle</label>
 						<input type="radio" value="poly" id="addTypeRad" name="addTypeRad" onclick="clickRadioPoly();" /><label>Poly</label>
+						<input type="radio" value="data" id="addTypeRad" name="addTypeRad" onclick="clickRadioDataset();" /><label>Dataset</label>
 						<div id="circleControls">
 							Radius: <input id="circleRadius" size=10 value="10"><br>
 							Position: (<input id="circlePosA" size=10 value="241.1766">, <input id="circlePosB" size=10 value="10.102814">)<br>
@@ -475,6 +620,12 @@ var createPolyAnno = function() {
 							<input type="button" value="Add Point" onclick="addPolyPoint();">
 							<input type="button" value="Remove Point" onclick="removeSelectedPolyPoint();"><br>
 							<input type="button" value="Create" onclick="createPolyAnno();">
+						</div>
+						<div id="datasetControls" style="display: none">
+							Dataset: <select id="datasetNameSelect" onchange="dataSetSelectChange();"></select><br>
+							<!--RA Field: <select id="RAFieldSelect"></select>
+							Dec Field: <select id="DecFieldSelect"></select><br>-->
+							<input type="button" value="Import Points" onclick="addDataSetPoints();">
 						</div>
 						<hr>
 						Coordinate Type:
