@@ -45,12 +45,11 @@ var defaultDashboards = [
   { author: 'Spencer',
     name: 'fitsViewer',
     numberOfColumns: 1, 
-    gadgetsOrder: [ "skyView", "nameResolver", "dataSetSelector", "dataInquirer", "tableView"], 
+    gadgetsOrder: ["dataInquirer", "plotView", "fitsViewer"], 
     gadgets: {
-      "fitsViewer" : { "id" : "fitsViewer", "gadgetInfoId" : "fitsViewer"},
-      "asciiFileLoader" : { "id" : "asciiFileLoader", "gadgetInfoId" : "asciiFileLoader"},
       "dataInquirer" :  { "id" : "dataInquirer", "gadgetInfoId" : "dataInquirer"},
-      "scalableScatter" : {"id" : "scalableScatter", "gadgetInfoId" : "scalableScatter"} 
+      "plotView" :  {"id" : "plotView", "gadgetInfoId" : "plotView"},
+      "fitsViewer" : { "id" : "fitsViewer", "gadgetInfoId" : "fitsViewer"}
     },
     dataSets: {},
     comments: []
