@@ -44,7 +44,7 @@ var defaultDashboards = [
   },
   { author: 'Spencer',
     name: 'fitsViewer',
-    numberOfColumns: 1, 
+    numberOfColumns: 2, 
     gadgetsOrder: ["dataInquirer", "plotView", "fitsViewer"], 
     gadgets: {
       "dataInquirer" :  { "id" : "dataInquirer", "gadgetInfoId" : "dataInquirer"},

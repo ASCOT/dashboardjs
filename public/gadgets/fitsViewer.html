@@ -57,7 +57,7 @@ var polyCreateList = []
 var selectedDataSet = null;
 var selectedDataSetID = -1;
 
-  // create HR object
+// create HR object
 gadget.init = function(finishedLoading){
 	initViewer();
 	var editCanvas = document.getElementById('editCanvas');
@@ -79,9 +79,7 @@ gadget.init = function(finishedLoading){
 };
 
 var dataSetChanged = function() {
-	// Fill up the dataset selection box and RA and dec select boxes
 	populateDataSetSelect();
-	//populateRADecSelect();
 	updateSelectedPoints();
 }
 
@@ -95,27 +93,12 @@ var populateDataSetSelect = function() {
 		option.value = items[i].id;
 		el.options.add(option);
 	}
-	selectedDataSetId = parseInt(el.options[0].value);
+	if (el.options[0] == undefined)
+		selectedDataSetId = 0;
+	else
+		selectedDataSetId = parseInt(el.options[0].value);
 	selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetId);
 }
-
-/*var populateRADecSelect = function () {
-	var el1 = document.getElementById("RAFieldSelect");
-	var el2 = document.getElementById("DecFieldSelect");
-	var items = selectedDataSet.getColumns();
-	el1.options.length = 0;
-	el2.options.length = 0;
-	for (i in items) {
-		var option1 = document.createElement("OPTION");
-		var option2 = document.createElement("OPTION");
-		option1.text = items[i];
-		option2.text = items[i];
-		option1.value = items[i];
-		option2.value = items[i];
-		el1.options.add(option1);
-		el2.options.add(option2);
-	}
-}*/
 
 var initViewer = function() {
 require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(fits, PNGParser, BinaryAjax, canvasAnnotator) {
@@ -191,8 +174,10 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(fits
 
     var renderSuccess = function(fitsHeader){
       document.getElementById('dropLabel').style.display = 'none'; 
-      //document.getElementById('loadingBar').style.display = 'none'; 
+      document.getElementById('loadingBar').style.display = 'none'; 
       fitsCanvas.style.display = 'inline-block';
+      document.getElementById('annoControls').style.display = 'block';
+      document.getElementById('fileChooser').style.display = 'none';
       
       annotator.init(document.getElementById('annotationCanvas'),fitsHeader);
        
@@ -227,10 +212,7 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(fits
 
     renderFile = function(file){
       document.getElementById('dropLabel').innerHTML = 'Loading file...';
-      //document.getElementById('loadingBar').style.display = 'block'; 
-      //canvas.setAttribute('width',this.width);
-      //canvas.setAttribute('height',this.height);
-      //canvas.setAttribute('id',this.id);
+      document.getElementById('loadingBar').style.display = 'block';
       fits.renderImage(file, fitsCanvas, renderSuccess);	
     };
 
@@ -257,6 +239,8 @@ var selectAnnotations = function(start, end) {
 }
 
 var updateSelectedPoints = function() {
+	if (selectedDataSet == undefined)
+		return;
  	for (var i = 0; i < selectedDataSet.length(); i++) {
  		var color = MARKER_COLOR[selectedDataSet.getRecord(i).color];
  		var id = selectedDataSet.getRecord(i).id;
@@ -542,8 +526,9 @@ var createPolyAnno = function() {
 	}
 	
 	polyCreateList = [];
+	var label = document.getElementById("polyLabel").value;
 	
-	annotator.addPolyRegion({'vertices': polyPoints, 'label': "polygon", 'labelXPos': 0, 'labelYPos': 0});
+	annotator.addPolyRegion({'vertices': polyPoints, 'label': label, 'labelXPos': 0, 'labelYPos': 0});
 	document.getElementById("annoSelect").add(new Option("polygon", "0"), null);
 }
 
@@ -551,8 +536,6 @@ var addDataSetPoints = function() {
 	removeAnnotations();
 	var coordA;
 	var coordB;
-	//var raField = document.getElementById("RAFieldSelect");
-	//var decField = document.getElementById("DecFieldSelect");
 	
 	for (var i = 0; i < selectedDataSet.length(); i++) {
     coordA = selectedDataSet.getRecord(i)["ra"]; 
@@ -577,79 +560,70 @@ var addDataSetPoints = function() {
 <body>
 	<div id="wrapper">
 				<div id="dropbox">
-					<div id="canvasArea" style="position: relative">
-						<canvas id="fitsCanvas" style="position: absolute; left: 0; top: 0; display: none; z-index:0" width="640" height="480"></canvas>
-						<canvas id="annotationCanvas" style="position: absolute; left: 0; top: 0; z-index: 1" width="640" height="480"></canvas>
-						<canvas id="editCanvas" style="position: absolute; left: 0; top: 0; z-index: 2" width="640" height="480"></canvas>
-					</div>
-					<div id="loadingBar" style="display: none"><img style="height: 19px; width: 107px" alt="dashboard loading" src='/images/loadingBar.gif'></div>  
-						<span id="dropLabel"></span>
+					<div id="canvasArea" style="position: relative" width="auto">
+						<canvas id="fitsCanvas" style="position: absolute; left: 0; top: 0; display: block; z-index:0" width="499" height="480"></canvas>
+						<canvas id="annotationCanvas" style="position: absolute; left: 0; top: 0; z-index: 1; display: block" width="499" height="480"></canvas>
+						<canvas id="editCanvas" style="position: absolute; left: 0; top: 0; z-index: 2; display: block" width="499" height="480"></canvas>
+						<div id="loadingBar" style="display: none"><img style="height: 19px; width: 107px" alt="dashboard loading" src='/images/loadingBar.gif'></div>  
+      			<span id="dropLabel">Drop file here...</span>
 					</div>
 				</div>
-				<div id="fileChooser"><input type="file" onchange="renderFile(this.files[0])"></div>
-				<div id="annoControls">
-					Annotations
-					<input type="radio" value="add" id="editRad" name="editRad" checked="checked" onclick="clickRadioAdd();" /><label>Add</label>
-					<input type="radio" value="remove" id="editRad" name="editRad" onclick="clickRadioRemove();" /><label>Remove</label>
-					<input type="radio" value="pan" id="editRad" name="editRad" onclick="clickRadioPan();" /><label>Pan</label>
-					<input type="radio" value="select" id="editRad" name="editRad" onclick="clickRadioSelect();" /><label>Select</label>
-					<hr>
-					<div id="selectControls" style="display: none">
-						Color: <select id="selectionColorSelect"></select>
-					</div>
-					<div id="addControls">
-						<input type="radio" value="circle" id="addTypeRad" name="addTypeRad" checked="checked" onclick="clickRadioCircle();" /><label>Circle</label>
-						<input type="radio" value="rect" id="addTypeRad" name="addTypeRad" onclick="clickRadioRect();" /><label>Rectangle</label>
-						<input type="radio" value="poly" id="addTypeRad" name="addTypeRad" onclick="clickRadioPoly();" /><label>Poly</label>
-						<input type="radio" value="data" id="addTypeRad" name="addTypeRad" onclick="clickRadioDataset();" /><label>Dataset</label>
-						<div id="circleControls">
-							Radius: <input id="circleRadius" size=10 value="10"><br>
-							Position: (<input id="circlePosA" size=10 value="241.1766">, <input id="circlePosB" size=10 value="10.102814">)<br>
-							Label: <input id="circleLabel" size=10 value="circle"> <br>
-							<input type="button" value="Create" onclick="createCircleAnno();">
-						</div>
-						<div id="rectControls" style="display: none">
-							Position: (<input id="rectPosA" size=10 value="241.14284">, <input id="rectPosB" size=10 value="10.097803">)<br>
-							Width: <input id="rectWidth" size=10 value="0.03516">  Height: <input id="rectHeight" size=10 value="0.042004"><br>
-							Label: <input id="rectLabel" size=10 value="rectangle"> <br>
-							<input type="button" value="Create" onclick="createRectAnno();">
-						</div>
-						<div id="polyControls" style="display: none">
-							Position: (<input id="polyPosA" size=10 value="241.14284">, <input id="polyPosB" size=10 value="10.097803">)<br>
-							<select id="polyPointsSelect" size=5><br>
-							<input type="button" value="Add Point" onclick="addPolyPoint();">
-							<input type="button" value="Remove Point" onclick="removeSelectedPolyPoint();"><br>
-							<input type="button" value="Create" onclick="createPolyAnno();">
-						</div>
-						<div id="datasetControls" style="display: none">
-							Dataset: <select id="datasetNameSelect" onchange="dataSetSelectChange();"></select><br>
-							<!--RA Field: <select id="RAFieldSelect"></select>
-							Dec Field: <select id="DecFieldSelect"></select><br>-->
-							<input type="button" value="Import Points" onclick="addDataSetPoints();">
-						</div>
+				</table>
+				<table id="slidersList" height="35"></table>
+				<div id="annoControlsContainer">
+					<div id="fileChooser"><input type="file" onchange="renderFile(this.files[0])"></div>
+					<div id="annoControls" style="display: none">
+						Annotations
+						<input type="radio" value="add" id="editRad" name="editRad" checked="checked" onclick="clickRadioAdd();" /><label>Add</label>
+						<input type="radio" value="remove" id="editRad" name="editRad" onclick="clickRadioRemove();" /><label>Remove</label>
+						<input type="radio" value="pan" id="editRad" name="editRad" onclick="clickRadioPan();" /><label>Pan</label>
+						<input type="radio" value="select" id="editRad" name="editRad" onclick="clickRadioSelect();" /><label>Select</label>
 						<hr>
-						Coordinate Type:
-						<input type="radio" value="pixels" id="coordTypeRad" name="coordTypeRad" onclick="clickRadioPix();" /><label>Pixels</label>
-						<input type="radio" value="wcs" id="coordTypeRad" name="coordTypeRad" checked="checked" onclick="clickRadioWCS();" /><label>WCS</label><br>
-						<input type="checkbox" name="showAnnotations" value="showAnnotations" checked="checked" onclick="clickShowAnnotations();" /><label>Show Annotations</label>
-					</div>
-					<div id="removeControls" style="display: none">
-						<select id="annoSelect" size="3" onchange="clickRemovalSelection();">
-						<input type="button" value="Remove All" onclick="removeAnnotations();">
-						<input type="button" value="Remove Selected" onclick="removeSelectedAnnotation();">
+						<div id="selectControls" style="display: none">
+							Color: <select id="selectionColorSelect"></select>
+						</div>
+						<div id="addControls">
+							<input type="radio" value="circle" id="addTypeRad" name="addTypeRad" checked="checked" onclick="clickRadioCircle();" /><label>Circle</label>
+							<input type="radio" value="rect" id="addTypeRad" name="addTypeRad" onclick="clickRadioRect();" /><label>Rectangle</label>
+							<input type="radio" value="poly" id="addTypeRad" name="addTypeRad" onclick="clickRadioPoly();" /><label>Poly</label>
+							<input type="radio" value="data" id="addTypeRad" name="addTypeRad" onclick="clickRadioDataset();" /><label>Dataset</label>
+							<div id="circleControls">
+								Radius: <input id="circleRadius" size=10 value="10">px<br>
+								Position: (<input id="circlePosA" size=10 value="241.1766">, <input id="circlePosB" size=10 value="10.102814">)<br>
+								Label: <input id="circleLabel" size=10 value="circle"> <br>
+								<input type="button" value="Create" onclick="createCircleAnno();">
+							</div>
+							<div id="rectControls" style="display: none">
+								Position: (<input id="rectPosA" size=10 value="241.14284">, <input id="rectPosB" size=10 value="10.097803">)<br>
+								Width: <input id="rectWidth" size=10 value="0.03516">  Height: <input id="rectHeight" size=10 value="0.042004"><br>
+								Label: <input id="rectLabel" size=10 value="rectangle"> <br>
+								<input type="button" value="Create" onclick="createRectAnno();">
+							</div>
+							<div id="polyControls" style="display: none">
+								Position: (<input id="polyPosA" size=10 value="241.14284">, <input id="polyPosB" size=10 value="10.097803">)<br>
+								<select id="polyPointsSelect" size=5><br>
+								<input type="button" value="Add Point" onclick="addPolyPoint();">
+								<input type="button" value="Remove Point" onclick="removeSelectedPolyPoint();"><br>
+								Label: <input id="polyLabel" size=10 value="poly"> <br>
+								<input type="button" value="Create" onclick="createPolyAnno();">
+							</div>
+							<div id="datasetControls" style="display: none">
+								Dataset: <select id="datasetNameSelect" onchange="dataSetSelectChange();"></select><br>
+								<input type="button" value="Import Points" onclick="addDataSetPoints();">
+							</div>
+							<hr>
+							Coordinate Type:
+							<input type="radio" value="pixels" id="coordTypeRad" name="coordTypeRad" onclick="clickRadioPix();" /><label>Pixels</label>
+							<input type="radio" value="wcs" id="coordTypeRad" name="coordTypeRad" checked="checked" onclick="clickRadioWCS();" /><label>WCS</label><br>
+							<input type="checkbox" name="showAnnotations" value="showAnnotations" checked="checked" onclick="clickShowAnnotations();" /><label>Show Annotations</label>
+						</div>
+						<div id="removeControls" style="display: none">
+							<select id="annoSelect" size="3" onchange="clickRemovalSelection();">
+							<input type="button" value="Remove All" onclick="removeAnnotations();">
+							<input type="button" value="Remove Selected" onclick="removeSelectedAnnotation();">
+						</div>
 					</div>
 				</div>
-			<!-- <div id="infobox">
-				X : <span id="xCoordinate"></span></br>
-				Y : <span id="yCoordinate"></span></br>
-				Pixel Value : <span id="pixelValue"></span></br>
-			</div>-->
-			<table id="slidersList">
-				<tbody>
-					<tr>
-					</tr>
-				</tbody>
-			</table>
 	</div>
 </body>
 
