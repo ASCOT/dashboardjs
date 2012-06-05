@@ -1949,7 +1949,7 @@ define('libs/pixelCanvas/pixelCanvas.js',[],function () {
     var cursorInfo = {
       "x" : xCoordinate,
       "y" : yCoordinate,
-      "value" : 0//pixelValues[xCoordinate + yCoordinate*offScreenCanvasHeight]
+      //"value" : pixelValues[xCoordinate + yCoordinate*offScreenCanvasHeight]
     };
     /*if (FITS.wcsMapper) {
       raDec = FITS.wcsMapper.pixelToCoordinate(xCoordinate, yCoordinate);
@@ -2062,6 +2062,7 @@ define('libs/pixelCanvas/pixelCanvas.js',[],function () {
   var zoom = function(newZoomFactor, mouseX, mouseY){
     if (newZoomFactor >= 1 && newZoomFactor < zoomFactor || // Zoom out
         newZoomFactor > zoomFactor && viewportHeight >= 2 && viewportWidth >= 2) { // Zoom In
+      viewportPosition = {x: 0, y: 0};
       centerViewport(newZoomFactor, newZoomFactor > zoomFactor, mouseX, mouseY);    
       zoomFactor = newZoomFactor; 
       //highlightPixel(event.offsetX, event.offsetY);
@@ -2083,8 +2084,8 @@ define('libs/pixelCanvas/pixelCanvas.js',[],function () {
   };
   
   var drawPixels = function (pixels, width, height, canvas) {   
-    canvas.addEventListener('mousedown', buttonPressed,false);
-    canvas.addEventListener('mouseup', buttonReleased,false);
+    canvas.addEventListener('mousedown', buttonPressed, false);
+    canvas.addEventListener('mouseup', buttonReleased, false);
     canvas.addEventListener('mousemove', mouseMoved, false);
     canvas.addEventListener('mouseout', mouseOut, false);
     canvas.addEventListener('mousewheel', wheelMoved, false);
@@ -2115,6 +2116,10 @@ define('libs/pixelCanvas/pixelCanvas.js',[],function () {
     draw();
 
   };
+  
+  var redrawPixels = function() {
+  	draw();
+  }
 
   filters.brightnessContrast = function(brightness, contrast){
     if(!offScreenCanvas) {
@@ -2126,6 +2131,8 @@ define('libs/pixelCanvas/pixelCanvas.js',[],function () {
 
   return {  
     'drawPixels' : drawPixels,
+    'redrawPixels' : redrawPixels,
+    'cursorToPixel': cursorToPixel,
     'filters' : filters 
   };
 
@@ -2133,22 +2140,28 @@ define('libs/pixelCanvas/pixelCanvas.js',[],function () {
 
 
 
-define('fits',['./libs/fitsParser/src/fitsParser.js', './libs/pixelCanvas/pixelCanvas.js'], function (fitsParser, pixelCanvas) {
+define('fits',['./libs/fitsParser/src/fitsParser.js', './libs/pixelCanvas/pixelCanvas.js', '/wcs.js'], function (fitsParser, pixelCanvas) {
   
 
   var FitsParser = fitsParser.Parser;  
   var mapPixels = fitsParser.mapPixels;
+  var wcs;
+  var fitsImageWidth;
+  var fitsImageHeight;
   
-   var renderImage = function(file, canvas, success){
+  var renderImage = function(file, canvas, success){
     var fitsParser = new FitsParser();
     
     fitsParser.onParsed = function(headerDataUnits){
       var HDUs = headerDataUnits;
       var pixels = mapPixels(HDUs[0].header, HDUs[0].data, 'RGBA', 'linear');
       var headerJSON = HDUs[0].header;
+      wcs = new WCS.Mapper(headerJSON);
       
       var imageWidth = HDUs[0].header.NAXIS1;
+      fitsImageWidth = imageWidth;
       var imageHeight = HDUs[0].header.NAXIS2;
+      fitsImageHeight = imageHeight;
       var pixelsRGBA = [];
       for (var i = 0; i < pixels.length; ++i) {
         pixelsRGBA.push(pixels[i].red);
@@ -2160,16 +2173,45 @@ define('fits',['./libs/fitsParser/src/fitsParser.js', './libs/pixelCanvas/pixelC
       pixelCanvas.drawPixels(pixelsRGBA, imageWidth, imageHeight, canvas);
       console.log("File read!");
       if(success){
-        success(headerJSON);
+        success();
       }
     };
 
     fitsParser.parse(file);
+  
   };
+  
+  var getImageDimensions = function() {
+  	return {width: fitsImageWidth, height: fitsImageHeight};
+  }
+  
+  var redrawImage = function() {
+  	pixelCanvas.redrawPixels();
+  }
+  
+  var wcs2pix = function(w1, w2) {
+		var pix = wcs.coordinateToPixel(w1, w2);
+		return {x: pix.x, y: fitsImageHeight-pix.y};
+	}
+		
+	var pix2wcs = function(p1, p2) {
+		var coord = wcs.pixelToCoordinate(p1, p2);
+		return {c1: coord.ra, c2: coord.dec};
+	}
+
+	var cursorToPix = function(x, y) {
+		var info  = pixelCanvas.cursorToPixel(x,y);
+		return {x: info.x, y: info.y};
+	}
 
   return {
+  	'getImageDimensions' : getImageDimensions,
     'renderImage' : renderImage,
-    'filters' : pixelCanvas.filters
+    'redrawImage' : redrawImage,
+    'filters' : pixelCanvas.filters,
+    'cursorToPix': cursorToPix,
+  	'wcs2pix' : wcs2pix,
+  	'pix2wcs' : pix2wcs
   };
   
 });

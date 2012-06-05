@@ -9,9 +9,10 @@
 <link rel="stylesheet" href="/css/dashboard.css">
 <link rel="stylesheet" href="/css/widgets.css" type="text/css">
 
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 
 <script src="/gfx/gfx.js" type="text/javascript" charset="utf-8"></script>
+<script src="/gfx/gfx.flip.js" type="text/javascript" charset="utf-8"></script>
 <script src="/gfx/gfx.cube.js" type="text/javascript" charset="utf-8"></script>
 
 <script src="/xhr.js" type="text/javascript" charset="utf-8"></script>
@@ -31,14 +32,11 @@ function requestNewDashboard(configuration){
 }
 
 jQuery(function($) {
-  
-   $("#cube").gfxCube({
-     width: 960,
-     height: 562
-   });
 
    $(".toRight").click(function() {
-     $("#cube").trigger("cube", "right")
+   	 $("#start").fadeOut(600, function() {	
+   	 		$("#gadgetsPanel").show();
+   	 });
      $.ajax({
      'url': '/gadgets/',
      success: populateGadgetsList });
@@ -119,13 +117,14 @@ $(".circle.counter").click(function() {
 
 #container{
   width: 960px;
+  height: 562px;
   margin: auto;
   padding-top: 63px;
-}
-
-.box{
   background: #b3adc6;
   border: 1px solid #bab9ba;
+  position: absolute;
+  top: 5%;
+  left: 15%;
   -webkit-box-shadow: rgba(0, 0, 0, .6) 0px 0px 2px;
   -moz-box-shadow: rgba(0, 0, 0, .6) 0px 0px 2px;
   box-shadow: rgba(0, 0, 0, .6) 0px 0px 2px;
@@ -134,7 +133,7 @@ $(".circle.counter").click(function() {
   border-radius: 5px;
 }
 
-.box header{
+#container header{
   background: rgba(133,96,166,.8);
   margin-top: 50px;
   display: block;
@@ -149,7 +148,7 @@ $(".circle.counter").click(function() {
   box-shadow: rgba(0, 0, 0, 1) 0px 0px 0px;
 }
 
-.box footer{
+#container footer{
   background: #663091;
   height: 50px;
   left: 0;
@@ -231,38 +230,36 @@ $(".circle.counter").click(function() {
 </head>
 <body>
   <div id="container">
-    <div id="cube"> 
-      <div class="box front face">         
-        <header><a href="/dashboard/" id="logo"></a></header>
-        <div style="width: 320px; margin: auto; padding-top: 275px">
-          <button class="big toRight">Create Dashboard</button>     
-          <button class="big quickDashboard">Quick Dashboard</button>           
-        </div>    
-        <footer><a href="http://www.astro.washington.edu/" id="departmentLogo"></a></footer>
-      </div> 
-      <div id="gadgetsPanel" class="box right face">
-        <div id="gadgetSelection" style="width:35%; padding: 15px; float: left">
-          <h2>Choose your gadgets:</h2>
-          <form action="#" method="get">   
-            <ul id="gadgetsList"></ul>
-          </form>
-          <button class="big startDashboard">Start Dashboard</button>
-        </div> 
-        <div id="gadgetDetails" style="width:53%; padding: 70px 30px 0px 0px; float: right; display: none">
-          <h2 id="gadgetName"></h2>
-          <p id="gadgetDescription"></p>
-          <dl>
-            <dt>Author:</dt>
-            <dd id="gadgetAuthor"></dd>
-          </dl>
-          <dl>
-            <dt>Version:</dt>
-            <dd id="gadgetVersion"></dd>
-          </dl>  
-        </div>    
-        <footer><a href="http://www.astro.washington.edu/" id="departmentLogo"></a></footer>
-      </div>
+    <div id="start">
+   		<header><a href="/dashboard/" id="logo"></a></header>
+      <div style="width: 320px; margin: auto; padding-top: 275px">
+        <button class="big toRight">Create Dashboard</button>     
+        <button class="big quickDashboard">Quick Dashboard</button>           
+      </div>    
+      <footer><a href="http://www.astro.washington.edu/" id="departmentLogo"></a></footer>
     </div> 
+    <div id="gadgetsPanel" style="display: none">
+      <div id="gadgetSelection" style="width:35%; padding: 15px; padding-top: 0px; float: left">
+        <h2>Choose your gadgets:</h2>
+        <form action="#" method="get">   
+          <ul id="gadgetsList"></ul>
+        </form>
+        <button class="big startDashboard">Start Dashboard</button>
+      </div> 
+      <div id="gadgetDetails" style="width:53%; padding: 70px 30px 0px 0px; float: right; display: none">
+        <h2 id="gadgetName"></h2>
+        <p id="gadgetDescription"></p>
+        <dl>
+          <dt>Author:</dt>
+          <dd id="gadgetAuthor"></dd>
+        </dl>
+        <dl>
+          <dt>Version:</dt>
+          <dd id="gadgetVersion"></dd>
+        </dl>  
+      </div>
+    </div>
+    <footer><a href="http://www.astro.washington.edu/" id="departmentLogo"></a></footer>
   </div>
 </body>
 </html>

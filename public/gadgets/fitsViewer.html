@@ -21,9 +21,6 @@
 <script src="/canvasAnnotator.js" type="text/javascript"></script>
 <script>
 
-var imageFiles = [{ path: '/images/stsci_dss_001.fits',
-                  name: 'stsci_dss_001.fits' }];
-
 var sliders = [{name : 'brightness', label : 'Brightness', min : -1, max : 1, value : 0, step : 0.01 },
                {name : 'contrast', label : 'Contrast', min : -1, max : 1, value : 0, step : 0.01 }];
 
@@ -32,20 +29,27 @@ var MARKER_COLOR = {
   red: '#ff0000',
   green: '#00ff00',
   blue: '#0000ff',
-  yellow: '#dcdcff',
+  yellow: '#dcdc00',
   unselect: '#ffffff' 
 };  
 
-var options;
-
 var annotator;
+var fits;
+var display;
+var displayContext;
+var displayWidth;
+var displayHeight;
 var fitsCanvas;
+var annotatorCanvas;
+var editCanvas;
+var editContext;
 var showAnnotations = true;
+var imageLoaded = false;
+var dataSetImported = false;
 
 var mouseDown = false;
 var prevSelectedIndex = -1;
 var dragStart = {x: '', y: ''};
-var editContext;
 var EDIT_TYPE = {ADD: 1, REMOVE: 2, ZOOM: 3, PAN: 4, SELECT: 5};
 var ANNO_TYPE = {RECT: 1, CIRCLE: 2, POLY: 3, DATA: 4};
 var COORD_TYPE = {PIXEL: 1, WCS: 2};
@@ -60,11 +64,8 @@ var selectedDataSetID = -1;
 // create HR object
 gadget.init = function(finishedLoading){
 	initViewer();
-	var editCanvas = document.getElementById('editCanvas');
-	editContext = editCanvas.getContext('2d');
-	editContext.globalAlpha = 0.5;
-	editContext.fillStyle = '#FFFFFF';
 	
+	// Construct the dropdown box for the selection colors
   var colorSelect = document.getElementById("selectionColorSelect");
   var items = ["red", "green", "blue", "yellow", "unselect"];
   for (i in items) {
@@ -78,11 +79,29 @@ gadget.init = function(finishedLoading){
   finishedLoading();
 };
 
-var dataSetChanged = function() {
-	populateDataSetSelect();
-	updateSelectedPoints();
+gadget.saveState = function(){};
+gadget.loadState = function(state){
+	if (state) {
+		showAnnotations = state.showAnnotations;
+		$('#showAnnotations').prop('checked', showAnnotations);
+	}
 }
 
+gadget.update = gadget.loadState;
+
+// Repopulate the data selection dropdown and update all of the displayed points
+// when the global dataset changes
+var dataSetChanged = function() {
+	populateDataSetSelect();
+	
+	if (!imageLoaded)
+		return;
+		
+	updateSelectedPoints();
+	draw();
+}
+
+// Gets all of the dataset names and puts them in the import dataset dropdown
 var populateDataSetSelect = function() {
 	var el = document.getElementById("datasetNameSelect");
 	var items = gadget.dashboard.getDataSetList();
@@ -101,10 +120,29 @@ var populateDataSetSelect = function() {
 }
 
 var initViewer = function() {
-require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(fits, PNGParser, BinaryAjax, canvasAnnotator) {
+require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(_fits, PNGParser, BinaryAjax, canvasAnnotator) {
+    // Set global variables, initalize the canvases
     var dropbox = document.getElementById('dropbox');
-    fitsCanvas = document.getElementById('fitsCanvas');
+    display = document.getElementById('display');
+    displayContext = display.getContext('2d');
+    displayWidth = display.width;
+    displayHeight = display.height;
     var canvasArea = document.getElementById('canvasArea');
+    fits = _fits;
+    
+    fitsCanvas = document.createElement('canvas');
+    fitsCanvas.setAttribute('width', displayWidth);
+    fitsCanvas.setAttribute('height', displayHeight);
+    annotatorCanvas = document.createElement('canvas');
+    annotatorCanvas.setAttribute('width', displayWidth);
+    annotatorCanvas.setAttribute('height', displayHeight);
+    editCanvas = document.createElement('canvas');
+    editCanvas.setAttribute('width', displayWidth);
+    editCanvas.setAttribute('height', displayHeight);
+    editContext = editCanvas.getContext('2d');
+    editContext.fillStyle = "white";
+    editContext.globalAlpha = 0.5;
+    
     annotator = canvasAnnotator;
     
     var loadImage = function() {
@@ -112,17 +150,12 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(fits
       var imageFile = $(this).val();
       var imageType = (imageFile.match(extensionExpr))[1];
       BinaryAjax(imageFile, function(oHTTP) {
-        fits.renderImage(oHTTP.responseText, fitsCanvas, renderSuccess);
+        fits.renderImage(oHTTP.responseText, fitsCanvas, canvasAnnotator, renderSuccess);
       });
     };
 
-    options = $("#imagesList");
-    $.each(imageFiles, function() {
-      options.append($("<option />").val(this.path).text(this.name));
-    }); 
-
+		// Set up the brightness/contrast sliders
     var tbody = $('#slidersList')[0];
-    // Add a row for each slider
     for (var i = 0; i < this.sliders.length; i++) {
       var slider = this.sliders[i];
       $('<tr><th>' + slider.label.replace(/ /g, '&nbsp;') + ':</th><td><div id="slider' + i + '"></div></td></tr>').appendTo(tbody);
@@ -130,6 +163,7 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(fits
           return function(event, ui) {
             this_[slider.name] = ui.value;
             fits.filters.brightnessContrast(this_.brightness , this_.contrast);
+            draw();
           };  
       })(this, slider);
       $('#slider' + i).slider({
@@ -143,8 +177,6 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(fits
       this[slider.name] = slider.value;
     }
 
-    options.change(loadImage);
-
     dropbox.addEventListener("dragenter", noopHandler, false);
     dropbox.addEventListener("dragexit", noopHandler, false);
     dropbox.addEventListener("dragover", noopHandler, false);
@@ -153,7 +185,7 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(fits
 		canvasArea.addEventListener('mousedown', handleMousedown, false);
 		canvasArea.addEventListener('mouseup', handleMouseup, false);
 		canvasArea.addEventListener('mousemove', handleMousemove, false);
-		canvasArea.addEventListener('mousewheel', handleMousewheel, false);
+		display.addEventListener('mousewheel', handleMousewheel, false);
 
     var noopHandler = function(evt) {
      evt.stopPropagation();
@@ -172,48 +204,54 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(fits
       }
     };
 
-    var renderSuccess = function(fitsHeader){
+		// When the FITS image is successfully loaded, bring up the annotator controls and initalize the
+		// annotator module
+    var renderSuccess = function(){
       document.getElementById('dropLabel').style.display = 'none'; 
       document.getElementById('loadingBar').style.display = 'none'; 
       fitsCanvas.style.display = 'inline-block';
-      document.getElementById('annoControls').style.display = 'block';
       document.getElementById('fileChooser').style.display = 'none';
+      document.getElementById('annoControlsContainer').style.display = 'block';
+      document.getElementById('slidersList').style.display = 'block';
+      gadget.resize();
+      imageLoaded = true;
       
-      annotator.init(document.getElementById('annotationCanvas'),fitsHeader);
-       
-    	/*var circlePos = canvasAnnotator.wcs2pix(241.1766,10.102814);
-  		canvasAnnotator.addCircleRegion({'xPos': circlePos.x, 'yPos': circlePos.y, 'radius': 10, label: "circle"});
+    	var imageDimensions = fits.getImageDimensions();
+    	annotator.init(annotatorCanvas, imageDimensions.width, imageDimensions.height);
+      
+      /*// Add some sample annotations
+      var circlePos = fits.wcs2pix(241.1766,10.102814);
+    	annotator.addCircleRegion({'xPos': circlePos.x, 'yPos': circlePos.y, 'radius': 10, label: "circle"});
   		document.getElementById("annoSelect").add(new Option("circle", "0"), null);
-  		
-  		var rectCorner1 = canvasAnnotator.wcs2pix(241.14284,10.097803);
-  		var rectCorner2 = canvasAnnotator.wcs2pix(241.10768,10.055799);
-  		canvasAnnotator.addRectRegion({'xPos': rectCorner1.x, 'yPos': rectCorner1.y, 
+    	
+    	var rectCorner1 = fits.wcs2pix(241.14284,10.097803);
+  		var rectCorner2 = fits.wcs2pix(241.10768,10.055799);
+  		annotator.addRectRegion({'xPos': rectCorner1.x, 'yPos': rectCorner1.y, 
   																	 'width': rectCorner2.x-rectCorner1.x, 'height': rectCorner2.y-rectCorner1.y, 
   																	 'label': "rectangle"});
   		document.getElementById("annoSelect").add(new Option("rectangle", "0"), null);
-  		
-  		
-  		var polyPoint1 = canvasAnnotator.wcs2pix(241.14991,10.038203);
-  		var polyPoint2 = canvasAnnotator.wcs2pix(241.11599,10.038834);
-  		var polyPoint3 = canvasAnnotator.wcs2pix(241.09425,10.019755);
-  		var polyPoint4 = canvasAnnotator.wcs2pix(241.11591,10.007677);
-  		var polyPoint5 = canvasAnnotator.wcs2pix(241.15262,10.008678);
-  		var labelPos = canvasAnnotator.wcs2pix(241.10089,10.007713);
-  		canvasAnnotator.addPolyRegion({'vertices': [[polyPoint1.x,polyPoint1.y],
+    	
+    	var polyPoint1 = fits.wcs2pix(241.14991,10.038203);
+  		var polyPoint2 = fits.wcs2pix(241.11599,10.038834);
+  		var polyPoint3 = fits.wcs2pix(241.09425,10.019755);
+  		var polyPoint4 = fits.wcs2pix(241.11591,10.007677);
+  		var polyPoint5 = fits.wcs2pix(241.15262,10.008678);
+  		var labelPos = fits.wcs2pix(241.10089,10.007713);
+  		annotator.addPolyRegion({'vertices': [[polyPoint1.x,polyPoint1.y],
   																								[polyPoint2.x,polyPoint2.y],
   																								[polyPoint3.x,polyPoint3.y],
   																								[polyPoint4.x,polyPoint4.y],
   																								[polyPoint5.x,polyPoint5.y]], 
   																	 'label': "polygon", 'labelXPos': labelPos.x, 'labelYPos': labelPos.y});
   		document.getElementById("annoSelect").add(new Option("polygon", "0"), null);*/
-  		
-      annotator.draw();
+    	
+    	draw();
     };
 
     renderFile = function(file){
       document.getElementById('dropLabel').innerHTML = 'Loading file...';
       document.getElementById('loadingBar').style.display = 'block';
-      fits.renderImage(file, fitsCanvas, renderSuccess);	
+      fits.renderImage(file, fitsCanvas, renderSuccess);
     };
 
     // fits.onHoverPixelChanged = function(pixelInfo){
@@ -228,18 +266,34 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(fits
   });
 }
 
-gadget.saveState = function(){};
-gadget.loadState = function(state){};
+// Draw the fits image, annotations, and edit marks
+var draw = function() {
+	annotator.draw();
+	displayContext.clearRect(0, 0, displayWidth, displayHeight);
+  displayContext.drawImage(fitsCanvas, 0, 0, displayWidth, displayHeight, 0, 0, displayWidth, displayHeight);
+  displayContext.drawImage(annotatorCanvas, 0, 0, displayWidth, displayHeight, 0, 0, displayWidth, displayHeight);
+  displayContext.drawImage(editCanvas, 0, 0, displayWidth, displayHeight, 0, 0, displayWidth, displayHeight);
+}
 
+// Select all annotations between two pixel coordinates on the image and mark those
+// annotations in the global dataset
 var selectAnnotations = function(start, end) {
+	var startNative = fits.cursorToPix(start.x, start.y);
+	var endNative = fits.cursorToPix(end.x, end.y);
+
 	var selectEl = document.getElementById("selectionColorSelect");
 	var colorName = selectEl.options[selectEl.selectedIndex].value;
-	var idsToColor = annotator.selectAnnotations(start, end, MARKER_COLOR[colorName]);
+	var idsToColor = annotator.selectAnnotations(startNative, endNative, MARKER_COLOR[colorName]);
+	
+	if (!dataSetImported)
+		return;
 	setTimeout(function() { selectedDataSet.setRecords({'color': colorName}, idsToColor); }, .1);
 }
 
+// If a dataset is selected, sync the color of the annotations up with the 
+// color of the points in the dataset
 var updateSelectedPoints = function() {
-	if (selectedDataSet == undefined)
+	if (!dataSetImported)
 		return;
  	for (var i = 0; i < selectedDataSet.length(); i++) {
  		var color = MARKER_COLOR[selectedDataSet.getRecord(i).color];
@@ -252,6 +306,8 @@ var updateSelectedPoints = function() {
 // Event handlers for the canvases
 
 var handleMousedown = function(e) {
+	if (!imageLoaded)
+		return;
 	// Send event to fits image canvas
 	if (selectedEditType == EDIT_TYPE.PAN) {
 		var evObj = document.createEvent('MouseEvents');
@@ -264,9 +320,12 @@ var handleMousedown = function(e) {
 		dragStart = {x: e.offsetX, y: e.offsetY};
 	}
 	annotator.handleMousedown(e);
+	draw();
 }
 
 var handleMouseup = function(e) {
+	if (!imageLoaded)
+		return;
 	// Send event to fits image canvas
 	var evObj = document.createEvent('MouseEvents');
 	evObj.initMouseEvent( 'mouseup', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
@@ -275,8 +334,8 @@ var handleMouseup = function(e) {
 	mouseDown = false;
 	if (selectedEditType == EDIT_TYPE.ADD) {
 		editContext.clearRect(0,0,640,480);
-		var start = annotator.cursorToPixel(dragStart.x, dragStart.y);
-		var end = annotator.cursorToPixel(e.offsetX, e.offsetY);
+		var start = fits.cursorToPix(dragStart.x, dragStart.y);
+		var end = fits.cursorToPix(e.offsetX, e.offsetY);
 		if (selectedAnnoType == ANNO_TYPE.RECT) {
 			annotator.addRectRegion({'xPos':start.x, 'yPos': start.y, 
   												 		 'width': end.x-start.x, 'height': end.y-start.y, 
@@ -284,33 +343,37 @@ var handleMouseup = function(e) {
  			document.getElementById("annoSelect").add(new Option("rect", "0"), null);
 		}
 		else if (selectedAnnoType == ANNO_TYPE.CIRCLE) {
-			annotator.addCircleRegion({'xPos': start.x, 'yPos': start.y, 'radius': Math.abs(end.x-start.x), label: "another"});
+			annotator.addCircleRegion({'xPos': start.x, 'yPos': start.y, 'radius': Math.abs(end.x-start.x), label: ["another"]});
 			document.getElementById("annoSelect").add(new Option("circle", "0"), null);
 		}
 	}
 	if (selectedEditType == EDIT_TYPE.SELECT) {
 		editContext.clearRect(0,0,640,480);
-		var start = annotator.cursorToPixel(dragStart.x, dragStart.y);
-		var end = annotator.cursorToPixel(e.offsetX, e.offsetY);
+		var start = fits.cursorToPix(dragStart.x, dragStart.y);
+		var end = fits.cursorToPix(e.offsetX, e.offsetY);
 		selectAnnotations(start, end);
 	}
 	annotator.handleMouseup(e);
+	draw();
 }
 
 var handleMousewheel = function(e) {
+	if (!imageLoaded)
+		return;
 	e.preventDefault();
 	// Send event to fits image canvas
 	var evObj = document.createEvent('MouseEvents');
-	evObj.initMouseEvent( 'mousewheel', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
+	evObj.initMouseEvent( 'mousewheel', false, true, window, 1, e.screenX-22, e.screenY-22, e.clientX-22, e.clientY-22, false, false, true, false, 0, null );
 	evObj.wheelDelta = e.wheelDelta;
 	fitsCanvas.dispatchEvent(evObj);
-	var zoomIn = false;
-	if (e.wheelDelta > 0)
-		zoomIn = true;
-	annotator.zoom(e.offsetX, e.offsetY, zoomIn);
+	
+	annotator.handleMousewheel(e);
+	draw();
 }
 
 var handleMousemove = function(e) {
+	if (!imageLoaded)
+		return;
 	// Send event to fits image canvas
 	var evObj = document.createEvent('MouseEvents');
 	evObj.initMouseEvent( 'mousemove', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
@@ -332,6 +395,7 @@ var handleMousemove = function(e) {
 	}
 	else
 		annotator.handleMousemove(e);
+	draw();
 }
   
 // HTML controls
@@ -348,6 +412,7 @@ var clickRadioAdd = function() {
 	document.getElementById("addControls").style.display = "block";
 	document.getElementById("polyControls").style.display = "none";
 	document.getElementById("selectControls").style.display = "none";
+	gadget.resize();
 	selectedEditType = EDIT_TYPE.ADD;
 	
 	switch (selectedAnnoType) {
@@ -368,6 +433,7 @@ var clickRadioRemove = function() {
 	document.getElementById("removeControls").style.display = "block";
 	document.getElementById("polyControls").style.display = "none";
 	document.getElementById("selectControls").style.display = "none";
+	gadget.resize();
 	selectedEditType = EDIT_TYPE.REMOVE;
 }
 
@@ -380,6 +446,7 @@ var clickRadioSelect = function() {
 	document.getElementById("addControls").style.display = "none";
 	document.getElementById("polyControls").style.display = "none";
 	document.getElementById("selectControls").style.display = "block";
+	gadget.resize();
 	selectedEditType = EDIT_TYPE.SELECT;
 }
 
@@ -388,6 +455,7 @@ var clickRadioCircle = function() {
 	document.getElementById("circleControls").style.display = "block";
 	document.getElementById("polyControls").style.display = "none";
 	document.getElementById("datasetControls").style.display = "none";
+	gadget.resize();
 	selectedAnnoType = ANNO_TYPE.CIRCLE;
 }
 
@@ -396,6 +464,7 @@ var clickRadioRect = function() {
 	document.getElementById("circleControls").style.display = "none";
 	document.getElementById("polyControls").style.display = "none";
 	document.getElementById("datasetControls").style.display = "none";
+	gadget.resize();
 	selectedAnnoType = ANNO_TYPE.RECT;
 }
 
@@ -404,6 +473,7 @@ var clickRadioPoly = function() {
 	document.getElementById("circleControls").style.display = "none";
 	document.getElementById("polyControls").style.display = "block";
 	document.getElementById("datasetControls").style.display = "none";
+	gadget.resize();
 	selectedAnnoType = ANNO_TYPE.POLY;
 }
 
@@ -435,10 +505,14 @@ var clickShowAnnotations = function() {
 	if (showAnnotations) {
 		annotator.hideAnnotations();
 		showAnnotations = false;
+		gadget.setState({ showAnnotations : false});
+		draw();
 	}
 	else {
 		annotator.showAnnotations();
 		showAnnotations = true;
+		gadget.setState({ showAnnotations : true});
+		draw();
 	}
 }
 
@@ -465,6 +539,7 @@ var removeAnnotations = function() {
 	for (var i = 0; i < numAnnos; i++) {
 		annotator.removeAnnotation(0);
 		list.remove(0);
+		draw();
 	}
 }
 
@@ -474,10 +549,10 @@ var removeSelectedAnnotation = function () {
 	if (selectedId != -1) {
 		annotator.removeAnnotation(selectedId);
 		list.remove(selectedId);
+		draw();
 	}
 }
 
-// Called when the user clicks 'create' for a circle annotation
 var createCircleAnno = function() {
 	var coordA = document.getElementById('circlePosA').value;
 	var coordB = document.getElementById('circlePosB').value;
@@ -486,11 +561,12 @@ var createCircleAnno = function() {
 	
 	var circlePos;
 	if (selectedCoordType == COORD_TYPE.WCS)
-		circlePos = annotator.wcs2pix(coordA,coordB);
+		circlePos = fits.wcs2pix(coordA,coordB);
 	else
 		circlePos = {"x": parseFloat(coordA), "y": parseFloat(coordB)};
 	annotator.addCircleRegion({'xPos': circlePos.x, 'yPos': circlePos.y, 'radius': parseFloat(radius), label: label});
 	document.getElementById("annoSelect").add(new Option(label, "0"), null);
+	draw();
 }
 
 var createRectAnno = function() {
@@ -503,8 +579,8 @@ var createRectAnno = function() {
 	var corner1;
 	var corner2;
 	if (selectedCoordType == COORD_TYPE.WCS) {
-		corner1 = annotator.wcs2pix(corner1A,corner1B);
-		corner2 = annotator.wcs2pix(parseFloat(corner1A)+parseFloat(width),parseFloat(corner1B)+parseFloat(height));
+		corner1 = fits.wcs2pix(corner1A,corner1B);
+		corner2 = fits.wcs2pix(parseFloat(corner1A)-parseFloat(width),parseFloat(corner1B)-parseFloat(height));
 	}
 	else {
 		corner1 = {"x": parseFloat(corner1A), "y": parseFloat(corner1B)};
@@ -514,6 +590,7 @@ var createRectAnno = function() {
   												 'width': corner2.x-corner1.x, 'height': corner2.y-corner1.y, 
   												 'label': label});
  	document.getElementById("annoSelect").add(new Option(label, "0"), null);
+ 	draw();
 }
 
 var createPolyAnno = function() {
@@ -521,7 +598,7 @@ var createPolyAnno = function() {
 	var polyPoints = [];
 	for (i in polyCreateList) {
 		list.remove(0);
-		var point = annotator.wcs2pix(polyCreateList[i][0], polyCreateList[i][1])
+		var point = fits.wcs2pix(polyCreateList[i][0], polyCreateList[i][1])
 		polyPoints.push([point.x, point.y]);
 	}
 	
@@ -530,29 +607,34 @@ var createPolyAnno = function() {
 	
 	annotator.addPolyRegion({'vertices': polyPoints, 'label': label, 'labelXPos': 0, 'labelYPos': 0});
 	document.getElementById("annoSelect").add(new Option("polygon", "0"), null);
+	draw();
 }
 
 var addDataSetPoints = function() {
 	removeAnnotations();
 	var coordA;
 	var coordB;
-	
 	for (var i = 0; i < selectedDataSet.length(); i++) {
     coordA = selectedDataSet.getRecord(i)["ra"]; 
     coordA = /\./.test(coordA)? parseFloat(coordA) : coordA;
     coordB = selectedDataSet.getRecord(i)["dec"];
     coordB = /\./.test(coordB)? parseFloat(coordB) : coordB;
+    
+    var label = [("ra: " + coordA),("dec: " + coordB)]
+    
     if (coordA !== NaN && coordB !== NaN) {
-    	var circlePos = annotator.wcs2pix(coordA, coordB);
+    	var circlePos = fits.wcs2pix(coordA, coordB);
       annotator.addCircleRegion({'id': selectedDataSet.getRecord(i)["id"],
                     						 'xPos': circlePos.x, 
 												         'yPos': circlePos.y,
 												         'color': MARKER_COLOR[selectedDataSet.getRecord(i).color],
 												         'radius': 3,
-												         'label': selectedDataSet.getRecord(i)["id"] });
+												         'label': label});
      document.getElementById("annoSelect").add(new Option("circle", "0"), null);
     }
   }
+  dataSetImported = true;
+  draw();
 }
 
 
@@ -561,18 +643,16 @@ var addDataSetPoints = function() {
 	<div id="wrapper">
 				<div id="dropbox">
 					<div id="canvasArea" style="position: relative" width="auto">
-						<canvas id="fitsCanvas" style="position: absolute; left: 0; top: 0; display: block; z-index:0" width="499" height="480"></canvas>
-						<canvas id="annotationCanvas" style="position: absolute; left: 0; top: 0; z-index: 1; display: block" width="499" height="480"></canvas>
-						<canvas id="editCanvas" style="position: absolute; left: 0; top: 0; z-index: 2; display: block" width="499" height="480"></canvas>
+						<canvas id="display" style="position: absolute; left: 0; top: 0; display: block; z-index:0" width="499" height="480"></canvas>
+						<span id="dropLabel">Drop file here...</span>
 						<div id="loadingBar" style="display: none"><img style="height: 19px; width: 107px" alt="dashboard loading" src='/images/loadingBar.gif'></div>  
-      			<span id="dropLabel">Drop file here...</span>
 					</div>
 				</div>
 				</table>
-				<table id="slidersList" height="35"></table>
-				<div id="annoControlsContainer">
-					<div id="fileChooser"><input type="file" onchange="renderFile(this.files[0])"></div>
-					<div id="annoControls" style="display: none">
+				<div id="fileChooser"><span>or </span><input type="file" onchange="renderFile(this.files[0])"></div>
+				<table id="slidersList" height="35" style="display: none"></table>
+				<div id="annoControlsContainer" style="display: none">
+					<div id="annoControls">
 						Annotations
 						<input type="radio" value="add" id="editRad" name="editRad" checked="checked" onclick="clickRadioAdd();" /><label>Add</label>
 						<input type="radio" value="remove" id="editRad" name="editRad" onclick="clickRadioRemove();" /><label>Remove</label>
@@ -615,13 +695,13 @@ var addDataSetPoints = function() {
 							Coordinate Type:
 							<input type="radio" value="pixels" id="coordTypeRad" name="coordTypeRad" onclick="clickRadioPix();" /><label>Pixels</label>
 							<input type="radio" value="wcs" id="coordTypeRad" name="coordTypeRad" checked="checked" onclick="clickRadioWCS();" /><label>WCS</label><br>
-							<input type="checkbox" name="showAnnotations" value="showAnnotations" checked="checked" onclick="clickShowAnnotations();" /><label>Show Annotations</label>
 						</div>
 						<div id="removeControls" style="display: none">
 							<select id="annoSelect" size="3" onchange="clickRemovalSelection();">
 							<input type="button" value="Remove All" onclick="removeAnnotations();">
 							<input type="button" value="Remove Selected" onclick="removeSelectedAnnotation();">
 						</div>
+						<input type="checkbox" id="showAnnotations" value="showAnnotations" checked="checked" onclick="clickShowAnnotations();" /><label>Show Annotations</label>
 					</div>
 				</div>
 	</div>
