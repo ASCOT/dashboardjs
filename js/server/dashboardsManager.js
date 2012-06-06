@@ -45,11 +45,11 @@ var defaultDashboards = [
   { author: 'Spencer',
     name: 'fitsViewer',
     numberOfColumns: 2, 
-    gadgetsOrder: ["dataInquirer", "plotView", "fitsViewer"], 
+    gadgetsOrder: ["dataInquirer", "fitsViewer", "plotView"], 
     gadgets: {
       "dataInquirer" :  { "id" : "dataInquirer", "gadgetInfoId" : "dataInquirer"},
-      "plotView" :  {"id" : "plotView", "gadgetInfoId" : "plotView"},
-      "fitsViewer" : { "id" : "fitsViewer", "gadgetInfoId" : "fitsViewer"}
+      "fitsViewer" : { "id" : "fitsViewer", "gadgetInfoId" : "fitsViewer"},
+      "plotView" :  {"id" : "plotView", "gadgetInfoId" : "plotView"}
     },
     dataSets: {},
     comments: []

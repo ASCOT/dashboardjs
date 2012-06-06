@@ -97,6 +97,7 @@ var dataSetChanged = function() {
 	if (!imageLoaded)
 		return;
 		
+	addDataSetPoints();
 	updateSelectedPoints();
 	draw();
 }
@@ -218,6 +219,13 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(_fit
       
     	var imageDimensions = fits.getImageDimensions();
     	annotator.init(annotatorCanvas, imageDimensions.width, imageDimensions.height);
+      
+      // Send the image boundaries to the dashboard
+      var topLeft = fits.pix2wcs(parseFloat(imageDimensions.width), parseFloat(imageDimensions.height));
+      var bottomRight = fits.pix2wcs(0.0, 0.0);
+      var curBounds = { topLeft: {ra: topLeft.c1, dec: topLeft.c2 },
+                        bottomRight: {ra: bottomRight.c1, dec: bottomRight.c2} };   
+      gadget.notify('viewBoundsChanged', curBounds);
       
       /*// Add some sample annotations
       var circlePos = fits.wcs2pix(241.1766,10.102814);
@@ -557,7 +565,7 @@ var createCircleAnno = function() {
 	var coordA = document.getElementById('circlePosA').value;
 	var coordB = document.getElementById('circlePosB').value;
 	var radius = document.getElementById('circleRadius').value;
-	var label = document.getElementById('circleLabel').value;
+	var label = [document.getElementById('circleLabel').value];
 	
 	var circlePos;
 	if (selectedCoordType == COORD_TYPE.WCS)
@@ -574,7 +582,7 @@ var createRectAnno = function() {
 	var corner1B = document.getElementById('rectPosB').value;
 	var width = document.getElementById('rectWidth').value;
 	var height = document.getElementById('rectHeight').value;
-	var label = document.getElementById('rectLabel').value;
+	var label = [document.getElementById('rectLabel').value];
 
 	var corner1;
 	var corner2;
@@ -603,7 +611,7 @@ var createPolyAnno = function() {
 	}
 	
 	polyCreateList = [];
-	var label = document.getElementById("polyLabel").value;
+	var label = [document.getElementById("polyLabel").value];
 	
 	annotator.addPolyRegion({'vertices': polyPoints, 'label': label, 'labelXPos': 0, 'labelYPos': 0});
 	document.getElementById("annoSelect").add(new Option("polygon", "0"), null);

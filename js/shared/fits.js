@@ -2195,7 +2195,7 @@ define('fits',['./libs/fitsParser/src/fitsParser.js', './libs/pixelCanvas/pixelC
 	}
 		
 	var pix2wcs = function(p1, p2) {
-		var coord = wcs.pixelToCoordinate(p1, p2);
+		var coord = wcs.pixelToCoordinate([p1, p2]);
 		return {c1: coord.ra, c2: coord.dec};
 	}
 

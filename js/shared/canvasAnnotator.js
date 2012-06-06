@@ -268,11 +268,23 @@ define('canvasAnnotator', [], function() {
 					if (context.measureText(labelToUse[i]).width > textWidth)
 						textWidth = context.measureText(labelToUse[i]).width;
 				}
+				
+				// Shift the label along on the x or y axis if it goes outside the viewport
+				var labelX = annotations[j].screenLabelX;
+				var labelY = annotations[j].screenLabelY;
+				if ((labelX + textWidth) > viewportWidth)
+					labelX -= textWidth;
+				if ((labelY+(textHeight*labelToUse.length)+2) > viewportHeight)
+					labelY -= (textHeight*labelToUse.length)+2;
+				
 				context.fillStyle = "white";
-				context.fillRect(annotations[j].screenLabelX, annotations[j].screenLabelY, textWidth, (textHeight*labelToUse.length)+2);
+				context.roundRect(labelX, labelY, labelX+textWidth, labelY+(textHeight*labelToUse.length)+2, 5);
+				context.fill();
+				context.strokeStyle = "gray";
+				context.stroke();
 				context.fillStyle = "black";
 				for (i in labelToUse)
-					context.fillText(labelToUse[i], annotations[j].screenLabelX, (annotations[j].screenLabelY+(i*textHeight))+textHeight);
+					context.fillText(labelToUse[i], labelX, (labelY+(i*textHeight))+textHeight);
 			}
 		}
 	}
@@ -426,6 +438,24 @@ define('canvasAnnotator', [], function() {
 		}
 		
 		return idList;
+	}
+	
+	// Draws a rounded rectangle
+	CanvasRenderingContext2D.prototype.roundRect = function(sx,sy,ex,ey,r) {
+    var r2d = Math.PI/180;
+    if( ( ex - sx ) - ( 2 * r ) < 0 ) { r = ( ( ex - sx ) / 2 ); } //ensure that the radius isn't too large for x
+    if( ( ey - sy ) - ( 2 * r ) < 0 ) { r = ( ( ey - sy ) / 2 ); } //ensure that the radius isn't too large for y
+    this.beginPath();
+    this.moveTo(sx+r,sy);
+    this.lineTo(ex-r,sy);
+    this.arc(ex-r,sy+r,r,r2d*270,r2d*360,false);
+    this.lineTo(ex,ey-r);
+    this.arc(ex-r,ey-r,r,r2d*0,r2d*90,false);
+    this.lineTo(sx+r,ey);
+    this.arc(sx+r,ey-r,r,r2d*90,r2d*180,false);
+    this.lineTo(sx,sy+r);
+    this.arc(sx+r,sy+r,r,r2d*180,r2d*270,false);
+    this.closePath();
 	}
 	
 	return {
