@@ -5,7 +5,6 @@ canvas {
 input{
 	margin: 0;
 	padding: 0;
-  font-size: 16px;
 }
 #title{
  font-weight: bold;
@@ -26,7 +25,9 @@ input{
  z-index: -1; 
 }
 #wrapper{ 
-  width: auto;     
+	position: relative;
+  width: auto;    
+  height: auto; 
   margin: auto; 
   padding: 10px;
 }
@@ -41,6 +42,7 @@ input{
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
   text-align: center;
+  position: relative;
 }
 #annoControlsContainer{
   display: block;

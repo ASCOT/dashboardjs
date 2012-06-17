@@ -109,8 +109,7 @@ define('canvasAnnotator', [], function() {
 											 'labelYPos': arg.yPos+arg.radius,
 											 'screenLabelX': arg.xPos,
 											 'screenLabelY': arg.yPos+arg.radius,
-											 'color': useColor,
-											 'prevColor': useColor});						
+											 'color': useColor});						
 											 
 		return idIndex;
 	}
@@ -143,32 +142,32 @@ define('canvasAnnotator', [], function() {
 	}
 	
 	// Calculates positions and sizes of an annotation depending on zoom level and viewport position
-	var calcScreenAttributes = function(i) {
-		switch (annotations[i].type) {
+	var calcScreenAttributes = function(id) {
+		switch (annotations[id].type) {
 			case 'rect':
-				annotations[i].screenWidth = annotations[i].width*zoomFactor;
-				annotations[i].screenHeight = annotations[i].height*zoomFactor;
-				annotations[i].screenPosX = annotations[i].xPos*zoomFactor-viewportPosition.x;
-				annotations[i].screenPosY = annotations[i].yPos*zoomFactor-viewportPosition.y;
-				annotations[i].screenLabelX = annotations[i].labelXPos*zoomFactor-viewportPosition.x;
-				annotations[i].screenLabelY = annotations[i].labelYPos*zoomFactor-viewportPosition.y;
+				annotations[id].screenWidth = annotations[id].width*zoomFactor;
+				annotations[id].screenHeight = annotations[id].height*zoomFactor;
+				annotations[id].screenPosX = annotations[id].xPos*zoomFactor-viewportPosition.x;
+				annotations[id].screenPosY = annotations[id].yPos*zoomFactor-viewportPosition.y;
+				annotations[id].screenLabelX = annotations[id].labelXPos*zoomFactor-viewportPosition.x;
+				annotations[id].screenLabelY = annotations[id].labelYPos*zoomFactor-viewportPosition.y;
 			break;
 			case 'circle':
-				annotations[i].screenRadius = annotations[i].radius*zoomFactor;
-				annotations[i].screenPosX = annotations[i].xPos*zoomFactor-viewportPosition.x;
-				annotations[i].screenPosY = annotations[i].yPos*zoomFactor-viewportPosition.y;
-				annotations[i].screenLabelX = annotations[i].labelXPos*zoomFactor-viewportPosition.x;
-				annotations[i].screenLabelY = annotations[i].labelYPos*zoomFactor-viewportPosition.y;
+				annotations[id].screenRadius = annotations[id].radius*zoomFactor;
+				annotations[id].screenPosX = annotations[id].xPos*zoomFactor-viewportPosition.x;
+				annotations[id].screenPosY = annotations[id].yPos*zoomFactor-viewportPosition.y;
+				annotations[id].screenLabelX = annotations[id].labelXPos*zoomFactor-viewportPosition.x;
+				annotations[id].screenLabelY = annotations[id].labelYPos*zoomFactor-viewportPosition.y;
 			break;
 			case 'poly':
 				var screenVertices = []
-				for (j in annotations[i].vertices) {
-					var point = [annotations[i].vertices[j][0]*zoomFactor-viewportPosition.x, annotations[i].vertices[j][1]*zoomFactor-viewportPosition.y];
+				for (j in annotations[id].vertices) {
+					var point = [annotations[id].vertices[j][0]*zoomFactor-viewportPosition.x, annotations[id].vertices[j][1]*zoomFactor-viewportPosition.y];
 					screenVertices.push(point);
 				}
-				annotations[i].screenVertices = screenVertices;
-				annotations[i].screenLabelX = annotations[i].labelXPos*zoomFactor-viewportPosition.x;
-				annotations[i].screenLabelY = annotations[i].labelYPos*zoomFactor-viewportPosition.y;
+				annotations[id].screenVertices = screenVertices;
+				annotations[id].screenLabelX = annotations[id].labelXPos*zoomFactor-viewportPosition.x;
+				annotations[id].screenLabelY = annotations[id].labelYPos*zoomFactor-viewportPosition.y;
 			break;
 		}
 	}
@@ -186,23 +185,8 @@ define('canvasAnnotator', [], function() {
 	//				color - A string giving the hexadecimal value of the color (ex. "#10ff00")
 	var colorAnnotation = function(id, color) {
 		for (i in annotations) {
-			if (annotations[i].id == id) {
-				annotations[i].previousColor = annotations[i].color;
+			if (annotations[i].id == id)
 				annotations[i].color = color;
-			}
-		}
-	}
-	
-	// Revert an annotation back to its previous color
-	// Arguments:
-	//				id - The unique id of the annotation
-	var revertColor = function(id) {
-		for (i in annotations) {
-				if (annotations[i].id == id) {
-					var t = annotations[i].color;
-					annotations[i].color = annotations[i].previousColor;
-					annotations[i].previousColor = t;
-				}
 		}
 	}
 	
@@ -257,8 +241,9 @@ define('canvasAnnotator', [], function() {
 		}
 	}
 	
+	
+	// Draw all visible annotation labels at their specified positions
 	var drawVisibleLabel = function() {
-		// Draw the visible annotation labels
 		for (j in annotations) {
 			if (annotations[j].textVisible) {
 				context.font = textHeight + "px sans-serif";
@@ -299,6 +284,16 @@ define('canvasAnnotator', [], function() {
 		drawVisibleLabel();
 	}
 	
+	// Center the viewport after zooming in on a certain point
+	var zoom = function(newZoomFactor, mouseX, mouseY) {
+		if (newZoomFactor >= 1) {
+			viewportPosition = {x: 0, y: 0};
+      centerViewport(newZoomFactor, newZoomFactor > zoomFactor, mouseX, mouseY);
+			zoomFactor = newZoomFactor;
+			draw();
+		}
+	}
+	
 	var centerViewport = function(scaleFactor, zoomIn, cursorX, cursorY) {
 		var newPositionX;
     var newPositionY;
@@ -315,15 +310,6 @@ define('canvasAnnotator', [], function() {
     }
     viewportPosition.x = newPositionX;
     viewportPosition.y = newPositionY;
-	}
-	
-	var zoom = function(newZoomFactor, mouseX, mouseY) {
-		if (newZoomFactor >= 1) {
-			viewportPosition = {x: 0, y: 0};
-      centerViewport(newZoomFactor, newZoomFactor > zoomFactor, mouseX, mouseY);
-			zoomFactor = newZoomFactor;
-			draw();
-		}
 	}
 	
 	var handleMousewheel = function(event) {
@@ -426,6 +412,16 @@ define('canvasAnnotator', [], function() {
 	// Select all annotations within the box defined by dragstart to dragend (in pixel coordinates)
 	// and give them the specified color. Returns the id of every annotation that was selected
 	var selectAnnotations = function(dragStart, dragEnd, color) {
+		if (dragStart.x > dragEnd.x) {
+			var t = dragStart.x;
+			dragStart.x = dragEnd.x;
+			dragEnd.x = t;
+		}
+		if (dragStart.y > dragEnd.y) {
+			var t = dragStart.y;
+			dragStart.y = dragEnd.y;
+			dragEnd.y = t;
+		}
 		var idList = []
 		for (i in annotations) {
 			if (annotations[i].xPos > dragStart.x && annotations[i].yPos > dragStart.y) {
@@ -465,7 +461,6 @@ define('canvasAnnotator', [], function() {
 		'addPolyRegion': addPolyRegion,
 		'removeAnnotation': removeAnnotation,
 		'colorAnnotation': colorAnnotation,
-		'revertColor': revertColor,
 		'draw': draw,
 		'showAnnotations': showAnnotations,
 		'hideAnnotations': hideAnnotations,

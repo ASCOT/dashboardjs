@@ -1891,7 +1891,7 @@ define('libs/fitsParser/src/fitsParser.js',['./fitsPixelMapper', './fitsFilePars
     };
 
     this.parse = function (input) {
-      if (input instanceof File) {
+      if (input instanceof File || input instanceof Blob) {
         checkFileSignature(input, parseFile);
       }
       else if (typeof input === 'string') {
