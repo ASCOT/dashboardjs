@@ -2,7 +2,6 @@
 var express = require('express');
 var sharejs = require('../ShareJS/').server;
 var faye = require('faye');
-var requirejs = require('requirejs');
 
 // Local Modules
 var DashboardManager = require('./js/server/dashboardsManager');
