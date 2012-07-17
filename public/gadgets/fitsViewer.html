@@ -70,7 +70,7 @@ var selectedEditType = EDIT_TYPE.PAN;
 var selectedAnnoType = ANNO_TYPE.CIRCLE;
 var polyCreateList = []
 var selectedDataSet;
-var selectedDataSetID = -1;
+var selectedDataSetId = -1;
 
 // Canvases and attributes
 var display;
@@ -88,7 +88,7 @@ gadget.loadState = function(state){
 		showAnnotations = state.showAnnotations;
 		$('#showAnnotations').prop('checked', showAnnotations);
 		savedImagePath = state.imagePath;
-		selectedDataSet = state.savedDataSetId;
+		selectedDataSetId = state.savedDataSetId;
 	}
 }
 
@@ -298,13 +298,11 @@ var updateSelectedPoints = function() {
 // Repopulate the data selection dropdown and update all of the displayed points
 // when the global dataset changes
 var dataSetChanged = function() {
+	
 	populateDataSetSelect();
 	
 	if (!imageLoaded)
 		return;
-	
-	if (!dataSetImported)	
-		addDataSetPoints();
 	
 	updateSelectedPoints();
 	draw();
@@ -312,9 +310,7 @@ var dataSetChanged = function() {
 
 var dataSetSelectChange = function() {
 	var el = document.getElementById("datasetNameSelect");
-	var selectedDatasetId = parseInt(el.options[el.selectedIndex].value);
-	selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetId);
-	populateRADecSelect();
+	selectedDataSetId = parseInt(el.options[el.selectedIndex].value);
 }
 
 // Gets all of the dataset names and puts them in the import dataset dropdown
@@ -328,10 +324,6 @@ var populateDataSetSelect = function() {
 		option.value = items[i].id;
 		el.options.add(option);
 	}
-	if (el.options[0] == undefined)
-		selectedDataSetId = -1;
-	else
-		selectedDataSetId = parseInt(el.options[0].value);
 	selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetId);
 }
 
@@ -714,6 +706,9 @@ var createPolyAnno = function() {
 }
 
 var addDataSetPoints = function() {
+	if (selectedDataSetId == -1)
+		selectedDataSetId = 0;
+	selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetId);
 	removeAnnotations();
 	var coordA;
 	var coordB;
