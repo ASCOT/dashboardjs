@@ -83,6 +83,7 @@ ASCOT.button.xslt;
     button.childNodes[0].style.display = "block";
     requestData.gadgets = dashboard.gadgets;
     requestData.dataSets = dataSets;
+    
     if(typeof dashboard == 'number'){
       window.location = ASCOT.button.serverPrefix + 'dashboard/' + dashboard;
     }
@@ -90,6 +91,7 @@ ASCOT.button.xslt;
       crossdomain.ajax({
         type: "POST",
         url:  ASCOT.button.serverPrefix + 'dashboard/',
+        contentType: 'application/json',
         data: JSON.stringify(requestData),
         success: function (newDashboardId) {
           window.location = ASCOT.button.serverPrefix + 'dashboard/' + newDashboardId;

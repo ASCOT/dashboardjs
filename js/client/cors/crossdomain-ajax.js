@@ -122,6 +122,7 @@ var crossdomain = (function () {
 	var success = options['success'];
 	var error   = options['error'];
 	var data    = options['data'];
+	var contentType = options['contentType'];
 
 	function handle_load(XHRobj) {
 	    if (XHRobj.readyState == 4) {
@@ -141,6 +142,7 @@ var crossdomain = (function () {
 	});
 
 	flproxy.open(type, url, true);
+	flproxy.setRequestHeader("Content-Type", contentType);
 	flproxy.send(data);
     }
 
@@ -156,7 +158,8 @@ var crossdomain = (function () {
 	var success = options['success'];
 	var error = options['error'];
 	var data  = options['data'];
-
+	var contentType = options['contentType'];
+	
 	try {
 	    var xhr = new XMLHttpRequest();
 	} catch(e) {}	
@@ -197,6 +200,7 @@ var crossdomain = (function () {
 
 	    xhr.onload  = function (e) { handle_load('load')(is_iexplorer() ? e : e.target) };
 	    xhr.onerror = function (e) { handle_load('error')(is_iexplorer() ? e : e.target) };
+	    xhr.setRequestHeader("Content-Type", contentType);
 	    xhr.send(data);
 	}
     }

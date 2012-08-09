@@ -1,11 +1,11 @@
 var gadgets = {
-  asciiFileLoader: {
+  /*asciiFileLoader: {
     name: "ASCII File Loader",
     fileName: "asciiDataLoader.html",
     description: "Load data into ASCOT from local text files.",
     author: "Spencer Wallace - spencerw@email.arizona.edu",
     version: "0.1"
-  },
+  },*/
   dataInquirer: { 
     name: "Data Inquirer",
     fileName: "dataInquirer.html",
@@ -68,7 +68,21 @@ var gadgets = {
     description: "Display and interact with fits files.",
     author: "Diego Marcos - diego.marcos@gmail.com, Spencer Wallace - spencerw@email.arizona.edu",
     version: "0.1"
-  }
+  },
+  fitsViewer_PDR: { 
+    name: "Fits Viewer PDR",
+    fileName: "fitsViewer_PDR.html",
+    description: "Display and interact with fits files. This version fetches images from simulated LSST data.",
+    author: "Diego Marcos - diego.marcos@gmail.com, Spencer Wallace - spencerw@email.arizona.edu",
+    version: "0.1"
+  },
+  /*astroJsFitsViewer: { 
+    name: "AstroJS Fits Viewer",
+    fileName: "astroJsFitsViewer.html",
+    description: "Display and interact with fits files. Powered by Amit Kapadia's AstroJS FITS parser.",
+    author: "Amit Kapadia - amit@zooniverse.com, Spencer Wallace - spencerw@email.arizona.edu",
+    version: "0.1"
+  }*/
 }
 
 module.exports.all = gadgets;

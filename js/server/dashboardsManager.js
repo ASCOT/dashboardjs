@@ -55,6 +55,18 @@ var defaultDashboards = [
     comments: []
   },
   { author: 'Spencer',
+    name: 'astroJsFitsViewer',
+    numberOfColumns: 2, 
+    gadgetsOrder: ["dataInquirer", "astroJsFitsViewer", "plotView"], 
+    gadgets: {
+      "dataInquirer" :  { "id" : "dataInquirer", "gadgetInfoId" : "dataInquirer"},
+      "astroJsFitsViewer" : { "id" : "astroJsFitsViewer", "gadgetInfoId" : "astroJsFitsViewer"},
+      "plotView" :  {"id" : "plotView", "gadgetInfoId" : "plotView"}
+    },
+    dataSets: {},
+    comments: []
+  },
+  { author: 'Spencer',
     name: 'ScatterPlotHistogramAndASCIILoader',
     numberOfColumns: 2, 
     gadgetsOrder: [ "asciiFileLoader", "nameResolver", "dataSetSelector", "dataInquirer", "tableView", "scalableScatter", "histogramView"], 
@@ -199,6 +211,7 @@ module.exports = function(app, model) {
           });
       },
       function(dashboard, callback){
+      	console.log(dashboard);
         createDashboard(dashboard, 
           function() {
             callback(null, dashboard.id);

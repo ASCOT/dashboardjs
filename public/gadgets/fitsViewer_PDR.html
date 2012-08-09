@@ -82,14 +82,20 @@ var displayHeight;
 var displayContext;
 var editContext;
 
+var newDashboard = true;
+var jsURL;
+var imgURL;
+
 gadget.saveState = function(){};
 gadget.loadState = function(state){
 	if (state) {
 		showAnnotations = state.showAnnotations;
 		$('#showAnnotations').prop('checked', showAnnotations);
 		savedImagePath = state.imagePath;
-		if (state.savedDataSetId !== undefined)
-			selectedDataSetId = state.savedDataSetId;
+		selectedDataSetId = state.savedDataSetId;
+		jsURL = state.jsHeaderPath;
+		imgURL = state.imgPath;
+		newDashboard = false;
 	}
 }
 
@@ -109,6 +115,24 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(_fit
     initCanvases();
     initHTMLControls();
     
+    if (newDashboard || imgURL !== undefined) {
+    	selectedDataSetId = 0;
+    	selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetId);
+    }
+    
+    // Pull up the image and header
+    var visit = selectedDataSet.getRecord(0)["visit"];
+    var raft = selectedDataSet.getRecord(0)["raft"];
+    var ccd = selectedDataSet.getRecord(0)["ccd"];
+    //var visit = "887029093";
+    //var raft = "0,1";
+    //var ccd = "0,0";
+    imgURL = "/images/LSSTData/thumb_v"+visit+"_R"+raft+"_S"+ccd+".jpg";
+    jsURL = "/images/LSSTData/header_v"+visit+"_R"+raft+"_S"+ccd+".js";
+    
+    $("#imageName").html("Visit:"+visit+" Raft:"+raft+" CCD:"+ccd);
+    loadJsFile(jsURL);
+    
     $('#dropbox').on("dragenter", noopHandler);
 		$('#dropbox').on("dragexit", noopHandler);
 		$('#dropbox').on("dragover", noopHandler);
@@ -117,10 +141,6 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(_fit
 		$('#canvasArea').on('mouseup', handleMouseup);
 		$('#canvasArea').on('mousemove', handleMousemove);
 		$('#display').on('mousewheel', handleMousewheel);
-		
-		// Bring up an existing image if one is saved to the dashboard state
-		if (savedImagePath != undefined)
-			imageFromUrl(savedImagePath);
 
     // fits.onHoverPixelChanged = function(pixelInfo){
     //   var x = document.getElementById("xCoordinate");
@@ -160,6 +180,29 @@ var initCanvases = function() {
   editContext.globalAlpha = 0.5;
 }
 
+// Dynamically load a js file containing a JSON object
+// Makes an HTTP request then calls JSON.parse on the response
+var loadJsFile = function(path) {
+
+	gadget.setState({ jsHeaderPath : path });
+	var parseJSHeader = function(data) {
+		var responseNoNewline = data.replace(/\n/g,"");	// Remove all newline characters
+		var header = JSON.parse(responseNoNewline);
+		
+		gadget.setState({ imgPath : imgURL});
+		var imageObj = new Image();
+  	imageObj.onload = function() {
+  		fits.renderJpg(this, fitsCanvas, renderSuccess, header);
+  	}
+  	imageObj.src = imgURL;
+	}
+	
+	$.ajax({
+		'url': '/xhrProxy/' + encodeURIComponent(path),
+		success: parseJSHeader 
+	});
+}
+
 // Send a file object to the FITS parser to be displayed
 var renderFile = function(file) {
 	$('#dropLabel').html('Loading file...');
@@ -191,8 +234,10 @@ var renderSuccess = function(){
                     bottomRight: {ra: bottomRight.c1, dec: bottomRight.c2} };   
   gadget.notify('viewBoundsChanged', curBounds);
   
-  // Load up a dataset if one was saved
-  if (selectedDataSetId != -1)
+  // Load up a dataset if one was saved or we are generating a dashboard from pipeQA
+  if (newDashboard || imgURL !== undefined)
+  	addLSSTDataSetPoints();
+  else if (selectedDataSetId != -1)
   	addDataSetPoints();
   
   /*// Add some sample annotations
@@ -342,7 +387,7 @@ var handleMouseup = function(e) {
 
 	mouseDown = false;
 	if (selectedEditType == EDIT_TYPE.ADD) {
-		editContext.clearRect(0,0,640,480);
+		editContext.clearRect(0,0,displayWidth,displayHeight);
 		var start = fits.cursorToPix(dragStart.x, dragStart.y);
 		var end = fits.cursorToPix(e.offsetX, e.offsetY);
 		if (selectedAnnoType == ANNO_TYPE.RECT) {
@@ -357,7 +402,7 @@ var handleMouseup = function(e) {
 		}
 	}
 	if (selectedEditType == EDIT_TYPE.SELECT) {
-		editContext.clearRect(0,0,640,480);
+		editContext.clearRect(0,0,displayWidth,displayHeight);
 		var start = fits.cursorToPix(dragStart.x, dragStart.y);
 		var end = fits.cursorToPix(e.offsetX, e.offsetY);
 		selectAnnotations(start, end);
@@ -375,7 +420,6 @@ var handleMousewheel = function(e) {
 	evObj.initMouseEvent( 'mousewheel', false, true, window, 1, e.originalEvent.screenX-22, e.originalEvent.screenY-22, e.originalEvent.clientX-22, e.originalEvent.clientY-22, false, false, true, false, 0, null );
 	evObj.wheelDelta = e.originalEvent.wheelDelta;
 	fitsCanvas.dispatchEvent(evObj);
-	
 	annotator.handleMousewheel(e.originalEvent);
 	draw();
 }
@@ -390,7 +434,7 @@ var handleMousemove = function(e) {
 
 	if (mouseDown) {
 		if (selectedEditType == EDIT_TYPE.ADD || selectedEditType == EDIT_TYPE.SELECT) {
-			editContext.clearRect(0,0,640,480);
+			editContext.clearRect(0,0,displayWidth,displayHeight);
 			if (selectedAnnoType == ANNO_TYPE.RECT || selectedEditType == EDIT_TYPE.SELECT)
 				editContext.fillRect(dragStart.x, dragStart.y, e.offsetX-dragStart.x, e.offsetY-dragStart.y);
 			else if (selectedAnnoType == ANNO_TYPE.CIRCLE && selectedEditType != EDIT_TYPE.SELECT) {
@@ -706,6 +750,31 @@ var createPolyAnno = function() {
 	draw();
 }
 
+var addLSSTDataSetPoints = function() {
+	removeAnnotations();
+	var xPix;
+	var yPix;
+	for (var i = 0; i < selectedDataSet.length(); i++) {
+		xPix = parseInt(selectedDataSet.getRecord(i)["xPix"]);
+		yPix = parseInt(selectedDataSet.getRecord(i)["yPix"]);
+		
+		if (xPix !== NaN && yPix !== NaN) {
+			var labelRaDec = fits.pix2wcs(xPix, yPix);
+			var label = [("ra: " + labelRaDec.c1),("dec: " + labelRaDec.c2)];
+			annotator.addCircleRegion({'id': selectedDataSet.getRecord(i)["id"],
+                    						 'xPos': xPix, 
+												         'yPos': yPix,
+												         'color': MARKER_COLOR[selectedDataSet.getRecord(i).color],
+												         'radius': 3,
+												         'label': label});
+     	document.getElementById("annoSelect").add(new Option("circle", "0"), null);
+		}
+	}
+	gadget.setState({savedDataSetId: selectedDataSetId});
+  dataSetImported = true;
+  draw();
+}
+
 var addDataSetPoints = function() {
 	if (selectedDataSetId == -1)
 		selectedDataSetId = 0;
@@ -757,6 +826,7 @@ var addDataSetPoints = function() {
 				</div>
 				<table id="slidersList" height="35" style="display: none"></table>
 				<input type="button" value="Unload Image" id="unloadImageButton" onclick="clickUnloadImage();" style="display: none">
+				<div id="imageName"></div>
 				<div id="annoControlsContainer" style="display: none">
 					<div id="annoControls">
 						Annotations

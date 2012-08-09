@@ -2149,6 +2149,34 @@ define('fits',['./libs/fitsParser/src/fitsParser.js', './libs/pixelCanvas/pixelC
   var fitsImageWidth;
   var fitsImageHeight;
   
+  var renderJpg = function(imageObj, canvas, success, headerJSON) {
+  	wcs = new WCS.Mapper(headerJSON);
+  	var imageWidth = headerJSON.NAXIS1;
+  	fitsImageWidth = imageWidth;
+  	var imageHeight = headerJSON.NAXIS2;
+  	fitsImageHeight = imageHeight;
+  	
+  	var viewportWidth = canvas.width;
+  	var viewportHeight = canvas.height;
+  	
+  	// drawImage will not draw outside of canvas boundaries
+  	canvas.setAttribute('width', imageWidth);
+  	canvas.setAttribute('height', imageHeight);
+  	
+  	var context = canvas.getContext('2d');
+  	context.drawImage(imageObj, 0, 0, imageWidth, imageHeight);
+  	var imageData = context.getImageData(0, 0, imageWidth, imageHeight);
+  	
+  	canvas.setAttribute('width', viewportWidth);
+  	canvas.setAttribute('height', viewportHeight);
+  	
+  	pixelCanvas.drawPixels(imageData.data, imageWidth, imageHeight, canvas);
+  	console.log("File read!");
+  	if(success){
+        success();
+    }
+  };
+  
   var renderImage = function(file, canvas, success){
     var fitsParser = new FitsParser();
     
@@ -2207,6 +2235,7 @@ define('fits',['./libs/fitsParser/src/fitsParser.js', './libs/pixelCanvas/pixelC
   return {
   	'getImageDimensions' : getImageDimensions,
     'renderImage' : renderImage,
+    'renderJpg' : renderJpg,
     'redrawImage' : redrawImage,
     'filters' : pixelCanvas.filters,
     'cursorToPix': cursorToPix,
