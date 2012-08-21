@@ -17,7 +17,7 @@ var gadgets = {
      name: "DataSet Selector",
      fileName: "dataSetSelector.html",
      description: "Change the visibility of DataSets.",
-     author: "Ian Smith - imsmith@uw.edu",
+     author: "Spencer Wallace - spencerw@email.arizona.edu",
      version: "0.1"
    },
   histogramView: {

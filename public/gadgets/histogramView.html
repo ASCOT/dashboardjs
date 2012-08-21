@@ -38,9 +38,10 @@ var selectedDataSetName = "";
 var selectedDataSet;
 var numberOfBins = 10;
 
-gadget.init = function(callback){	
-  gadget.onNotification('dataSetChanged', gadget.update);  
-  callback();
+gadget.init = function(finishedLoading){	
+  gadget.update = function() {};
+	gadget.onNotification('dataSetChanged', updateDataSetList);
+  finishedLoading();
 };
 
 gadget.loadState = function(state){
@@ -49,13 +50,11 @@ gadget.loadState = function(state){
     selectedDataSetId = state.selectedDataSetId || "";
     selectedXAxis = state.selectedXAxis || "";
     selectedColor = state.selectedColor || "";
-    numberOfBins = state.numberOfBins || 1;
+    numberOfBins = state.numberOfBins || 10;
   }
   redraw();
 
 };
-
-gadget.update = gadget.loadState;
 
 var DEFAULT_MARKER_COLOR = 'rgba(160, 160,160, 1)';
 var SELECTED_MARKER_COLOR = 'rgba(210,30,100,.9)';
@@ -75,6 +74,8 @@ var dataToChart;	// The collection of points going into the histogram
 var updateDataSetList = function(){
   populateSelect('selectDataSetName', gadget.dashboard.getDataSetList(), selectedDataSetId);
   updateSelectedPoints();
+  console.log('data set changed');
+ 	redraw();
 }
 
 var populateSelects = function() {
@@ -103,12 +104,15 @@ var populateSelects = function() {
         'selectedDataSetName' : selectedDataSetName,
         'selectedXAxis' : selectedXAxis
       });
+    	redraw();
     }
   });
 
   $('#selectXAxis').change( function(){
     if(this.selectedIndex != -1){
+    	selectedXAxis = $(this).find('option:selected').val();
       gadget.setState({ 'selectedXAxis' : $(this).find('option:selected').val() });
+      redraw();
     }
   });
   
@@ -120,7 +124,9 @@ var populateSelects = function() {
 
    $('#selectNumberOfBins').change( function(){
     if(this.selectedIndex != -1){
+    	numberOfBins = parseInt($(this).find('option:selected').val());
       gadget.setState({'numberOfBins' : parseInt($(this).find('option:selected').val()) });
+      redraw();
     }
   });
 
@@ -140,6 +146,7 @@ var setSelectedColor = function(obj) {
 	
 // Checks the public dataset to update the selection status of all the points in the histogram
 var updateSelectedPoints = function() {
+
 	if(chart1 == null)
  		return;	
  	// select or unselect all the points in the chart to change the way they look
@@ -150,15 +157,13 @@ var updateSelectedPoints = function() {
  	var colorIndex;
  	var point;
  	
- 	for (color in colorIndexArray) {
- 		colorIndex = colorIndexArray[color];
- 		for (var i = 0; i < colorIndex.length; i++) {
- 			point = dataToChart[colorIndex[i]];
- 			colorChartPoint(point,color);
+ 	for (var j=0; j < colorIndexArray.length; ++j) {
+ 		recordsColor = selectedDataSet.getRecordsIndicesWithAttribute('color',colorIndexArray[j]);
+ 		for (var i = 0; i < recordsColor.length; i++) {
+ 			point = dataToChart[recordsColor[i]];
+ 			colorChartPoint(point,colorIndexArray[j]);
  		}
  	}
-
- 	redraw();
 }
 
 // Colors a selected point in the histogram dataset by the color name
@@ -319,9 +324,7 @@ function handleSelectEvent(chart,event) {
    }
    
   // Change the color of the points in the public database
-  var selectionObj = {modifiedPointIds: modifiedPointIds, color: selectedColor };
-	setSelectedColor(selectionObj);
-	setTimeout(function() { gadget.notify('pointsSelected', selectionObj, {'private': true}) },1);
+	setTimeout(function() { selectedDataSet.setRecords({'color': selectedColor}, modifiedPointIds); }, .1);
 }
    
 // Read the data from the public dataset and create the histogram   

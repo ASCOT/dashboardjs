@@ -20,6 +20,7 @@
 window.ondragstart = function() { return false; } 
 
 gadget.init = function(callback){	
+	gadget.update = function() {};
   gadget.onNotification('dataSetChanged', updateDataSetList);
   document.getElementById("debugSettings").style.display="none";
   callback();
@@ -66,7 +67,7 @@ myFields = { }				     // Pointers to HTML fields on the page
 	
 // When the public dataset changes, update the plot data
 function updateDataSetList(){
- 	setSelectOptions("selDatasetName", gadget.dashboard.getDataSetList());
+ 	populateDataSetSelect();
  	updateSelectedPoints();
 }
 	
@@ -115,6 +116,36 @@ function updateSelectedPoints() {
        point.color = MARKER_COLOR[colorName];
      }
  }
+ 
+// Gets all of the dataset names and puts them in the import dataset dropdown
+var populateDataSetSelect = function() {
+	var el = document.getElementById("selDatasetName");
+	var items = gadget.dashboard.getDataSetList();
+	el.options.length = 0;
+	for (i in items) {
+		var option = document.createElement("OPTION");
+		option.text = items[i].text;
+		option.value = items[i].id;
+		el.options.add(option);
+	}
+	
+	dataSetSelectChange();
+}
+ 
+var dataSetSelectChange = function() {
+	var el = document.getElementById("selDatasetName");
+	
+	if (el.selectedIndex == -1)
+		return;
+	
+	var selectedDataSetId = parseInt(el.options[el.selectedIndex].value);
+	var columnNames = [""];
+  var ds = gadget.dashboard.getDataSet(selectedDataSetId);
+  columnNames = ds.getColumns();
+	setSelectOptions("selXAxis", columnNames);
+	setSelectOptions("selYAxis", columnNames);
+	gadget.resize();
+}
 	
 // Functions that deal with the HTML controls on the page    
 function getSelectedDataset() {
@@ -517,21 +548,9 @@ function handleSelectEvent(chart,event) {
 				}
 			}
 		}
-		var selectionObj = {modifiedPointIds: modifiedPointIds, color: getSelectionMarkerColor()};
-		setSelectedColor(selectionObj);
+		var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+		setTimeout(function() { ds.setRecords({'color': getSelectionMarkerColor()}, modifiedPointIds); }, .1);
 	}
-}
-	
-// Populates the X/Y axis dropdowns with values from the chosen datasets column names
-// If no dataset is chosen, then it blanks them
-function populateXYSelect(datasetName) {
-	var columnNames = [""];
-   if (datasetName !== "") {
-   	var ds = gadget.dashboard.getDataSet(datasetName);
-      columnNames = ds.getColumns();
-	}
-	setSelectOptions("selXAxis", columnNames);
-	setSelectOptions("selYAxis", columnNames);
 }
 
 // Read the data from the public dataset and create the plot	
@@ -579,7 +598,7 @@ function doPlot() {
 	<div id="divChart1" style="width: 600px; height: 400px; margin: 0 auto"></div>
 
 	<!-- The plot controls -->
-	Dataset: <select id="selDatasetName" onchange="populateXYSelect(this.options[this.selectedIndex].value);"></select>
+	Dataset: <select id="selDatasetName" onchange="dataSetSelectChange();"></select>
 	X-Axis: <select id="selXAxis"></select>
 	Y-Axis: <select id="selYAxis"></select><br>
 	

@@ -245,7 +245,7 @@ define('canvasAnnotator', [], function() {
 	// Draw all visible annotation labels at their specified positions
 	var drawVisibleLabel = function() {
 		for (j in annotations) {
-			if (annotations[j].textVisible) {
+			if (annotations[j].textVisible && annotations[j].label !== undefined) {
 				context.font = textHeight + "px sans-serif";
 				var labelToUse = annotations[j].label;
 				var textWidth = 0;
@@ -422,6 +422,7 @@ define('canvasAnnotator', [], function() {
 			dragStart.y = dragEnd.y;
 			dragEnd.y = t;
 		}
+		
 		var idList = []
 		for (i in annotations) {
 			if (annotations[i].xPos > dragStart.x && annotations[i].yPos > dragStart.y) {
@@ -432,7 +433,6 @@ define('canvasAnnotator', [], function() {
 				}
 			}
 		}
-		
 		return idList;
 	}
 	

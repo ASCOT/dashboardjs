@@ -58,7 +58,6 @@ var fits;
 var savedImagePath;
 var showAnnotations = true;
 var imageLoaded = false;
-var dataSetImported = false;
 var mouseDown = false;
 var prevSelectedIndex = -1;
 var dragStart = {x: '', y: ''};
@@ -116,6 +115,7 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(_fit
     $('#canvasArea').on('mousedown', handleMousedown);
 		$('#canvasArea').on('mouseup', handleMouseup);
 		$('#canvasArea').on('mousemove', handleMousemove);
+		$('#canvasArea').on('mouseout', handleMouseout);
 		$('#display').on('mousewheel', handleMousewheel);
 		
 		// Bring up an existing image if one is saved to the dashboard state
@@ -262,7 +262,7 @@ var selectAnnotations = function(start, end) {
 	var colorName = selectEl.options[selectEl.selectedIndex].value;
 	var idsToColor = annotator.selectAnnotations(startNative, endNative, MARKER_COLOR[colorName]);
 	
-	if (!dataSetImported)
+	if (selectedDataSet == undefined)
 		return;
 	setTimeout(function() { selectedDataSet.setRecords({'color': colorName}, idsToColor); }, .1);
 }
@@ -270,7 +270,7 @@ var selectAnnotations = function(start, end) {
 // If a dataset is selected, sync the color of the annotations up with the 
 // color of the points in the dataset
 var updateSelectedPoints = function() {
-	if (!dataSetImported)
+	if (selectedDataSet == undefined)
 		return;
  	for (var i = 0; i < selectedDataSet.length(); i++) {
  		var color = MARKER_COLOR[selectedDataSet.getRecord(i).color];
@@ -332,23 +332,15 @@ var handleMousedown = function(e) {
 	draw();
 }
 
-var handleMouseup = function(e) {
-	if (!imageLoaded)
-		return;
-	// Send event to fits image canvas
-	var evObj = document.createEvent('MouseEvents');
-	evObj.initMouseEvent( 'mouseup', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
-	fitsCanvas.dispatchEvent(evObj);
-
-	mouseDown = false;
+var finishDrag = function(e) {
 	if (selectedEditType == EDIT_TYPE.ADD) {
 		editContext.clearRect(0,0,640,480);
 		var start = fits.cursorToPix(dragStart.x, dragStart.y);
 		var end = fits.cursorToPix(e.offsetX, e.offsetY);
 		if (selectedAnnoType == ANNO_TYPE.RECT) {
 			annotator.addRectRegion({'xPos':start.x, 'yPos': start.y, 
-  												 		 'width': end.x-start.x, 'height': end.y-start.y, 
-  														 'label': "rect"});
+													 		 'width': end.x-start.x, 'height': end.y-start.y, 
+															 'label': "rect"});
  			document.getElementById("annoSelect").add(new Option("rect", "0"), null);
 		}
 		else if (selectedAnnoType == ANNO_TYPE.CIRCLE) {
@@ -358,12 +350,24 @@ var handleMouseup = function(e) {
 	}
 	if (selectedEditType == EDIT_TYPE.SELECT) {
 		editContext.clearRect(0,0,640,480);
-		var start = fits.cursorToPix(dragStart.x, dragStart.y);
-		var end = fits.cursorToPix(e.offsetX, e.offsetY);
+		var start = {x: dragStart.x, y: dragStart.y};
+		var end = {x: e.offsetX, y: e.offsetY};
 		selectAnnotations(start, end);
 	}
 	annotator.handleMouseup(e.originalEvent);
 	draw();
+}
+
+var handleMouseup = function(e) {
+	if (!imageLoaded)
+		return;
+	// Send event to fits image canvas
+	var evObj = document.createEvent('MouseEvents');
+	evObj.initMouseEvent( 'mouseup', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
+	fitsCanvas.dispatchEvent(evObj);
+
+	mouseDown = false;
+	finishDrag(e);
 }
 
 var handleMousewheel = function(e) {
@@ -378,6 +382,17 @@ var handleMousewheel = function(e) {
 	
 	annotator.handleMousewheel(e.originalEvent);
 	draw();
+}
+
+var handleMouseout = function(e) {
+	mouseDown = false;
+	if (!imageLoaded)
+		return;
+	// Send event to fits image canvas
+	var evObj = document.createEvent('MouseEvents');
+	evObj.initMouseEvent( 'mouseout', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
+	fitsCanvas.dispatchEvent(evObj);
+	finishDrag(e);
 }
 
 var handleMousemove = function(e) {
@@ -708,7 +723,7 @@ var createPolyAnno = function() {
 
 var addDataSetPoints = function() {
 	if (selectedDataSetId == -1)
-		selectedDataSetId = 0;
+		selectedDataSetId = gadget.dashboard.getDataSetList()[0].id;
 	selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetId);
 	removeAnnotations();
 	var coordA;
@@ -733,7 +748,6 @@ var addDataSetPoints = function() {
     }
   }
   gadget.setState({savedDataSetId: selectedDataSetId});
-  dataSetImported = true;
   draw();
 }
 
