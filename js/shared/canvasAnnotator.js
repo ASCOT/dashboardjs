@@ -7,10 +7,7 @@ define('canvasAnnotator', [], function() {
 	var canvas;
 	var context;
 	
-	var viewportWidth;
-	var viewportHeight;
-	var imageWidth;
-	var imageHeight;
+	var pixToScreen;
 
   var viewportPosition = { x : 0, y : 0 };
   var zoomFactor = 1;
@@ -26,14 +23,12 @@ define('canvasAnnotator', [], function() {
 	// Initalize the canvas attributes
 	// Arguments:
 	//					canvas - The canvas to draw onto
-	var init = function(_canvas, _imageWidth, _imageHeight) {
+	//					pixToScreen - The method that converts native pixel coordinates to screen coordinates
+	var init = function(_canvas, _pixToScreen) {
 		canvas = _canvas;
 		context = canvas.getContext('2d');
 		
-		viewportWidth = parseInt(canvas.getAttribute('width'));
-		viewportHeight = parseInt(canvas.getAttribute('height'));
-		imageWidth = _imageWidth;
-		imageHeight = _imageHeight;
+		pixToScreen = _pixToScreen
 	}
 	
 	// Add a rectangle annotation to the list
@@ -145,29 +140,39 @@ define('canvasAnnotator', [], function() {
 	var calcScreenAttributes = function(id) {
 		switch (annotations[id].type) {
 			case 'rect':
-				annotations[id].screenWidth = annotations[id].width*zoomFactor;
-				annotations[id].screenHeight = annotations[id].height*zoomFactor;
-				annotations[id].screenPosX = annotations[id].xPos*zoomFactor-viewportPosition.x;
-				annotations[id].screenPosY = annotations[id].yPos*zoomFactor-viewportPosition.y;
-				annotations[id].screenLabelX = annotations[id].labelXPos*zoomFactor-viewportPosition.x;
-				annotations[id].screenLabelY = annotations[id].labelYPos*zoomFactor-viewportPosition.y;
+				var wh = Math.abs(pixToScreen(annotations[id].xPos,annotations[id].yPos)-pixToScreen(annotations[id].xPos+annotations[id].width,annotations[id].yPos+annotations[id].height));
+				annotations[id].screenWidth = wh.x;
+				annotations[id].screenHeight = wh.y;
+				
+				var pxy = pixToScreen(annotations[id].xPos,annotations[id].yPos);
+				annotations[id].screenPosX = pxy.x;
+				annotations[id].screenPosY = pxy.y;
+				
+				var lxy = pixToScreen(annotations[id].labelXPos,annotations[id].labelYPos);
+				annotations[id].screenLabelX = lxy.x;
+				annotations[id].screenLabelY = lxy.y;
 			break;
 			case 'circle':
-				annotations[id].screenRadius = annotations[id].radius*zoomFactor;
-				annotations[id].screenPosX = annotations[id].xPos*zoomFactor-viewportPosition.x;
-				annotations[id].screenPosY = annotations[id].yPos*zoomFactor-viewportPosition.y;
-				annotations[id].screenLabelX = annotations[id].labelXPos*zoomFactor-viewportPosition.x;
-				annotations[id].screenLabelY = annotations[id].labelYPos*zoomFactor-viewportPosition.y;
+				annotations[id].screenRadius = Math.abs(pixToScreen(annotations[id].xPos,0).x-pixToScreen(annotations[id].xPos+annotations[id].radius,0).x);
+				var pxy = pixToScreen(annotations[id].xPos,annotations[id].yPos);
+				annotations[id].screenPosX = pxy.x;
+				annotations[id].screenPosY = pxy.y;
+				
+				var lxy = pixToScreen(annotations[id].labelXPos,annotations[id].labelYPos);
+				annotations[id].screenLabelX = lxy.x;
+				annotations[id].screenLabelY = lxy.y;
 			break;
 			case 'poly':
 				var screenVertices = []
 				for (j in annotations[id].vertices) {
-					var point = [annotations[id].vertices[j][0]*zoomFactor-viewportPosition.x, annotations[id].vertices[j][1]*zoomFactor-viewportPosition.y];
+					var pxy = pixToScreen(annotations[id].vertices[j][0],annotations[id].vertices[j][1]);
+					var point = [pxy.x, pxy.y];
 					screenVertices.push(point);
 				}
 				annotations[id].screenVertices = screenVertices;
-				annotations[id].screenLabelX = annotations[id].labelXPos*zoomFactor-viewportPosition.x;
-				annotations[id].screenLabelY = annotations[id].labelYPos*zoomFactor-viewportPosition.y;
+				var lxy = pixToScreen(annotations[id].labelXPos,annotations[id].labelYPos);
+				annotations[id].screenLabelX = lxy.x;
+				annotations[id].screenLabelY = lxy.y;
 			break;
 		}
 	}
@@ -197,7 +202,6 @@ define('canvasAnnotator', [], function() {
 	var drawAnno = function(anno) {
 		if (!anno.visible)
 			return;
-	
 		// Draw the annotation boundary
 		switch (anno.type) {
 			case 'rect':
@@ -244,7 +248,7 @@ define('canvasAnnotator', [], function() {
 	
 	// Draw all visible annotation labels at their specified positions
 	var drawVisibleLabel = function() {
-		for (j in annotations) {
+		/*for (j in annotations) {
 			if (annotations[j].textVisible && annotations[j].label !== undefined) {
 				context.font = textHeight + "px sans-serif";
 				var labelToUse = annotations[j].label;
@@ -271,7 +275,7 @@ define('canvasAnnotator', [], function() {
 				for (i in labelToUse)
 					context.fillText(labelToUse[i], labelX, (labelY+(i*textHeight))+textHeight);
 			}
-		}
+		}*/
 	}
 	
 	// Draw all visible annotations in the list onto the canvas
@@ -282,39 +286,6 @@ define('canvasAnnotator', [], function() {
 			drawAnno(annotations[i]);
 		}
 		drawVisibleLabel();
-	}
-	
-	// Center the viewport after zooming in on a certain point
-	var zoom = function(newZoomFactor, mouseX, mouseY) {
-		if (newZoomFactor >= 1) {
-			viewportPosition = {x: 0, y: 0};
-      centerViewport(newZoomFactor, newZoomFactor > zoomFactor, mouseX, mouseY);
-			zoomFactor = newZoomFactor;
-			draw();
-		}
-	}
-	
-	var centerViewport = function(scaleFactor, zoomIn, cursorX, cursorY) {
-		var newPositionX;
-    var newPositionY;
-    var translationX = cursorX / scaleFactor;
-    var translationY = cursorY / scaleFactor;
-    var xOffset = zoomIn? translationX : - translationX / 2; 
-    var yOffset = zoomIn? translationY : - translationY / 2;
-    newPositionX = viewportPosition.x + xOffset; 
-    newPositionY = viewportPosition.y + yOffset; 
-    newPositionX *= scaleFactor;
-    newPositionY *= scaleFactor;
-    if (newPositionX < 0 || newPositionY < 0) {
-      return;
-    }
-    viewportPosition.x = newPositionX;
-    viewportPosition.y = newPositionY;
-	}
-	
-	var handleMousewheel = function(event) {
-    var wheel = event.wheelDelta/120;//n or -n
-    zoom(wheel > 0? zoomFactor*2 : zoomFactor/2, event.offsetX, event.offsetY);
 	}
 	
 	var handleMousemove = function(canvasMouse) {
@@ -381,16 +352,10 @@ define('canvasAnnotator', [], function() {
 		// Pan if the mouse is being dragged
 		if (mouseDown) {
 			var scrollVector = {x: dragStart.x - e.offsetX, y: dragStart.y - e.offsetY};
-			if (viewportPosition.x + scrollVector.x >= 0 && 
-          (viewportPosition.x + scrollVector.x + viewportWidth) <= imageWidth*zoomFactor ) {
-				viewportPosition.x += scrollVector.x;
-				dragStart.x = e.offsetX;
-			}
-			if (viewportPosition.y + scrollVector.y >= 0 && 
-          viewportPosition.y + scrollVector.y + viewportHeight <= imageHeight*zoomFactor ) {
-				viewportPosition.y += scrollVector.y;
-				dragStart.y = e.offsetY;
-			}
+			viewportPosition.x += scrollVector.x;
+			dragStart.x = e.offsetX;
+			viewportPosition.y += scrollVector.y;
+			dragStart.y = e.offsetY;
 			draw();
 		}
 	}
@@ -466,7 +431,6 @@ define('canvasAnnotator', [], function() {
 		'hideAnnotations': hideAnnotations,
 		'selectAnnotations': selectAnnotations,
 		'handleMousemove': handleMousemove,
-		'handleMousewheel': handleMousewheel,
 		'handleMouseup': handleMouseup,
 		'handleMousedown': handleMousedown,
 		'handleMousemovePan': handleMousemovePan

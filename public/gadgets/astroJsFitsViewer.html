@@ -22,8 +22,8 @@
 <script>
 
 // Brightness and contrast sliders
-var sliders = [{name : 'brightness', label : 'Brightness', min : -1, max : 1, value : 0, step : 0.01 },
-               {name : 'contrast', label : 'Contrast', min : -1, max : 1, value : 0, step : 0.01 }];
+var sliders = [{name : 'bias', label : 'Bias '},
+               {name : 'contrast', label : 'Contrast '}];
 
 // List of remote image to load from server           
 var imageFiles = [
@@ -40,6 +40,9 @@ var imageFiles = [
     	name: 'stsci_dss_001.fits'
     }];
 
+// Options for image stretch
+var stretchOptions = ['linear', 'logarithm', 'sqrt', 'power'];
+
 // Selection color options
 var DEFAULT_MARKER_COLOR = '#ffffff';
 var MARKER_COLOR = {
@@ -50,16 +53,17 @@ var MARKER_COLOR = {
   unselect: '#ffffff' 
 };  
 
-// RequireJS modules
+// modules
 var annotator;
 var fits;
+var astroJsFits;
+var wcs;
 
 // Gadget state
 var savedImagePath;
 var showAnnotations = true;
 var imageLoaded = false;
-var dataSetImported = false;
-var mouseDown = false;
+var leftMouseDown = false;
 var prevSelectedIndex = -1;
 var dragStart = {x: '', y: ''};
 var EDIT_TYPE = {ADD: 1, REMOVE: 2, ZOOM: 3, PAN: 4, SELECT: 5};
@@ -71,6 +75,7 @@ var selectedAnnoType = ANNO_TYPE.CIRCLE;
 var polyCreateList = []
 var selectedDataSet;
 var selectedDataSetId = -1;
+var fitsHeader;
 
 // Canvases and attributes
 var display;
@@ -102,8 +107,16 @@ gadget.init = function(finishedLoading){
 
 // Initalize the fits viewer, called when the gadget is initalized
 var initViewer = function() {
-require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(_fits, PNGParser, BinaryAjax, canvasAnnotator) {
+// Set configuration options for requirejs
+var config = {
+    paths: {
+        'cs': '/cs',
+        'coffee-script': '/coffee-script'
+    }
+};
+require(config, ['fits','pngParser', '/binaryajax.js', 'canvasAnnotator', 'cs!/astroJS/display'], function(_fits, PNGParser, BinaryAjax, canvasAnnotator, _astroJsFits) {
     fits = _fits;
+    astroJsFits = _astroJsFits;
     annotator = canvasAnnotator;
     
     initCanvases();
@@ -112,7 +125,6 @@ require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(_fit
     $('#dropbox').on("dragenter", noopHandler);
 		$('#dropbox').on("dragexit", noopHandler);
 		$('#dropbox').on("dragover", noopHandler);
-		$('#dropbox').on("drop", drop);
     $('#canvasArea').on('mousedown', handleMousedown);
 		$('#canvasArea').on('mouseup', handleMouseup);
 		$('#canvasArea').on('mousemove', handleMousemove);
@@ -147,9 +159,6 @@ var initCanvases = function() {
   displayWidth = display.width;
   displayHeight = display.height;
   
-  fitsCanvas = document.createElement('canvas');
-  fitsCanvas.setAttribute('width', displayWidth);
-  fitsCanvas.setAttribute('height', displayHeight);
   annotatorCanvas = document.createElement('canvas');
   annotatorCanvas.setAttribute('width', displayWidth);
   annotatorCanvas.setAttribute('height', displayHeight);
@@ -163,9 +172,22 @@ var initCanvases = function() {
 
 // Send a file object to the FITS parser to be displayed
 var renderFile = function(file) {
+	$('#init').hide();
+	gadget.resize();
 	$('#dropLabel').html('Loading file...');
 	$('#loadingBar').show();
-	fits.renderImage(file, fitsCanvas, renderSuccess);
+	//fits.renderImage(file, fitsCanvas, renderSuccess);
+	
+	// Need to convert the file to an arraybuffer to be read by astroJsFits
+	var reader = new FileReader();
+	reader.onload = function(event) {
+		  var contents = event.target.result;
+		  astroJsFits.initalize(contents, $('#canvasArea'), displayWidth, displayHeight);
+		  fitsCanvas = astroJsFits.getCanvas();
+		  fitsHeader = astroJsFits.getHeader();
+		  renderSuccess();
+	};
+	reader.readAsArrayBuffer(file);
 }
 
 // Executes after a FITS file is successfully loaded
@@ -174,29 +196,79 @@ var renderSuccess = function(){
   $('#loadingBar').hide();
   $('#fitsCanvas').show();
   $('#display').show();
-  $('#init').hide();
-  $('#unloadImageButton').show();
   $('#annoControlsContainer').show();
   $('#slidersList').show();
+  $('#upperControls').show();
   gadget.resize();
   imageLoaded = true;
   
   // Initalize the annotator
-	var imageDimensions = fits.getImageDimensions();
-	annotator.init(annotatorCanvas, imageDimensions.width, imageDimensions.height);
+	var imageDimensions = {width: fitsHeader.get("NAXIS1")[1], height: fitsHeader.get("NAXIS2")[1]};
+	annotator.init(annotatorCanvas, astroJsFits.pixToScreen);
   
+  // Initalize the wcsjs module
+  wcs = new WCS.Mapper(fitsHeader);
   // Send the image boundaries to the dashboard
-  var topLeft = fits.pix2wcs(parseFloat(imageDimensions.width), parseFloat(imageDimensions.height));
-  var bottomRight = fits.pix2wcs(0.0, 0.0);
-  var curBounds = { topLeft: {ra: topLeft.c1, dec: topLeft.c2 },
-                    bottomRight: {ra: bottomRight.c1, dec: bottomRight.c2} };   
+  var topLeft = wcs.pixelToCoordinate([parseFloat(imageDimensions.width), parseFloat(imageDimensions.height)]);
+  var bottomRight = wcs.pixelToCoordinate([0, 0]);
+  var curBounds = { topLeft: {ra: topLeft.ra, dec: topLeft.dec },
+                    bottomRight: {ra: bottomRight.ra, dec: bottomRight.dec} };
+  
+  if (curBounds.topLeft.ra > curBounds.bottomRight.ra) {
+  	var a = curBounds.topLeft.ra;
+  	curBounds.topLeft.ra = curBounds.bottomRight.ra;
+  	curBounds.bottomRight.ra = a;
+  }
+  if (curBounds.topLeft.dec < curBounds.bottomRight.dec) {
+  	var a = curBounds.topLeft.dec;
+  	curBounds.topLeft.dec = curBounds.bottomRight.dec;
+  	curBounds.bottomRight.dec = a;
+  }
+  
   gadget.notify('viewBoundsChanged', curBounds);
   
   // Load up a dataset if one was saved
   if (selectedDataSetId != -1)
   	addDataSetPoints();
+	
+  // Set up the sliders
+  var extremes = astroJsFits.getImageExtremes();
+  var maxBias = extremes.maximum;
+  var maxContrast = (extremes.maximum-extremes.minimum)*5;
+  var bias = maxBias/2;
+  var contrast = maxContrast/5;
+  document.getElementById("slidersList").innerHTML = "";
+  var tbody = $('#slidersList')[0];
+  for (var i = 0; i < this.sliders.length; i++) {
+    var slider = this.sliders[i];
+    $('<tr align="right"><th>' + slider.label.replace(/ /g, '&nbsp;') + ':</th><td><div id="slider' + i + '"></div></td></tr>').appendTo(tbody);
+    var onchange = (function(this_, slider) {
+        return function(event, ui) {
+          this_[slider.name] = ui.value;
+          if(slider.name == 'bias') {
+						setImageExtremes(maxBias-this_.bias, contrast);
+						bias = maxBias-this_.bias
+					}
+					else {
+						setImageExtremes(bias, maxContrast-this_.contrast);
+						contrast = maxContrast-this_.contrast
+					}
+        };  
+    })(this, slider);
+	
+    $('#slider' + i).slider({
+        slide: onchange,
+        change: onchange,
+        min: 0,
+        max: i==0? maxBias: maxContrast,
+        value: i==0? bias: contrast,
+        step: 50
+    });
+    this[slider.name] = slider.value;
+  }
+  setImageExtremes(bias, contrast);
   
-  /*// Add some sample annotations
+  /* // Add some sample annotations
   var circlePos = fits.wcs2pix(241.1766,10.102814);
 	annotator.addCircleRegion({'xPos': circlePos.x, 'yPos': circlePos.y, 'radius': 10, label: "circle"});
 	document.getElementById("annoSelect").add(new Option("circle", "0"), null);
@@ -229,7 +301,7 @@ var renderSuccess = function(){
 var draw = function() {
 	annotator.draw();
 	displayContext.clearRect(0, 0, displayWidth, displayHeight);
-  displayContext.drawImage(fitsCanvas, 0, 0, displayWidth, displayHeight, 0, 0, displayWidth, displayHeight);
+  //displayContext.drawImage(fitsCanvas, 0, 0, displayWidth, displayHeight, 0, 0, displayWidth, displayHeight);
   displayContext.drawImage(annotatorCanvas, 0, 0, displayWidth, displayHeight, 0, 0, displayWidth, displayHeight);
   displayContext.drawImage(editCanvas, 0, 0, displayWidth, displayHeight, 0, 0, displayWidth, displayHeight);
 }
@@ -240,30 +312,24 @@ var noopHandler = function(evt) {
 	evt.preventDefault();
 }
 
-// Called when a file is dropped into the drop box
-var drop = function(evt) {
-	var files = evt.dataTransfer.files;
-	var count = files.length;
-	evt.stopPropagation();
-	evt.preventDefault();
-	// Only call the handler if 1 or more files was dropped.
-	if (count > 0) {
-		$('#dropLabel').html("Processing " + files[0].name);
-		renderFile(files[0]);
-	}
+var setImageExtremes = function(bias, contrast) {
+	var newExtremes = {lower: bias-(contrast/2) < 0 ? 0 : bias-(contrast/2),
+									   upper: bias+(contrast/2)};
+	astroJsFits.changeExtremes(newExtremes.lower, newExtremes.upper);
+  draw();
 }
 
 // Select all annotations between two pixel coordinates on the image and mark those
 // annotations in the global dataset
 var selectAnnotations = function(start, end) {
-	var startNative = fits.cursorToPix(start.x, start.y);
-	var endNative = fits.cursorToPix(end.x, end.y);
+	var startNative = astroJsFits.cursorToPix(start.x, start.y);
+	var endNative = astroJsFits.cursorToPix(end.x, end.y);
 
 	var selectEl = document.getElementById("selectionColorSelect");
 	var colorName = selectEl.options[selectEl.selectedIndex].value;
 	var idsToColor = annotator.selectAnnotations(startNative, endNative, MARKER_COLOR[colorName]);
 	
-	if (!dataSetImported)
+	if (selectedDataSet == undefined)
 		return;
 	setTimeout(function() { selectedDataSet.setRecords({'color': colorName}, idsToColor); }, .1);
 }
@@ -271,7 +337,7 @@ var selectAnnotations = function(start, end) {
 // If a dataset is selected, sync the color of the annotations up with the 
 // color of the points in the dataset
 var updateSelectedPoints = function() {
-	if (!dataSetImported)
+	if (selectedDataSet == undefined)
 		return;
  	for (var i = 0; i < selectedDataSet.length(); i++) {
  		var color = MARKER_COLOR[selectedDataSet.getRecord(i).color];
@@ -294,9 +360,26 @@ var dataSetChanged = function() {
 	draw();
 }
 
+var stretchSelectChange = function() {
+	var el = document.getElementById("stretchSelect");
+	var newStretch = el.options[el.selectedIndex].value;
+	astroJsFits.changeStretch(newStretch);
+	setImageExtremes(bias, contrast);
+}
+
 var dataSetSelectChange = function() {
 	var el = document.getElementById("datasetNameSelect");
 	selectedDataSetId = parseInt(el.options[el.selectedIndex].value);
+}
+
+var populateStretchSelect = function() {
+	var el = document.getElementById("stretchSelect");
+	for (i in stretchOptions) {
+		var option = document.createElement("OPTION");
+		option.text = stretchOptions[i];
+		option.value = stretchOptions[i];
+		el.options.add(option);
+	}
 }
 
 // Gets all of the dataset names and puts them in the import dataset dropdown
@@ -318,6 +401,7 @@ var populateDataSetSelect = function() {
 var handleMousedown = function(e) {
 	if (!imageLoaded)
 		return;
+		
 	// Send event to fits image canvas
 	if (selectedEditType == EDIT_TYPE.PAN) {
 		var evObj = document.createEvent('MouseEvents');
@@ -325,7 +409,7 @@ var handleMousedown = function(e) {
 		fitsCanvas.dispatchEvent(evObj);
 	}
 
-	mouseDown = true;
+	leftMouseDown = true;
 	if (selectedEditType == EDIT_TYPE.ADD || selectedEditType == EDIT_TYPE.SELECT) {
 		dragStart = {x: e.offsetX, y: e.offsetY};
 	}
@@ -336,8 +420,8 @@ var handleMousedown = function(e) {
 var finishDrag = function(e) {
 	if (selectedEditType == EDIT_TYPE.ADD) {
 		editContext.clearRect(0,0,640,480);
-		var start = fits.cursorToPix(dragStart.x, dragStart.y);
-		var end = fits.cursorToPix(e.offsetX, e.offsetY);
+		var start = astroJsFits.cursorToPix(dragStart.x, dragStart.y);
+		var end = astroJsFits.cursorToPix(e.offsetX, e.offsetY);
 		if (selectedAnnoType == ANNO_TYPE.RECT) {
 			annotator.addRectRegion({'xPos':start.x, 'yPos': start.y, 
 													 		 'width': end.x-start.x, 'height': end.y-start.y, 
@@ -362,12 +446,14 @@ var finishDrag = function(e) {
 var handleMouseup = function(e) {
 	if (!imageLoaded)
 		return;
+	
 	// Send event to fits image canvas
 	var evObj = document.createEvent('MouseEvents');
 	evObj.initMouseEvent( 'mouseup', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
-	fitsCanvas.dispatchEvent(evObj);
+	// Only notify the fits canvas of the mouse event if we are in pan mode
+	if (selectedEditType == EDIT_TYPE.PAN) fitsCanvas.dispatchEvent(evObj);
 
-	mouseDown = false;
+	leftMouseDown = false;
 	finishDrag(e);
 }
 
@@ -380,31 +466,40 @@ var handleMousewheel = function(e) {
 	evObj.initMouseEvent( 'mousewheel', false, true, window, 1, e.originalEvent.screenX-22, e.originalEvent.screenY-22, e.originalEvent.clientX-22, e.originalEvent.clientY-22, false, false, true, false, 0, null );
 	evObj.wheelDelta = e.originalEvent.wheelDelta;
 	fitsCanvas.dispatchEvent(evObj);
-	
-	annotator.handleMousewheel(e.originalEvent);
+	//annotator.handleMousewheel(e.originalEvent);
 	draw();
 }
 
 var handleMouseout = function(e) {
-	mouseDown = false;
+	leftMouseDown = false;
 	if (!imageLoaded)
 		return;
 	// Send event to fits image canvas
 	var evObj = document.createEvent('MouseEvents');
 	evObj.initMouseEvent( 'mouseout', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
 	fitsCanvas.dispatchEvent(evObj);
-	finishDrag(e);
+	if (leftMouseDown) finishDrag(e);
 }
 
 var handleMousemove = function(e) {
 	if (!imageLoaded)
 		return;
+		
+	// Update pixel readout
+	var nativeMouse = astroJsFits.cursorToPix(e.clientX, e.clientY);
+	document.getElementById("xPix").innerHTML = parseInt(nativeMouse.x);
+	document.getElementById("yPix").innerHTML = parseInt(nativeMouse.y);
+	var wcsMouse = wcs.pixelToCoordinate([nativeMouse.x, nativeMouse.y]);
+	document.getElementById("alpha").innerHTML = wcsMouse.ra.toFixed(5);
+	document.getElementById("delta").innerHTML = wcsMouse.dec.toFixed(5);
+	document.getElementById("pixValue").innerHTML = parseInt(astroJsFits.getPixelValue(nativeMouse.x, nativeMouse.y));
+	
 	// Send event to fits image canvas
 	var evObj = document.createEvent('MouseEvents');
 	evObj.initMouseEvent( 'mousemove', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
 	fitsCanvas.dispatchEvent(evObj);
 
-	if (mouseDown) {
+	if (leftMouseDown) {
 		if (selectedEditType == EDIT_TYPE.ADD || selectedEditType == EDIT_TYPE.SELECT) {
 			editContext.clearRect(0,0,640,480);
 			if (selectedAnnoType == ANNO_TYPE.RECT || selectedEditType == EDIT_TYPE.SELECT)
@@ -425,6 +520,8 @@ var handleMousemove = function(e) {
 
 // Makes an AJAX request through the server and sends the result to the FITS parser to be displayed
 var imageFromUrl = function(path) {
+	$('#init').hide();
+	gadget.resize();
 	if (path == "None")
 		return;
 		
@@ -441,7 +538,11 @@ var imageFromUrl = function(path) {
 
 		bb.append(byteArray.buffer);
 		var file = bb.getBlob('text/plain');
-		fits.renderImage(file, fitsCanvas, renderSuccess);
+		//fits.renderImage(file, fitsCanvas, renderSuccess);
+		astroJsFits.initalize(byteArray.buffer, $('#canvasArea'), displayWidth, displayHeight);
+		fitsCanvas = astroJsFits.getCanvas();
+		fitsHeader = astroJsFits.getHeader();
+		renderSuccess();
 	}
 
 	$('#dropLabel').html('Loading file...');
@@ -470,6 +571,8 @@ var initHTMLControls = function() {
   	gadget.setState({ imagePath : $(this).val()});
   	imageFromUrl($(this).val());
   });
+  
+  populateStretchSelect();
 
 	// Construct the dropdown box for the selection colors
   var colorSelect = $("#selectionColorSelect");
@@ -477,39 +580,17 @@ var initHTMLControls = function() {
   $.each(items, function(index, value) {
   	colorSelect.append($("<option />").val(value).text(value));
   });
-
-	// Set up the brightness/contrast sliders
-  var tbody = $('#slidersList')[0];
-  for (var i = 0; i < this.sliders.length; i++) {
-    var slider = this.sliders[i];
-    $('<tr><th>' + slider.label.replace(/ /g, '&nbsp;') + ':</th><td><div id="slider' + i + '"></div></td></tr>').appendTo(tbody);
-    var onchange = (function(this_, slider) {
-        return function(event, ui) {
-          this_[slider.name] = ui.value;
-          fits.filters.brightnessContrast(this_.brightness , this_.contrast);
-          draw();
-        };  
-    })(this, slider);
-    $('#slider' + i).slider({
-        slide: onchange,
-        change: onchange,
-        min: slider.min,
-        max: slider.max,
-        value: slider.value,
-        step: slider.step
-    });
-    this[slider.name] = slider.value;
-  }
 }
 
 // Called when the user clicks 'unload image'
 // Sets the gadget back to its initial blank state
 var clickUnloadImage = function() {
 	$("#dropLabel").show(); 
-	$("#dropLabel").html('Drop file here...');
+	$("#dropLabel").html('No image loaded');
   $("#loadingBar").hide();
+  $('#sampleImageSelect')[0].selectedIndex = 0;
   $("#init").show();
-  $("#unloadImageButton").hide();
+  $("#upperControls").hide();
   $("#annoControlsContainer").hide();
   $("#slidersList").hide();
   
@@ -738,10 +819,10 @@ var addDataSetPoints = function() {
     var label = [("ra: " + coordA),("dec: " + coordB)]
     
     if (coordA !== NaN && coordB !== NaN) {
-    	var circlePos = fits.wcs2pix(coordA, coordB);
+    	var circlePos = wcs.coordinateToPixel(coordA, coordB);
       annotator.addCircleRegion({'id': selectedDataSet.getRecord(i)["id"],
                     						 'xPos': circlePos.x, 
-												         'yPos': circlePos.y,
+												         'yPos': fitsHeader.get("NAXIS2")[1]-circlePos.y,
 												         'color': MARKER_COLOR[selectedDataSet.getRecord(i).color],
 												         'radius': 3,
 												         'label': label});
@@ -749,18 +830,17 @@ var addDataSetPoints = function() {
     }
   }
   gadget.setState({savedDataSetId: selectedDataSetId});
-  dataSetImported = true;
   draw();
 }
 
 
 </script>
-<body>
+<body oncontextmenu="return false;">
 	<div id="wrapper">
 				<div id="dropbox">
 					<div id="canvasArea" style="position: relative; height: 100%; width: 100%; float: left">
 						<canvas id="display" style="position: absolute; left: 0; top: 0; display: block; z-index:0"></canvas>
-						<span id="dropLabel">Drop file here...</span>
+						<span id="dropLabel">No image loaded</span>
 						<div id="loadingBar" style="display: none"><img style="height: 19px; width: 107px" alt="dashboard loading" src='/images/loadingBar.gif'></div>  
 					</div>
 				</div>
@@ -771,8 +851,20 @@ var addDataSetPoints = function() {
 					<select id="sampleImageSelect"></select><br>
 					<input type="button" id="fetchURL" value="Fetch" style="padding: 3px"><input id="imageURL" value="From URL" size="50">
 				</div>
+				<table id="upperControls" style="display: none; width: 100%">
+					<tc>
+						<td>
+							<input type="button" value="Unload Image" id="unloadImageButton" onclick="clickUnloadImage();"><br>
+							Stretch: <select id="stretchSelect" onchange="stretchSelectChange();"></select><br>
+						</td>
+					</tc>
+					<tc>
+						<td align="right">&alpha;: <span id="alpha">000.00000</span> &delta;: <span id="delta">000.00000</span> <br>
+						X: <span id="xPix">000</span> Y: <span id="yPix">000</span> <br>
+						Value: <span id="pixValue">00000</span></td>
+					</tc>
+				</table>
 				<table id="slidersList" height="35" style="display: none"></table>
-				<input type="button" value="Unload Image" id="unloadImageButton" onclick="clickUnloadImage();" style="display: none">
 				<div id="annoControlsContainer" style="display: none">
 					<div id="annoControls">
 						Annotations

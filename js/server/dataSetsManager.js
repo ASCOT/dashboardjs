@@ -1,5 +1,5 @@
 var XMLHttpRequest = require("./XMLHttpRequest").XMLHttpRequest;
-var xmlParser = require('libxmljs');
+var xml2js = require('xml2js'); //require('libxmljs');
 var LsstMySQLClient = require('mysql').Client;
 var lsstMySQLClient = new LsstMySQLClient();
 lsstMySQLClient.host = 'lsst10.ncsa.uiuc.edu';
@@ -29,23 +29,25 @@ var queryLSST = function(query, callback){
 	//lsstMySQLClient.end();
 };
 
-var parseSDSSQueryResult = function(queryResult){
-  var doc = xmlParser.parseXmlString(queryResult);
-  var rows = doc.get('//Answer').childNodes();
-  var rowsNumber = rows.length;
-  var currentRow;
-  var currentRowAttributes;
-  var records = [];
-  var newRecord;
-  for(var i = 0; i < rowsNumber; ++i){
-    currentRowAttributes = rows[i].attrs();
-    newRecord = {};
-    for(var j = 0; j < currentRowAttributes.length; j++){
-      newRecord[currentRowAttributes[j].name()] = currentRowAttributes[j].value();
+var parseSDSSQueryResult = function(queryResult, callback){
+  var parseSuccess = function (err, result) {
+  	var records = [];
+  	var rows = result.root.Answer[0].Row;
+  	
+  	for (j in rows) {
+		  var entry = rows[j].$;
+		  newRecord = {};
+		  console.log(entry);
+		  for (i in entry)
+		  	newRecord[i] = entry[i];
+		  records.push(newRecord);
     }
-    records.push(newRecord); 
+    callback(records);
   }
-  return records;
+  
+  var parser = new xml2js.Parser();
+  parser.parseString(queryResult, parseSuccess);
+  
 };
 
 var parseLSSTQueryResult = function(queryResults){
@@ -68,7 +70,8 @@ var parseLSSTQueryResult = function(queryResults){
 
 var dataSources = {
   sdss: {
-    url: 'http://skyserver.sdss3.org/public/en/tools/search/x_sql.asp',
+    //url: 'http://skyserver.sdss3.org/public/en/tools/search/x_sql.asp',
+    url: 'http://skyserver.sdss.org/public/en/tools/search/x_sql.asp',
     type: 'sql',
     queryResultParser: parseSDSSQueryResult,
     dataInquirer: querySDSS
@@ -90,8 +93,10 @@ var retrieveRecords = function(source, query, success, error){
   var dataInquirer = dataSources[source].dataInquirer;
   var queryResultParser;
   var processQueryResult = function(queryResult){
-    var records = queryResultParser(queryResult) || [];
-    success(records);
+  	var querySuccess = function(records) {
+  		success(records);
+  	}
+    queryResultParser(queryResult, querySuccess);
   }
     
   if (!dataInquirer) {
