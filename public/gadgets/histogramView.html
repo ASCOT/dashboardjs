@@ -350,7 +350,7 @@ function redraw() {
     for (var i = 0; i < numberOfBins; i++) {
       var targetColor = DEFAULT_MARKER_COLOR;
       for (var j = 0; j < bins[i].length; j++) {
-        if (bins[i][j].color!= SELECTED_MARKER_COLOR) {
+        if (bins[i][j].color!= 'grey') {
           targetColor = bins[i][j].color;
         }
       }
