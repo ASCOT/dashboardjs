@@ -17,8 +17,23 @@
 <link href="/css/reset.css" rel="stylesheet" type="text/css">
 <link href="/css/text.css" rel="stylesheet" type="text/css"> 
 <link href="/css/widgets.css" rel="stylesheet" type="text/css"> 
-
+</head>
 <script type="text/javascript">
+// create HR object
+gadget.init = function(finishedLoading){
+	gadget.update = function(){};
+  finishedLoading();
+}
+
+gadget.saveState = function(){
+  return {
+  	'txtInput': $("#txtInputText").val()
+  }
+};
+
+gadget.loadState = function(state){
+	$('#txtInputText').val(state.txtInput); 
+};
 
 // CONSTANTS
 // Status Icons
@@ -159,22 +174,18 @@ var makeRequestGet = function(url){
   success: parseResponse });
 };
 
-// create gadget object
-gadget.init = function(callback){
-  gadget.resize();
-  callback();
+var clickGo = function() {
+	gadget.setState({ txtInput: $("#txtInputText").val()});
+	getCoordinates(document.getElementById('txtInputText').value);
 }
 
 </script>
-</head>
 <body>
 <div id='content'>
-	<form name="form" action="#" onsubmit="getCoordinates(document.getElementById('txtInputText').value);return false">
-  	<input type="text" id="txtInputText" style="width:15em;"/>
-   	<input type="submit" value="Go"/ style="margin: 5px;" /> 
-   	<div style="display: inline">e.g. "M67" or "190 00 00 -11 37 21.2"</div>
-   	<div id="divStatusText" style="float: right; margin-top: 1px"></div> 
- </form>
+	<input type="text" id="txtInputText" style="width:15em;"/>
+ 	<input type="submit" value="Go"/ style="margin: 5px;" onclick="clickGo();"/> 
+ 	<div style="display: inline">e.g. "M67" or "190 00 00 -11 37 21.2"</div>
+ 	<div id="divStatusText" style="float: right; margin-top: 1px"></div> 
 </div>
 </body>
 </html>

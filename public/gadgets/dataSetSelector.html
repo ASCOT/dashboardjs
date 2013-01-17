@@ -86,14 +86,19 @@ function createDataSetColorsList(dataSet) {
     var color = colorList[i];
     colorRecordsIndices = dataSet.getRecordsIndicesWithAttribute('color', color);
     colorRecord = dataSet.getRecord(colorRecordsIndices[0]);
+    
+    var colorRecordVisible = true;
+    if (colorRecord.visible == "false" || colorRecord.visible == false)
+    	colorRecordVisible = false;
+    	
     if(colorRecordsIndices.length > 0){
       var checkBoxVisibility = document.createElement("input");
       checkBoxVisibility.type = "checkbox";
       checkBoxVisibility.id = "ckVis_" + dataSetId + "_" + color;
-      checkBoxVisibility.checked = colorRecord.visible;
+      checkBoxVisibility.checked = colorRecordVisible;
       checkBoxVisibility.value = color;
       checkBoxVisibility.onclick = function() {
-        toggleDataSetColorVisibility(dataSetId, this.value, this.checked);
+        toggleDataSetColorVisibility(dataSetId, checkBoxVisibility.value, checkBoxVisibility.checked);
       }
       subDiv.appendChild(checkBoxVisibility);     
       // create the color name span
@@ -117,21 +122,18 @@ function createDataSetColorsList(dataSet) {
   
 function subsetByVisible(dataSetId) {
 
+	var newName = prompt("Enter name for new dataset");
+	if (newName === "" || newName === null) {
+	  return;
+	}
+	
   var dataSet = gadget.dashboard.getDataSet(dataSetId);
-      
-  // copy the records from the dataset
-  var subsetData = dataSet.query({visible:true});
-      
-  // make the new dataset
-  var subsetDS = gadget.dashboard.createDataSet();
-  subsetDS.init(subsetData);
-  // get the new name
-  var newName = prompt("Enter name for new dataset");
-  if (newName === "" || newName === null) {
-    return;
+  var subsetRecordIndices = dataSet.getRecordsIndicesWithAttribute("visible", true);
+  var subsetRecords = []
+  for (i in subsetRecordIndices) {
+  	subsetRecords.push(dataSet.getRecord(i));
   }
-  subsetDS.setId(newName);
-  gadget.dashboard.setDataSet(newName, subsetDS); 
+  gadget.dashboard.createDataSetFromRecords(newName, subsetRecords, function() {});
 
   // call to refresh the list
   updateDataSetList();      

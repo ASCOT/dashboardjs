@@ -253,6 +253,23 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     });    
     
   };
+  
+  this.createDataSetFromRecords = function(name, records, success) {
+  	var createDataSetSuccess = function(dataSetId){
+      this.loadDataSet(dataSetId);
+      success(dataSetId);
+    }
+    var data = {
+    	"name" : name,
+    	"existingRecords" : records
+    };
+    UW.ajax({
+      "url" : "/dataSet/",
+      "type" : "POST",
+      "data" : JSON.stringify(data),
+      "success" : _.bind(createDataSetSuccess, this)
+    }); 
+  };
 
   this.getComments = function(){
     return dashboardModel.at('comments').get();

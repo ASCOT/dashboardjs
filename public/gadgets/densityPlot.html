@@ -19,20 +19,75 @@
 // drags a selection box across the plot
 window.ondragstart = function() { return false; } 
 
-gadget.init = function(callback){	
-	gadget.update = function() {};
-  gadget.onNotification('dataSetChanged', updateDataSetList);
-  document.getElementById("debugSettings").style.display="none";
-  callback();
-}
+// Gadget state
+var axisInverted = {x: false, y: false};
+var plottedDataset;
+var curXAxis, curYAxis;
 
 gadget.saveState = function(){
 
 };
 
 gadget.loadState = function(state){
+	if (state) {
+		axisInverted.x = state.axisInverted && state.axisInverted.x;
+    axisInverted.y = state.axisInverted && state.axisInverted.y;
+    
+    if (axisInverted.x) {
+      $('#invertXAxisButton').get(0).value = '<';
+    } else {
+      $('#invertXAxisButton').get(0).value = '>';
+    }
 
+    if (axisInverted.y) {
+      $('#invertYAxisButton').get(0).value = 'v';
+    } else {
+      $('#invertYAxisButton').get(0).value = '^';
+    }	
+	
+		plottedDataset = state.plottedDataset;
+		xFlip = state.xFlip;
+		yFlip = state.yFlip;
+		curXAxis = state.curXAxis;
+		curYAxis = state.curYAxis;
+	}
 };
+
+gadget.init = function(callback){	
+	gadget.update = function() {};
+  gadget.onNotification('dataSetChanged', updateDataSetList);
+  document.getElementById("debugSettings").style.display="none";
+  
+  $('#invertXAxisButton').click( function(){
+    gadget.setState({ 
+      axisInverted : {
+        x : !axisInverted.x,
+        y : axisInverted.y
+    }});
+    axisInverted.x = !axisInverted.x;
+    if ($('#invertXAxisButton').get(0).value == '>') {
+      $('#invertXAxisButton').get(0).value = '<';
+    } else {
+      $('#invertXAxisButton').get(0).value = '>';
+    }
+  });
+
+  $('#invertYAxisButton').click( function(){
+    gadget.setState({ 
+      axisInverted : {
+      y : !axisInverted.y,
+      x : axisInverted.x
+    }});
+    axisInverted.y = !axisInverted.y;
+    if ($('#invertYAxisButton').get(0).value == '^') {
+      $('#invertYAxisButton').get(0).value = 'v';
+    } else {
+      $('#invertYAxisButton').get(0).value = '^';
+    }
+  });
+  
+  callback();
+}
 
 // GLOBAL CONSTANTS
 var chart1;                  // The highcharts chart object
@@ -62,9 +117,6 @@ var numBinsY;             // The number of y bins is automatically adjusted acco
 var dataExtremes;         // Find the extremes of the dataset to be plotted to set the initial window bounds
 var bins;                 // Holds information about the density of each part of the plot
 
-var currentDatasetName = ""; // The name of the dataset to be loaded
-myFields = { }				     // Pointers to HTML fields on the page
-	
 // When the public dataset changes, update the plot data
 function updateDataSetList(){
  	populateDataSetSelect();
@@ -119,31 +171,39 @@ function updateSelectedPoints() {
  
 // Gets all of the dataset names and puts them in the import dataset dropdown
 var populateDataSetSelect = function() {
-	var el = document.getElementById("selDatasetName");
+	// Clear whatever is already in the dropdown
+	$("#selDatasetName").find("option").remove();
+
 	var items = gadget.dashboard.getDataSetList();
-	el.options.length = 0;
 	for (i in items) {
-		var option = document.createElement("OPTION");
-		option.text = items[i].text;
-		option.value = items[i].id;
-		el.options.add(option);
+		var option = new Option(items[i].text, items[i].id);
+		$("#selDatasetName").append(option);
 	}
 	
-	dataSetSelectChange();
+	dataSetSelectChange(false);
 }
  
-var dataSetSelectChange = function() {
-	var el = document.getElementById("selDatasetName");
+var dataSetSelectChange = function(click) {
+	currentDataset = $("#selDatasetName").val();
+	var selectedIndex = $("#selDatasetName").attr("selectedIndex");
 	
-	if (el.selectedIndex == -1)
+	if (selectedIndex == -1)
 		return;
 	
-	var selectedDataSetId = parseInt(el.options[el.selectedIndex].value);
+	var selectedDataSetId = parseInt(selectedIndex);
 	var columnNames = [""];
-  var ds = gadget.dashboard.getDataSet(selectedDataSetId);
+  var ds = gadget.dashboard.getDataSet(currentDataset);
   columnNames = ds.getColumns();
 	setSelectOptions("selXAxis", columnNames);
 	setSelectOptions("selYAxis", columnNames);
+	
+	// If there is a dataset selection saved to the gadget state, select it and plot
+	if (plottedDataset != undefined && !click) {
+		$("#selDatasetName").val(plottedDataset);
+		$("#selXAxis").val(curXAxis);
+		$("#selYAxis").val(curYAxis);
+		doPlot();
+	}
 	gadget.resize();
 }
 	
@@ -165,73 +225,49 @@ function getSelectionMarkerColor() {
 }
 
 function getSelectedOption(select) {
-   var selName = getField(select);
-   if (selName.length > 0){
-     return selName.options[selName.selectedIndex].value;
-   } else {
-      return "";
-   }
+	return $("#"+select).val();
 }
 
 function setSelectOptions(selectName, options) {
-	var select = getField(selectName);
-   if (select === null) {
-   	return;
-   }
-   // save old selected option so maybe it can be reselected
-   var selectedOption = getSelectedOption(selectName);
-   // Default. First option selected
-   if (selectedOption == "")
-  		 selectedOption == options[0];
-   // clear options
-   select.length = 0;
-   // add options
-   for (var i=0, len=options.length; i<len; i++) {
-   	// if oldOption is in the list, then select it
-      select.add(new Option(options[i], options[i], false, (selectedOption == options[i])), null);
-   }
-   if(select.onchange)
-   	select.onchange();
-}
-
-function getField(field) {
-	if (!(field in myFields) || (myFields[field] === null)) {
-  		myFields[field] = document.getElementById(field);
-   }
-	return myFields[field];
+	// Clear whatever is already in the dropdown
+	$("#"+selectName).find("option").remove();
+	
+	for (i in options) {
+		var option = new Option(options[i], options[i]);
+		$("#"+selectName).append(option);
+	}
 }
 
 function getRadioValue(radio) {
-	if (!radio) {
-		return "";
-	}
-	for (var i=0, len=radio.length; i<len; i++) {
-		if (radio[i].checked) {
-			return radio[i].value;
-		}
-	}
-	return "";
+	return $("input[name="+radio+"]:checked").val();
 }
 
 function isRadioZoom() {
-	return (getRadioValue(document.formSelectZoom.radSelectZoom) === "zoom");
+	return (getRadioValue("radSelectZoom") === "zoom");
 }
    
 // Read the public dataset into a format that can be used by the scatter plot
 function parseData(args) {
 	var xCol = args.xAxis;
 	var yCol = args.yAxis;
-     
+  var visible;
 	var ds = gadget.dashboard.getDataSet(args.dataSetName);
+	if (!ds.isVisible())
+		return [];
 	var colorIndexArray = ds.getAttributeValues('color');
              
  	var graphData = [];
 	for (i=0,len=ds.length(); i<len; i++) {
+		var v = ds.getRecord(i)["visible"];
+    if (v == "false" || v == false)
+    	visible = false;
+    else
+    	visible = true;
 		var xVal = parseFloat(ds.getRecord(i)[getSelectedXAxis()]);
 		var yVal = parseFloat(ds.getRecord(i)[getSelectedYAxis()]);
 		// each point has unique id so a pointer to point can be had by chart.get(id)
    	var id = ds.getRecord(i)["id"];
-   	if (xVal !== NaN && yVal !== NaN){
+   	if (xVal !== NaN && yVal !== NaN && visible){
    		graphData.push({id: id, x: xVal, y: yVal, color: DEFAULT_MARKER_COLOR });
   		}
   	}
@@ -367,8 +403,16 @@ function drawData(sparsePts) {
 				// Scale the opacity of the fill color based on the density
 				var fillColor = 'rgba(50,50,50,'+ ((bins[i][j].length - maxDensity)/densityRange) +')';
 				
-				var xPos = i*binPixelWidth+chart1.plotLeft;
-				var yPos = chart1.plotHeight+chart1.plotTop-binPixelHeight-j*binPixelHeight;
+				var xPos, yPos;
+				if (axisInverted.x)
+					xPos = (bins.length-i)*binPixelWidth+chart1.plotLeft;
+				else
+					xPos = i*binPixelWidth+chart1.plotLeft;
+					
+				if (axisInverted.y)	
+					yPos = chart1.plotHeight+chart1.plotTop-binPixelHeight-(bins[0].length-j)*binPixelHeight;
+				else
+					yPos = chart1.plotHeight+chart1.plotTop-binPixelHeight-j*binPixelHeight;
 				
 				var strokeWidth = 0;
 				var strokeColor = '#0000FF';
@@ -393,7 +437,7 @@ function drawData(sparsePts) {
 		var xPos = chart1.xAxis[0].translate(sparsePts[i].x)+chart1.plotLeft;
 		var yPos = chart1.plotHeight-chart1.yAxis[0].translate(sparsePts[i].y)+chart1.plotTop;
 		
-		primitiveObjects.push(chart1.renderer.circle(xPos,yPos,3).attr({fill: sparsePts[i].color,stroke: 'black','stroke-width': 1,zIndex: 100}).add());	
+		primitiveObjects.push(chart1.renderer.circle(xPos,yPos,2).attr({fill: sparsePts[i].color,stroke: 'black','stroke-width': 0,zIndex: 100}).add());	
 	}
 
 	return primitiveObjects;
@@ -422,7 +466,7 @@ function displayPlot(args) {
   	   	x: -60
       },
 		title: {
-			text: getSelectedDataset()
+			text: gadget.dashboard.getDataSet(getSelectedDataset()).name
 		},
 		credits: {
                  enabled: false
@@ -432,6 +476,7 @@ function displayPlot(args) {
 				enabled: true,
 				text: args.xAxis
 			},
+			reversed: axisInverted.x,
 			startOnTick: false,
 			endOnTick: false,
 			// Make the scales 0.1% longer to keep bin boundaries within the confines of the window
@@ -443,6 +488,8 @@ function displayPlot(args) {
 			title: {
 				text: args.yAxis
 			},
+			reversed: axisInverted.y,
+			gridLineWidth: 0,
 			startOnTick: false,
 			endOnTick: false,
 			// Make the scales 0.1% longer to keep bin boundaries within the confines of the window
@@ -458,7 +505,6 @@ function displayPlot(args) {
 			showInLegend: false
 		}]
 	});
-	
 	// Hide the dummy point at (0,0)
 	chart1.series[0].hide();
 }
@@ -472,20 +518,21 @@ function handleLoadEvent(chart) {
    originalSizeX = chart.xAxis[0].getExtremes().max - originalMinX;
    originalMinY = chart.yAxis[0].getExtremes().min;
    originalSizeY = chart.yAxis[0].getExtremes().max - originalMinY;
-   updateSelectedPoints();
+   //updateSelectedPoints();
 }
 	
 // What to do when the plot is redrawn
 function handleRedrawEvent(chart) {
 	gadget.resize();
-	// Remove all of the exisiting primitive objects
+	
+   // Remove all of the exisiting primitive objects
    for (var i = 0; i < primitiveObjects.length; i++) {
       primitiveObjects[i].destroy();
    }
    
    // Draw a white rectangle over the background to clear out the previous background image
 	primitiveObjects.push(chart.renderer.rect(0,0,chart.chartWidth, chart.chartHeight, 0)
-    							 .attr({fill: 'white', zIndex: 0}).add());
+    							 .attr({fill: 'white', zIndex: 5}).add());
    // Draw the background image
    var currentMinX = chart.xAxis[0].getExtremes().min;
    var currentSizeX = chart.xAxis[0].getExtremes().max - currentMinX;
@@ -565,11 +612,13 @@ function doPlot() {
 	imgHeight = document.getElementById('imgHeightInput').value;
 	
 	// Init the dataset
-	currentDatasetName = getSelectedDataset();
-   var datasetName = currentDatasetName;
+   var datasetName = getSelectedDataset();
    var xAxisName = getSelectedXAxis();
    var yAxisName = getSelectedYAxis();
    
+   // Clear all of the primitive objects, since highcharts does this for us
+   // when the chart is reconstructed
+   primitiveObjects = []
    
    if (datasetName ===  "" || xAxisName === "" || yAxisName === "") {
    	alert("Choose a dataset, x axis, and y axis");
@@ -584,23 +633,25 @@ function doPlot() {
 	// Read the data in and figure out the max and min of the dataset
 	dataToPlot = parseData(dataInput);
 	dataExtremes = getDataExtremes(dataToPlot);
-	
 	displayPlot(dataInput);
-	
 	updateSelectedPoints();
+	plottedDataset = datasetName;
+	curXAxis = xAxisName;
+	curYAxis = yAxisName;
+	gadget.setState({ plottedDataset : datasetName});
+	gadget.setState({ curXAxis : xAxisName});
+	gadget.setState({ curYAxis : yAxisName});
 }
 
 </script>
 </head>
 <body>
 <div id="content">
-	<!-- The scatter plot -->
-	<div id="divChart1" style="width: 600px; height: 400px; margin: 0 auto"></div>
 
 	<!-- The plot controls -->
-	Dataset: <select id="selDatasetName" onchange="dataSetSelectChange();"></select>
-	X-Axis: <select id="selXAxis"></select>
-	Y-Axis: <select id="selYAxis"></select><br>
+	Dataset: <select id="selDatasetName" onchange="dataSetSelectChange(true);"></select><br>
+	X-Axis: <input id="invertXAxisButton" type="button" title="Invert X Axis" value=">"> <select id="selXAxis"></select>
+	Y-Axis: <input id="invertYAxisButton" type="button" title="Invert Y Axis" value="^"> <select id="selYAxis"></select><br>
 	
 	<div id="debugSettings">
 	maxDensity: <input type="text" id="maxDensityInput" value="2" /><br>
@@ -622,6 +673,8 @@ function doPlot() {
    	</div>
 	</form>
 	<input id="btDoPlot" onclick="doPlot();" type="button" value="Plot"/><br>
+	<!-- The scatter plot -->
+	<div id="divChart1" style="width: 100%; height: 400px; margin: 0 auto"></div>
 </div>
 
 </body>

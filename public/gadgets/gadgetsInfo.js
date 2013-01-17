@@ -42,8 +42,8 @@ var gadgets = {
     version: "0.1"
   },
   scalableScatter: {
-    name: "ScalableScatter",
-    fileName: "scalableScatter.html",
+    name: "Density Plot",
+    fileName: "densityPlot.html",
     description: "Create interactive density plots from DataSets. Useful for visualizing many thousands of points.",
     author: "Spencer Wallace - spencerw@email.arizona.edu",
     version: "0.1"

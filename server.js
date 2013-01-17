@@ -83,7 +83,7 @@ app.get('/dataSet/:id', function(req, res){
     res.send(JSON.stringify(dataSet));
   };
   DataSetsManager.find(req.params.id, dataSetFound);
-});  
+});
 
 app.post('/dataSet/', function(req, res){
   var queryInfo = req.body || undefined;

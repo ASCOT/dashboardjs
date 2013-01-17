@@ -30,14 +30,13 @@ var queryLSST = function(query, callback){
 };
 
 var parseSDSSQueryResult = function(queryResult, callback){
-  var parseSuccess = function (err, result) {
+	var parseSuccess = function (err, result) {
   	var records = [];
   	var rows = result.root.Answer[0].Row;
   	
   	for (j in rows) {
-		  var entry = rows[j].$;
+		  var entry = rows[j];
 		  newRecord = {};
-		  console.log(entry);
 		  for (i in entry)
 		  	newRecord[i] = entry[i];
 		  records.push(newRecord);
@@ -70,8 +69,7 @@ var parseLSSTQueryResult = function(queryResults){
 
 var dataSources = {
   sdss: {
-    //url: 'http://skyserver.sdss3.org/public/en/tools/search/x_sql.asp',
-    url: 'http://skyserver.sdss.org/public/en/tools/search/x_sql.asp',
+    url: 'http://skyserver.sdss3.org/public/en/tools/search/x_sql.asp',
     type: 'sql',
     queryResultParser: parseSDSSQueryResult,
     dataInquirer: querySDSS
@@ -150,6 +148,10 @@ module.exports.find = function(id, callback) {
 module.exports.createDataSet = function(dataSetInfo, callback) {
   var id = dataSetInfo.id || dataSets.length;
   var name = dataSetInfo.name;
+	if (dataSetInfo.existingRecords != undefined) {
+		callback(addDataSet({'id': id, 'name': name, 'records': dataSetInfo.existingRecords}));
+		return;
+	}
   var sourceId = dataSetInfo.source;
   var query = dataSetInfo.query;
   var records = dataSetInfo.records;

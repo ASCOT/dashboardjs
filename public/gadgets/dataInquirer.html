@@ -70,19 +70,22 @@ var currentQuery = {};
 
 // create HR object
 gadget.init = function(finishedLoading){
+	gadget.update = function(){};
   gadget.onNotification('viewBoundsChanged', setViewPortBounds);
   setFields();
   finishedLoading();
 }
 
 gadget.saveState = function(){
-  return { 
+  return {
+  	'datasetName': $("#txtDatasetName").val(),
     'currentQueryText': currentQuery.query,
     'selectedCatalog': $("#selectCatalog option:selected").text()
   }
 };
 
 gadget.loadState = function(state){
+	$('#txtDatasetName').val(state.datasetName);
   currentQuery.query = state.currentQueryText;
   $('textarea#txtQueryString').val(state.currentQueryText);
   $('#selectCatalog').val(state.selectedCatalog).attr('selected',true);  
@@ -116,6 +119,10 @@ var createDataSet = function() {
   var dataSetName = $("#txtDatasetName").val();
   var query = $("#txtQueryString").val(); 
   var dataSource = $("#selectCatalog option:selected").text();
+  
+  gadget.setState({ currentQueryText: query});
+  gadget.setState({ selectedCatalog: $("#selectCatalog option:selected").text()});
+  gadget.setState({ datasetName: $("#txtDatasetName").val()});
 
   var createDataSetSuccess = function(newDataSetId) {
     //var numberOfRows = newDataSet.length();
@@ -193,7 +200,7 @@ function setViewPortBounds(newBounds) {
   }
   viewportBounds = newBounds;
   boundsText =  "ra between " + newBounds.topLeft.ra.toFixed(4) + " and " + newBounds.bottomRight.ra.toFixed(4) +    
-                "<br/> dec between " + newBounds.topLeft.dec.toFixed(4) + " and " + newBounds.bottomRight.dec.toFixed(4)
+                "<br/> dec between " + newBounds.bottomRight.dec.toFixed(4) + " and " + newBounds.topLeft.dec.toFixed(4)
   $("#divViewPortBounds").html(boundsText);
 }
 

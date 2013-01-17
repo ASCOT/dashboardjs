@@ -415,9 +415,12 @@ function drawPlot() {
 }
 
 function generatePoints(){
+	if (!selectedDataSet.isVisible())
+		return [];
   var xValue;
   var yValue;
   var shift;
+  var visible;
   var points = [];
   if (!selectedDataSet)
     return points;
@@ -427,8 +430,13 @@ function generatePoints(){
     xValue = /\./.test(xValue)? parseFloat(xValue) : xValue;
     yValue = selectedDataSet.getRecord(i)[selectedYAxis];
     yValue = /\./.test(yValue)? parseFloat(yValue) : yValue;
+    var v = selectedDataSet.getRecord(i)["visible"];
+    if (v == "false" || v == false)
+    	visible = false;
+    else
+    	visible = true;
     // each point has unique id so a pointer to point can be had by chart.get(id)
-    if (xValue !== NaN && yValue !== NaN){
+    if (xValue !== NaN && yValue !== NaN && visible){
       points.push({'id': selectedDataSet.getRecord(i)["id"],
                     x: xValue, 
                     y: yValue,

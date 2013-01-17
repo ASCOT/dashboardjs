@@ -232,7 +232,7 @@ if (!UW) var UW={};
 
     setVisible: function(visible){
       this.visible = visible;
-      this.trigger('changed', { event: 'dataSetChaned', id: this.id});
+      this.trigger('changed', { event: 'dataSetChanged', id: this.id});
     },
     
     change: function(){

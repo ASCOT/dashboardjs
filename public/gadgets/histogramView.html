@@ -194,13 +194,22 @@ function isRadioZoom() {
 	
 // Read the public dataset into a format that can be used by the histogram
 function parseData(args) {
-	var xCol = args.xAxis;        
+	if (!selectedDataSet.isVisible())
+		return [];
+	var xCol = args.xAxis; 
+	var visible;       
  	var graphData = [];
 	for (i=0, len=selectedDataSet.length(); i<len; i++) {
+		var v = selectedDataSet.getRecord(i)["visible"];
+    if (v == "false" || v == false)
+    	visible = false;
+    else
+    	visible = true;
+	
 		var xVal = parseFloat(selectedDataSet.getRecord(i)[selectedXAxis]);
 		// each point has unique id so a pointer to point can be had by chart.get(id)
    	var id = selectedDataSet.getRecord(i)["id"];
-   	if (xVal !== NaN){
+   	if (xVal !== NaN && visible){
    		graphData.push({id: id, x: xVal, color: selectedDataSet.getRecord(i).color });
   		}
   }
