@@ -527,17 +527,11 @@ var imageFromUrl = function(path) {
 		
 	// Send an http response to the FITS parser to be displayed
 	var renderImage = function(response) {
-		var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder;
-		var bb = new BlobBuilder();
-
 		// convert string object into a binary object
 		var byteArray = new Uint8Array(response.length);
 		for (var i = 0; i < response.length; i++) {
 				byteArray[i] = response.charCodeAt(i) & 0xff;
 		}
-
-		bb.append(byteArray.buffer);
-		var file = bb.getBlob('text/plain');
 		//fits.renderImage(file, fitsCanvas, renderSuccess);
 		astroJsFits.initalize(byteArray.buffer, $('#canvasArea'), displayWidth, displayHeight);
 		fitsCanvas = astroJsFits.getCanvas();
