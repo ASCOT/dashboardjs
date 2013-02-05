@@ -105,7 +105,7 @@ var DEFAULT_MARKER_COLOR = 'rgba(0, 0, 0, 0)';
                      green: 'rgba(0, 255, 0, .7)',
                      blue: 'rgba(0, 0, 255, .7)',
                      yellow: 'rgba(220, 220, 0, .7)',
-                     unselect: DEFAULT_MARKER_COLOR
+                     grey: DEFAULT_MARKER_COLOR
                     }
 
 var primitiveObjects = [] // References to the primitive objects drawn on the chart
@@ -126,7 +126,7 @@ function updateDataSetList(){
 // Given a list of point ids, change those points in the public dataset to a given color
 function setSelectedColor(obj) {
 	var useColor = obj.color;
-	if (obj.color == 'unselect') {
+	if (obj.color == 'grey') {
 		useColor = '';
 	}
 	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
@@ -162,7 +162,7 @@ function updateSelectedPoints() {
  // Colors a selected point on plot by the color name
  function colorChartPoint(point, colorName) {
      if (colorName === "") {
-         colorName = "unselect";
+         colorName = "grey";
      }
      if(point){
        point.color = MARKER_COLOR[colorName];
@@ -667,7 +667,7 @@ function doPlot() {
 			<option value="green">green</option>
 			<option value="blue">blue</option>
 			<option value="yellow">yellow</option>
-			<option value="unselect">unselect</option></select>
+			<option value="unselect">grey</option></select>
          <input type="radio" id="radSelectZoom" name="radSelectZoom" value="select" checked="checked" /><label for="radSelect">Select</label>
          <input type="radio" id="radSelectZoom" name="radSelectZoom" value="zoom" /><label for="radZoom">Zoom</label>
    	</div>

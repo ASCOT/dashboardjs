@@ -225,7 +225,7 @@ var renderSuccess = function(){
   	curBounds.bottomRight.dec = a;
   }
   
-  gadget.notify('viewBoundsChanged', curBounds);
+  gadget.notify('viewBoundsChanged', {'bounds': curBounds, 'source': 'fitsViewer'});
   
   // Load up a dataset if one was saved
   if (selectedDataSetId != -1)

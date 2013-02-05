@@ -31,6 +31,7 @@ if (!UW) var UW={};
     id: _.uniqueId('ds'),
     
     initialize: function(dataSetJSON){
+			this.initalized = false;
       this.records = [];
       this.columns = {};
       this.visible = true;
@@ -50,6 +51,7 @@ if (!UW) var UW={};
         }
       }
       
+			this.initalized = true;
     },
     
     addRecords : function(records, silent){
@@ -187,7 +189,7 @@ if (!UW) var UW={};
         index[newValue].push(id);
 
         // Remove old value from index
-        if (oldValue) {
+        if (oldValue && this.initalized) {
           for (var i = 0; i < index[oldValue].length; ++i) {
             if (index[oldValue][i] === id){
               index[oldValue].splice(i,1);
@@ -197,7 +199,6 @@ if (!UW) var UW={};
         }
 
       }
-      
     },
     
     length: function(){

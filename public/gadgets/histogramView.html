@@ -63,7 +63,7 @@ var MARKER_COLOR = {
   green: 'rgba(0, 255, 0, .7)',
   blue: 'rgba(0, 0, 255, .7)',
   yellow: 'rgba(220, 220, 0, .7)',
-  unselect: DEFAULT_MARKER_COLOR
+  grey: DEFAULT_MARKER_COLOR
 };
 
 var chart1;       // The highcharts chart object
@@ -87,7 +87,7 @@ var populateSelects = function() {
   $('#selectColor').unbind('change');
   $('#selectNumberOfBins').unbind('change');          
   
-  selectedColor = populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"], selectedColor).val();
+  selectedColor = populateSelect("selectColor", ["red", "green", "blue", "yellow", "grey"], selectedColor).val();
   numberOfBins = parseInt(populateSelect("selectNumberOfBins", [1, 2, 3, 4, 5 ,6 ,7 ,8, 9 ,10], numberOfBins).val());
   selectedDataSetName = populateSelect('selectDataSetName', gadget.dashboard.getDataSetList(), selectedDataSetName);
   selectedDataSetId = selectedDataSetName.val();
@@ -135,7 +135,7 @@ var populateSelects = function() {
 // Given a list of point ids, change those points in the public dataset to a given color
 var setSelectedColor = function(obj) {
   var useColor = obj.color;
-	if (obj.color == 'unselect') {
+	if (obj.color == 'grey') {
 		useColor = '';
 	}
 	var ds = gadget.dashboard.getDataSet(selectedDataSetId);
@@ -169,7 +169,7 @@ var updateSelectedPoints = function() {
 // Colors a selected point in the histogram dataset by the color name
 function colorChartPoint(point, colorName) {
     if (colorName === "") {
-        colorName = "unselect";
+        colorName = "grey";
     }
     if(point){
       point.color = MARKER_COLOR[colorName];

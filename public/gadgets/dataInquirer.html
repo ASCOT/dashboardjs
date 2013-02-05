@@ -14,7 +14,8 @@
 <body>
 <div id="content" class="extraPadding">
 	<div id="divViewPortBounds" style="float: right">
-	    <div><b>Viewport Bounds</b></div>
+	    <div>Viewport Bounds:<br><select id="sourceSelect"></select></div>
+			<div id="viewPortBoundsText"></div>
 	    <div id="spViewportBounds" class="info"></div>
 	</div>
 	<div id="divQuery">
@@ -67,11 +68,19 @@ var myFields = {}
 // Gadget State Variables
 var viewportBounds;
 var currentQuery = {};
+var boundSources = [];
 
 // create HR object
 gadget.init = function(finishedLoading){
 	gadget.update = function(){};
-  gadget.onNotification('viewBoundsChanged', setViewPortBounds);
+  gadget.onNotification('viewBoundsChanged', viewBoundsUpdate);
+	
+	$("#sourceSelect").change(function(){
+		setViewPortBounds(boundSources[$(this).val()]);
+	});
+	var firstVal = "Select a Source-----";
+	$("#sourceSelect").append($("<option />").val(firstVal).text(firstVal));
+	
   setFields();
   finishedLoading();
 }
@@ -90,7 +99,18 @@ gadget.loadState = function(state){
   $('textarea#txtQueryString').val(state.currentQueryText);
   $('#selectCatalog').val(state.selectedCatalog).attr('selected',true);  
 };
-    
+ 
+var viewBoundsUpdate = function(bounds) {
+	boundSources[bounds.source] = bounds.bounds;
+	$("#sourceSelect").empty();
+	var firstVal = "Select a Source-----";
+	$("#sourceSelect").append($("<option />").val(firstVal).text(firstVal));
+	for (i in boundSources) 
+    $("#sourceSelect").append($("<option />").val(i).text(i));
+	$("#sourceSelect option:last-child").attr("selected", "selected");
+	$("#sourceSelect").change();
+}
+ 
 var setFields = function() {
   // set the catalog options
   var  options = [];
@@ -201,7 +221,7 @@ function setViewPortBounds(newBounds) {
   viewportBounds = newBounds;
   boundsText =  "ra between " + newBounds.topLeft.ra.toFixed(4) + " and " + newBounds.bottomRight.ra.toFixed(4) +    
                 "<br/> dec between " + newBounds.bottomRight.dec.toFixed(4) + " and " + newBounds.topLeft.dec.toFixed(4)
-  $("#divViewPortBounds").html(boundsText);
+  $("#viewPortBoundsText").html(boundsText);
 }
 
 function populateSelect(selectName, options) { 

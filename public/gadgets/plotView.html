@@ -52,7 +52,7 @@ var MARKER_COLOR = {
   green: 'rgba(0, 255, 0, .7)',
   blue: 'rgba(0, 0, 255, .7)',
   yellow: 'rgba(220, 220, 0, .7)',
-  unselect: 'rgba(100, 100, 100, .7)' 
+  grey: 'rgba(100, 100, 100, .7)' 
 };  
 
 // Highcharts plot
@@ -64,7 +64,7 @@ var verboseTooltip = false;
 var selectedDataSetName = "";
 var selectedXAxis = "";
 var selectedYAxis = "";
-var selectedColor = "unselect";
+var selectedColor = "grey";
 var selectedDataSet;
 var selectionObject;
 var loadingState = false;
@@ -120,7 +120,7 @@ gadget.loadState = function(state){
     selectedDataSetName = state.selectedDataSetName || selectedDataSetName || "";
     selectedXAxis = state.selectedXAxis || selectedXAxis || false;
     selectedYAxis = state.selectedYAxis || selectedYAxis || false;
-    selectedColor = state.selectedColor || selectedColor || "unselect";
+    selectedColor = state.selectedColor || selectedColor || "grey";
   }  
   redraw();
 };
@@ -155,7 +155,7 @@ function populateSelects() {
   $('#selectYAxis').unbind('change');
   $('#selectColor').unbind('change');      
   
-  selectedColor = populateSelect("selectColor", ["red", "green", "blue", "yellow", "unselect"], selectedColor).val();
+  selectedColor = populateSelect("selectColor", ["red", "green", "blue", "yellow", "grey"], selectedColor).val();
   selectedDataSetName = populateSelect('selectDatasetName', gadget.dashboard.getDataSetList(), selectedDataSetName);
   selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetName.val());
   selectedDataSetName = selectedDataSetName.text();
@@ -355,14 +355,14 @@ function updateSelectedPoints() {
 // Colors a selected point on chart by the color name
 function colorChartPoint(point, colorName) {
   if (colorName === "") {
-    colorName = "unselect";
+    colorName = "grey";
   }
   point.update({color: MARKER_COLOR[colorName], marker: {fillColor: MARKER_COLOR[colorName]}}, false);
 }
 
 // colors chart point and writes it to dataset
 function setPointColor(point, colorName) {
-  if (colorName === "unselect") {
+  if (colorName === "grey") {
     colorName = "";
   }
   colorChartPoint(point, colorName);

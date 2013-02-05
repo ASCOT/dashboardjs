@@ -15,13 +15,15 @@
 <body>
 <div id="content">
 	<div id="dataSetList"></div>
+	<input type="submit" value="Copy Visible" onclick="subsetByVisible();">
 </div>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js" type="text/javascript"></script>
-<script type="text/javascript">
 
+<script type="text/javascript">
 // Creates gadget object
 gadget.init = function(callback){
-  gadget.onNotification('dataSetChanged', updateDataSetList);
+  gadget.update = updateDataSetList;
+  gadget.onNotification('dataSetChanged', gadget.update);
   callback();
 }
 
@@ -35,108 +37,69 @@ function updateDataSetList() {
   }
   gadget.resize();  
 }
- 
-// adds the creates a new dataset list element and adds it to the list
-function addDatasetToList(dataSetInfo) {        
-  // create the div
-  var dataSetDiv = document.createElement("div");
-  // TODO: Possibly dangerous to allow any chars in the ID
-  dataSetDiv.id = 'dataSet' + dataSetInfo.id;
-  dataSetDiv.className = 'dataSetListItem';
-  dataSetDiv.appendChild(createDataSetItem(dataSetInfo));
-  // append the div element to the list div
-  $('#dataSetList').append(dataSetDiv);
-}
-  
-// returns a div filled with dataset functions
-function createDataSetItem(dataSetInfo) {
-  var dataSet = gadget.dashboard.getDataSet(dataSetInfo.id);     
-  var dataSetDiv = document.createElement("div");
-  var checkBoxVisibility = document.createElement("input");
-  var dataSetNameSpan = document.createElement("span");
-  
-  checkBoxVisibility.type = "checkbox";
-  checkBoxVisibility.id = "ckVis_" + dataSetInfo.id;
-  checkBoxVisibility.checked = dataSet.isVisible();
-  checkBoxVisibility.onclick = function() { toggleDataSetVisbility(dataSetInfo.id); }
-  
-  dataSetNameSpan.innerHTML = "<b>" + dataSetInfo.text + "</b> (" +  dataSet.length() + ")";
-      
-  dataSetDiv.appendChild(checkBoxVisibility);
-  dataSetDiv.appendChild(dataSetNameSpan);
-  dataSetDiv.appendChild(createDataSetColorsList(dataSet));
-  return dataSetDiv;
-}
-  
-// returns a div containing the color subsetting functionality to add to
-// the DS list
-function createDataSetColorsList(dataSet) {
-  var dataSetId = dataSet.getId();
-  var subDiv = document.createElement("div");
-  var colorList = dataSet.getAttributeValues('color');
-  var indentSpan = document.createElement("span");
-  var colorRecord;
-  var colorRecordsIndices;
-  indentSpan.innerHTML = "&nbsp; \\-";
-  subDiv.appendChild(indentSpan);
-      
-  // create the color name span
-  // for each color, make a checkbox and name
-  for (var i=0, len=colorList.length; i<len; i++) {
-    var color = colorList[i];
-    colorRecordsIndices = dataSet.getRecordsIndicesWithAttribute('color', color);
-    colorRecord = dataSet.getRecord(colorRecordsIndices[0]);
-    
-    var colorRecordVisible = true;
-    if (colorRecord.visible == "false" || colorRecord.visible == false)
-    	colorRecordVisible = false;
-    	
-    if(colorRecordsIndices.length > 0){
-      var checkBoxVisibility = document.createElement("input");
-      checkBoxVisibility.type = "checkbox";
-      checkBoxVisibility.id = "ckVis_" + dataSetId + "_" + color;
-      checkBoxVisibility.checked = colorRecordVisible;
-      checkBoxVisibility.value = color;
-      checkBoxVisibility.onclick = function() {
-        toggleDataSetColorVisibility(dataSetId, checkBoxVisibility.value, checkBoxVisibility.checked);
-      }
-      subDiv.appendChild(checkBoxVisibility);     
-      // create the color name span
-      var colorSpan = document.createElement("span");
-      colorSpan.style.marginRight = "8px";
-      colorSpan.innerHTML = color == 'grey' || color == ''? 'unselected': color;
-      colorSpan.innerHTML += " (" + colorRecordsIndices.length + ")";
-      subDiv.appendChild(colorSpan);
-    }
-  }
 
-  // create subset button
-  var aSubset = document.createElement("input");
-  aSubset.type = "button";
-  aSubset.value = "copy";
-  aSubset.onclick = function(){ subsetByVisible(dataSetId); };
-  aSubset.style.cssFloat = "right";
-  subDiv.appendChild(aSubset);
-  return subDiv;
+function addDatasetToList(dataSetInfo) {
+	var ds = gadget.dashboard.getDataSet(dataSetInfo.id);
+	var id = "checkbox"+dataSetInfo.id;
+	var name = dataSetInfo.text;
+	$("#dataSetList").append('<input type="checkbox" id="'+id+'"/> '+name+"<br>");
+	
+	if (ds.visible == true || ds.visible == "true")
+		$("#"+id).attr('checked', 'checked');
+	
+	$("#"+id).click(function() {
+		toggleDataSetVisbility(dataSetInfo.id);
+	});
+	addColorOptionsToList(ds);
+}
+
+function addColorOptionsToList(dataSet) {
+	var dataSetId = dataSet.getId();
+	var colorList = dataSet.getAttributeValues('color');
+	for (i in colorList) {
+		var id = "checkbox"+dataSetId+"color"+colorList[i];
+		var colorRecordIndices = dataSet.getRecordsIndicesWithAttribute('color', colorList[i]);
+		var colorRecord = dataSet.getRecord(colorRecordIndices[0]);
+		
+		var colorVisible = false;
+		if (colorRecord.visible == true || colorRecord.visible == "true")
+			colorVisible = true;
+			
+		var newColorVisibleString = "true"
+		if (colorVisible)
+			newColorVisibleString = "false";
+		
+		$("#dataSetList").append('&nbsp&nbsp&nbsp&nbsp<input type="checkbox" id="'+id+'" onclick="toggleDataSetColorVisibility('+dataSetId+',\''+colorList[i]+'\',\''+newColorVisibleString+'\');"/> '+colorList[i]);
+		
+		if (colorVisible && dataSet.isVisible())
+			$("#"+id).attr('checked', 'checked');
+	}
+	$("#dataSetList").append("<br>");
 }
   
 function subsetByVisible(dataSetId) {
-
-	var newName = prompt("Enter name for new dataset");
+	var newName = prompt("Enter a name for the new dataset:");
 	if (newName === "" || newName === null) {
 	  return;
 	}
 	
-  var dataSet = gadget.dashboard.getDataSet(dataSetId);
-  var subsetRecordIndices = dataSet.getRecordsIndicesWithAttribute("visible", true);
-  var subsetRecords = []
-  for (i in subsetRecordIndices) {
-  	subsetRecords.push(dataSet.getRecord(i));
-  }
-  gadget.dashboard.createDataSetFromRecords(newName, subsetRecords, function() {});
-
-  // call to refresh the list
-  updateDataSetList();      
+	// Go through all of the datasets and add every 'visible' entry to an array
+	var dataSetList = gadget.dashboard.getDataSetList();
+	var dataSet;
+	var subsetRecordIndices;
+	var subsetRecords = []
+	
+	for (i in dataSetList) {
+		dataSet = gadget.dashboard.getDataSet(dataSetList[i].id);
+		if (!dataSet.isVisible())
+			continue;
+		subsetRecordIndices = dataSet.getRecordsIndicesWithAttribute("visible", true);
+		for (j in subsetRecordIndices) {
+			subsetRecords.push(dataSet.getRecord(subsetRecordIndices[j]));
+		}
+	}
+	
+  gadget.dashboard.createDataSet(newName, "none", "none", function() {}, function() {}, true, subsetRecords);   
 }
   
 function toggleDataSetVisbility(id) {
@@ -144,9 +107,9 @@ function toggleDataSetVisbility(id) {
   dataSet.setVisible(!dataSet.isVisible());
 }
   
-function toggleDataSetColorVisibility(id, color, visible) {
+function toggleDataSetColorVisibility(id, color, visibleString) {
   var dataSet = gadget.dashboard.getDataSet(id);
-  dataSet.setRecords({'visible': visible}, dataSet.getRecordsIndicesWithAttribute('color', color));
+  dataSet.setRecords({'visible': visibleString}, dataSet.getRecordsIndicesWithAttribute('color', color));
 }
       
 </script>

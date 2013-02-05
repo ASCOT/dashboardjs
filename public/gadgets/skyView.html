@@ -74,6 +74,7 @@ function failure(errorCode) {
 }
 
 function initCenterOfCoordinates(){ 
+  console.log('center of coords changed');
   moveMap();
   google.earth.removeEventListener(googleEarthInstance.getView(), "viewchangebegin", initCenterOfCoordinates); 
   // write the new VP bounds to the public variable
@@ -127,7 +128,7 @@ function writeCurrentBounds(){
     longitude = lookAt.getLongitude();
     curBounds = { topLeft: {ra: boxBounds.getWest() + 180, dec: boxBounds.getNorth() },
                   bottomRight: {ra: boxBounds.getEast() + 180, dec: boxBounds.getSouth()} };     
-    gadget.notify('viewBoundsChanged', curBounds); 
+    gadget.notify('viewBoundsChanged', {'bounds': curBounds, 'source': 'skyView'}); 
   }, 200);
   // add the new timer id to the array
   tidsViewchangeend.push(tid);
