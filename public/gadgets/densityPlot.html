@@ -437,7 +437,7 @@ function drawData(sparsePts) {
 		var xPos = chart1.xAxis[0].translate(sparsePts[i].x)+chart1.plotLeft;
 		var yPos = chart1.plotHeight-chart1.yAxis[0].translate(sparsePts[i].y)+chart1.plotTop;
 		
-		primitiveObjects.push(chart1.renderer.circle(xPos,yPos,2).attr({fill: sparsePts[i].color,stroke: 'black','stroke-width': 0,zIndex: 100}).add());	
+		primitiveObjects.push(chart1.renderer.circle(xPos,yPos,2).attr({fill: sparsePts[i].color,stroke: 'black','stroke-width': 1,zIndex: 100}).add());	
 	}
 
 	return primitiveObjects;

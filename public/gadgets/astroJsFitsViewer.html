@@ -748,7 +748,7 @@ var createCircleAnno = function() {
 	
 	var circlePos;
 	if (selectedCoordType == COORD_TYPE.WCS)
-		circlePos = fits.wcs2pix(coordA,coordB);
+		circlePos = wcs.coordinateToPixel(coordA,coordB);
 	else
 		circlePos = {"x": parseFloat(coordA), "y": parseFloat(coordB)};
 	annotator.addCircleRegion({'xPos': circlePos.x, 'yPos': circlePos.y, 'radius': parseFloat(radius), label: label});
@@ -766,8 +766,8 @@ var createRectAnno = function() {
 	var corner1;
 	var corner2;
 	if (selectedCoordType == COORD_TYPE.WCS) {
-		corner1 = fits.wcs2pix(corner1A,corner1B);
-		corner2 = fits.wcs2pix(parseFloat(corner1A)-parseFloat(width),parseFloat(corner1B)-parseFloat(height));
+		corner1 = wcs.coordinateToPixel(corner1A,corner1B);
+		corner2 = wcs.coordinateToPixel(parseFloat(corner1A)-parseFloat(width),parseFloat(corner1B)-parseFloat(height));
 	}
 	else {
 		corner1 = {"x": parseFloat(corner1A), "y": parseFloat(corner1B)};
@@ -785,7 +785,7 @@ var createPolyAnno = function() {
 	var polyPoints = [];
 	for (i in polyCreateList) {
 		list.remove(0);
-		var point = fits.wcs2pix(polyCreateList[i][0], polyCreateList[i][1])
+		var point = wcs.coordinateToPixel(polyCreateList[i][0], polyCreateList[i][1])
 		polyPoints.push([point.x, point.y]);
 	}
 	

@@ -43,7 +43,6 @@ define('canvasAnnotator', [], function() {
 		var visible = true;
 		var textVisible = false;
 		idIndex++;
-		
 		annotations.push({ 'type': 'rect',
 											 'id': idIndex,
 											 'visible': visible,
@@ -140,7 +139,9 @@ define('canvasAnnotator', [], function() {
 	var calcScreenAttributes = function(id) {
 		switch (annotations[id].type) {
 			case 'rect':
-				var wh = Math.abs(pixToScreen(annotations[id].xPos,annotations[id].yPos)-pixToScreen(annotations[id].xPos+annotations[id].width,annotations[id].yPos+annotations[id].height));
+				var wh = 
+					{'x': Math.abs(pixToScreen(annotations[id].xPos,annotations[id].yPos).x-pixToScreen(annotations[id].xPos+annotations[id].width,annotations[id].yPos+annotations[id].height).x),
+					'y': Math.abs(pixToScreen(annotations[id].xPos,annotations[id].yPos).y-pixToScreen(annotations[id].xPos+annotations[id].width,annotations[id].yPos+annotations[id].height).y)};
 				annotations[id].screenWidth = wh.x;
 				annotations[id].screenHeight = wh.y;
 				
