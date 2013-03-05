@@ -185,6 +185,10 @@ define('canvasAnnotator', [], function() {
 		annotations.splice(id, 1);
 	}
 	
+	var removeAllAnnotations = function() {
+		annotations = []
+	}
+	
 	// Set an annotation region to a certain color
 	// Arguments:
 	//				id - The unique id of the annotation to color
@@ -426,6 +430,7 @@ define('canvasAnnotator', [], function() {
 		'addCircleRegion': addCircleRegion,
 		'addPolyRegion': addPolyRegion,
 		'removeAnnotation': removeAnnotation,
+		'removeAllAnnotations': removeAllAnnotations,
 		'colorAnnotation': colorAnnotation,
 		'draw': draw,
 		'showAnnotations': showAnnotations,

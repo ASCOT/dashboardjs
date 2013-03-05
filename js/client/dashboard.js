@@ -232,7 +232,7 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     dashboardModel.redo();
   }
 
-  this.createDataSet = function(name, source, query, success, error, staticData){
+  this.createDataSet = function(name, source, query, success, error, staticData, existingRecords){
     var createDataSetSuccess = function(dataSetId){
       this.loadDataSet(dataSetId);
       success(dataSetId);
@@ -242,7 +242,8 @@ UW.Dashboard = function(_id, container, dashboardUrl){
       "source" : source,
       "query" : query,
       "staticData" : staticData || false,
-      "returnRecords" : true
+      "returnRecords" : true,
+      "existingRecords" : existingRecords
     };
     
     UW.ajax({

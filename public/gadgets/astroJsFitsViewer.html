@@ -337,8 +337,11 @@ var selectAnnotations = function(start, end) {
 // If a dataset is selected, sync the color of the annotations up with the 
 // color of the points in the dataset
 var updateSelectedPoints = function() {
-	if (selectedDataSet == undefined)
+	if (selectedDataSet == undefined) {
+		selectedDataSetId = -1;
+		annotator.removeAllAnnotations();
 		return;
+	}
  	for (var i = 0; i < selectedDataSet.length(); i++) {
  		var color = MARKER_COLOR[selectedDataSet.getRecord(i).color];
  		var id = selectedDataSet.getRecord(i).id;
@@ -798,7 +801,7 @@ var createPolyAnno = function() {
 }
 
 var addDataSetPoints = function() {
-	if (selectedDataSetId == -1)
+	if (selectedDataSetId == -1 || selectedDataSetId == undefined)
 		selectedDataSetId = gadget.dashboard.getDataSetList()[0].id;
 	selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetId);
 	removeAnnotations();
