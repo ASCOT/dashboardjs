@@ -143,12 +143,13 @@ require(config, ['fits','pngParser', '/binaryajax.js', 'canvasAnnotator', 'cs!/a
   });
 }
 
-// Create and set canvas attributes; The fits canvas holds the pixels from the fits image; The annotator canvas
+// Create and set canvas attributes; The annotator canvas
 // is used for drawing annotations; The edit canvas is used for drawing edit marks like selection boxes and
 // the display canvas is the surface onto which the other canvases are displayed
 var initCanvases = function() {
 	display = document.getElementById('display');
   var canvasArea = document.getElementById('canvasArea');
+	
 	display.width = canvasArea.offsetWidth;
 	display.height = canvasArea.offsetHeight;
   displayContext = display.getContext('2d');
@@ -279,7 +280,7 @@ var renderSuccess = function(){
 var draw = function() {
 	annotator.draw();
 	displayContext.clearRect(0, 0, displayWidth, displayHeight);
-  //displayContext.drawImage(fitsCanvas, 0, 0, displayWidth, displayHeight, 0, 0, displayWidth, displayHeight);
+  displayContext.drawImage(fitsCanvas, 0, 0, displayWidth, displayHeight, 0, 0, displayWidth, displayHeight);
   displayContext.drawImage(annotatorCanvas, 0, 0, displayWidth, displayHeight, 0, 0, displayWidth, displayHeight);
   displayContext.drawImage(editCanvas, 0, 0, displayWidth, displayHeight, 0, 0, displayWidth, displayHeight);
 }
@@ -338,7 +339,6 @@ var stretchSelectChange = function() {
 	var el = document.getElementById("stretchSelect");
 	var newStretch = el.options[el.selectedIndex].value;
 	astroJsFits.changeStretch(newStretch);
-	setImageExtremes(bias, contrast);
 }
 
 var dataSetSelectChange = function() {

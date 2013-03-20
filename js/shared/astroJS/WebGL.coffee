@@ -188,9 +188,9 @@ define [], () ->
 		  canvas.setAttribute('id', 'webgl-fits')
 		  canvas.setAttribute('width', width)
 		  canvas.setAttribute('height', height)
-		  
+			
 		  # Append canvas to container
-		  container.append(canvas)
+		  # container.append(canvas)
 		  
 		  return canvas
 		

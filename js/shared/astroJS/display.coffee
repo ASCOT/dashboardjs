@@ -73,8 +73,6 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 		fits = new FITS.File(buffer)
 		hdu = if fits.hdus[0].data is undefined then fits.hdus[1] else fits.hdus[0]
 		header = hdu.header
-		
-		console.log 'readImageData'
 
 		data = hdu.data
 		[width, height] = [data.width, data.height]
@@ -86,7 +84,6 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 		data.getExtremes()
 		
 	setupWebGL = ->
-		console.log 'setupWebGL'
 		canvas = WebGL.setupCanvas(container, viewportWidth, viewportHeight)
 
 		# Set up variables for panning and zooming
@@ -167,8 +164,6 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 		drawScene()
 		
 	setupWebGLUI = ->
-		console.log 'setupWebGLUI'
-
 		# Store parameters needed for rendering
 		stretch = stretch.value
 		minimum = hdu.data.min
@@ -230,6 +225,8 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]), gl.STATIC_DRAW)
 		
 	drawScene = ->
+		gl.clearColor(0.9, 0.9, 0.9, 1.0);
+		gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
 		offsetLocation = gl.getUniformLocation(program, 'u_offset')
 		scaleLocation = gl.getUniformLocation(program, 'u_scale')
 		gl.uniform2f(offsetLocation, xOffset, yOffset)
