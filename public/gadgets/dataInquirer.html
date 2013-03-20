@@ -39,6 +39,11 @@
 <script src="/util.js" type="text/javascript"></script> 
 
 <script type="text/javascript">
+
+$(window).resize(function() {
+	gadget.resize();
+});
+
 // Text in {{ }} such as " {{ra.lower}}" are substituted in setQueryText() method
 var QUERY_BUTTONS =  
   [{ buttonNum: 0,
@@ -74,6 +79,8 @@ var boundSources = [];
 gadget.init = function(finishedLoading){
 	gadget.update = function(){};
   gadget.onNotification('viewBoundsChanged', viewBoundsUpdate);
+	
+	$("#divCatalog").hide();
 	
 	$("#sourceSelect").change(function(){
 		setViewPortBounds(boundSources[$(this).val()]);

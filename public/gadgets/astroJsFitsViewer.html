@@ -21,10 +21,6 @@
 <script src="/canvasAnnotator.js" type="text/javascript"></script>
 <script>
 
-// Brightness and contrast sliders
-var sliders = [{name : 'bias', label : 'Bias '},
-               {name : 'contrast', label : 'Contrast '}];
-
 // List of remote image to load from server           
 var imageFiles = [
     {
@@ -190,6 +186,11 @@ var renderFile = function(file) {
 	reader.readAsArrayBuffer(file);
 }
 
+var setImageExtremes = function(lower, upper) {
+	astroJsFits.changeExtremes(lower, upper);
+  draw();
+}
+
 // Executes after a FITS file is successfully loaded
 var renderSuccess = function(){
   $('#dropLabel').hide();
@@ -230,44 +231,21 @@ var renderSuccess = function(){
   // Load up a dataset if one was saved
   if (selectedDataSetId != -1)
   	addDataSetPoints();
-	
-  // Set up the sliders
-  var extremes = astroJsFits.getImageExtremes();
-  var maxBias = extremes.maximum;
-  var maxContrast = (extremes.maximum-extremes.minimum)*5;
-  var bias = maxBias/2;
-  var contrast = maxContrast/5;
-  document.getElementById("slidersList").innerHTML = "";
-  var tbody = $('#slidersList')[0];
-  for (var i = 0; i < this.sliders.length; i++) {
-    var slider = this.sliders[i];
-    $('<tr align="right"><th>' + slider.label.replace(/ /g, '&nbsp;') + ':</th><td><div id="slider' + i + '"></div></td></tr>').appendTo(tbody);
-    var onchange = (function(this_, slider) {
-        return function(event, ui) {
-          this_[slider.name] = ui.value;
-          if(slider.name == 'bias') {
-						setImageExtremes(maxBias-this_.bias, contrast);
-						bias = maxBias-this_.bias
-					}
-					else {
-						setImageExtremes(bias, maxContrast-this_.contrast);
-						contrast = maxContrast-this_.contrast
-					}
-        };  
-    })(this, slider);
-	
-    $('#slider' + i).slider({
-        slide: onchange,
-        change: onchange,
-        min: 0,
-        max: i==0? maxBias: maxContrast,
-        value: i==0? bias: contrast,
-        step: 50
-    });
-    this[slider.name] = slider.value;
-  }
-  setImageExtremes(bias, contrast);
   
+	// Add the scaling slider
+	var extremes = astroJsFits.getImageExtremes();
+	$("#scalingSlider").slider({
+		range: true,
+		min: extremes.minimum,
+		max: extremes.maximum,
+		values: [extremes.minimum, extremes.maximum],
+		slide: function(event, ui) {
+			var lo = parseInt($("#scalingSlider").slider("values", 0));
+			var hi = parseInt($("#scalingSlider").slider("values", 1));
+			setImageExtremes(lo, hi);
+		}
+	});
+	
   /* // Add some sample annotations
   var circlePos = fits.wcs2pix(241.1766,10.102814);
 	annotator.addCircleRegion({'xPos': circlePos.x, 'yPos': circlePos.y, 'radius': 10, label: "circle"});
@@ -310,13 +288,6 @@ var draw = function() {
 var noopHandler = function(evt) {
 	evt.stopPropagation();
 	evt.preventDefault();
-}
-
-var setImageExtremes = function(bias, contrast) {
-	var newExtremes = {lower: bias-(contrast/2) < 0 ? 0 : bias-(contrast/2),
-									   upper: bias+(contrast/2)};
-	astroJsFits.changeExtremes(newExtremes.lower, newExtremes.upper);
-  draw();
 }
 
 // Select all annotations between two pixel coordinates on the image and mark those
@@ -833,7 +804,7 @@ var addDataSetPoints = function() {
 
 </script>
 <body oncontextmenu="return false;">
-	<div id="wrapper">
+	<div id="content">
 				<div id="dropbox">
 					<div id="canvasArea" style="position: relative; height: 100%; width: 100%; float: left">
 						<canvas id="display" style="position: absolute; left: 0; top: 0; display: block; z-index:0"></canvas>
@@ -853,6 +824,7 @@ var addDataSetPoints = function() {
 						<td>
 							<input type="button" value="Unload Image" id="unloadImageButton" onclick="clickUnloadImage();"><br>
 							Stretch: <select id="stretchSelect" onchange="stretchSelectChange();"></select><br>
+							Extremes: <div id="scalingSlider" style="margin: 10px"></div><br>
 						</td>
 					</tc>
 					<tc>
@@ -861,7 +833,6 @@ var addDataSetPoints = function() {
 						Value: <span id="pixValue">00000</span></td>
 					</tc>
 				</table>
-				<table id="slidersList" height="35" style="display: none"></table>
 				<div id="annoControlsContainer" style="display: none">
 					<div id="annoControls">
 						Annotations

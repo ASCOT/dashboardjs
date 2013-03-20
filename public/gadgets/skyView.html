@@ -153,7 +153,7 @@ function plotDataset(dataSetName) {
     
   if (dataSet.isVisible()) {
     for (var i=0, len=dataSet.length(); i<len; i++) {
-      if (dataSet.getRecord(i).visible) { // check the visible property of the record
+      if (dataSet.getRecord(i).visible && dataSet.getRecord(i).visible != "false") { // check the visible property of the record
         kmlDataSetRecords.push(toKML(dataSet.getRecord(i)));
       }
     }

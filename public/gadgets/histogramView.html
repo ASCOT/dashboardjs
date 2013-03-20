@@ -14,7 +14,7 @@
 <div id="content">
   <div>Dataset: <select id="selectDataSetName"></select></div>
   X-Axis:  <select id="selectXAxis"></select>
-  bins:    <select id="selectNumberOfBins"></select>
+  Bins:    <input id="selectNumberOfBins" value="10">
   <form name="formSelectZoom">
     <div id="divSelectZoom">
         Selection Color: <select id="selectColor"></select>
@@ -88,7 +88,7 @@ var populateSelects = function() {
   $('#selectNumberOfBins').unbind('change');          
   
   selectedColor = populateSelect("selectColor", ["red", "green", "blue", "yellow", "grey"], selectedColor).val();
-  numberOfBins = parseInt(populateSelect("selectNumberOfBins", [1, 2, 3, 4, 5 ,6 ,7 ,8, 9 ,10], numberOfBins).val());
+  //numberOfBins = parseInt(populateSelect("selectNumberOfBins", [1, 2, 3, 4, 5 ,6 ,7 ,8, 9 ,10], numberOfBins).val());
   selectedDataSetName = populateSelect('selectDataSetName', gadget.dashboard.getDataSetList(), selectedDataSetName);
   selectedDataSetId = selectedDataSetName.val();
   selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetId);
@@ -123,11 +123,14 @@ var populateSelects = function() {
   });
 
    $('#selectNumberOfBins').change( function(){
-    if(this.selectedIndex != -1){
+		numberOfBins = parseInt($(this).val());
+		gadget.setState({'numberOfBins' : numberOfBins});
+		redraw();
+    /*if(this.selectedIndex != -1){
     	numberOfBins = parseInt($(this).find('option:selected').val());
       gadget.setState({'numberOfBins' : parseInt($(this).find('option:selected').val()) });
       redraw();
-    }
+    }*/
   });
 
 }
@@ -320,8 +323,8 @@ function handleSelectEvent(chart,event) {
 	event.preventDefault();
 	
 	// Determine which bins the selection box falls onto
-	var minBin = Math.floor(event.xAxis[0].min-0.5)+1;
-	var maxBin = Math.floor(event.xAxis[0].max+0.5);
+	var minBin = Math.floor(event.xAxis[0].min);
+	var maxBin = Math.ceil(event.xAxis[0].max);
 	
 	// Select all of the bars in this range
 	var modifiedPointIds = []

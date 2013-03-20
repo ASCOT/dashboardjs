@@ -70,6 +70,8 @@ gadget.init = function(callback){
     } else {
       $('#invertXAxisButton').get(0).value = '>';
     }
+		
+		doPlot();
   });
 
   $('#invertYAxisButton').click( function(){
@@ -84,7 +86,16 @@ gadget.init = function(callback){
     } else {
       $('#invertYAxisButton').get(0).value = '^';
     }
+		
+		doPlot();
   });
+	
+	$('#selXAxis').change(function() {
+		doPlot();
+	});
+	$('#selYAxis').change(function() {
+		doPlot();
+	});
   
   callback();
 }
@@ -99,15 +110,6 @@ var imgPosX = 100;           // The x and y coordinates of the upper right corne
 var imgPosY = 0.75;
 var imgWidth = 300;          // The height and width of the background image (in the same units as the axes, not pixels)
 
-var DEFAULT_MARKER_COLOR = 'rgba(0, 0, 0, 0)';
-    SELECTED_MARKER_COLOR = 'rgba(210,30,100,.9)'
-    MARKER_COLOR = { red: 'rgba(255, 0, 0, .7)',
-                     green: 'rgba(0, 255, 0, .7)',
-                     blue: 'rgba(0, 0, 255, .7)',
-                     yellow: 'rgba(220, 220, 0, .7)',
-                     grey: DEFAULT_MARKER_COLOR
-                    }
-
 var primitiveObjects = [] // References to the primitive objects drawn on the chart
 var originalSizeX;		  // Size variables for the background image
 var originalMinX;
@@ -116,57 +118,25 @@ var originalMinY;
 var numBinsY;             // The number of y bins is automatically adjusted according to numBinsX so that the bins are square
 var dataExtremes;         // Find the extremes of the dataset to be plotted to set the initial window bounds
 var bins;                 // Holds information about the density of each part of the plot
+var sparsePoints;
 
 // When the public dataset changes, update the plot data
 function updateDataSetList(){
  	populateDataSetSelect();
- 	updateSelectedPoints();
-}
-	
-// Given a list of point ids, change those points in the public dataset to a given color
-function setSelectedColor(obj) {
-	var useColor = obj.color;
-	if (obj.color == 'grey') {
-		useColor = '';
-	}
-	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
-	ds.setRecords({'color': useColor}, obj.modifiedPointIds); 
-   gadget.notify('dataSetListChanged');
-	return;
-}
-	
-// Checks the public dataset to update the selection status of all the points in the plot
-function updateSelectedPoints() {
- 
-	if(chart1 == null)
- 		return;	
- 	// select or unselect all the points in the chart to change the way they look
- 	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
- 	if (ds === undefined || ds === null) {
-	 	return;
-	 }
- 	var colorIndexArray = ds.getAttributeValues('color');
- 	var recordsColor;
- 	var point;
- 	
- 	for (var j=0; j < colorIndexArray.length; ++j) {
- 		recordsColor = ds.getRecordsIndicesWithAttribute('color',colorIndexArray[j]);
- 		for (var i = 0; i < recordsColor.length; i++) {
- 			point = dataToPlot[recordsColor[i]];
- 			colorChartPoint(point,colorIndexArray[j]);
- 		}
- 	}
- 	chart1.redraw();
+	if (chart1 != undefined)
+		chart1.redraw();
 }
 	
  // Colors a selected point on plot by the color name
- function colorChartPoint(point, colorName) {
-     if (colorName === "") {
-         colorName = "grey";
-     }
-     if(point){
-       point.color = MARKER_COLOR[colorName];
-     }
+ function colorChartPoint(id, colorName) {
+		for (i in dataToPlot) {
+			if (dataToPlot[i].id == id) {
+				if (colorName === "") {
+					 colorName = "grey";
+				}
+				dataToPlot[id].color = colorName;
+			}
+		}
  }
  
 // Gets all of the dataset names and puts them in the import dataset dropdown
@@ -202,9 +172,28 @@ var dataSetSelectChange = function(click) {
 		$("#selDatasetName").val(plottedDataset);
 		$("#selXAxis").val(curXAxis);
 		$("#selYAxis").val(curYAxis);
-		doPlot();
+		
+		if (dataToPlot == undefined)
+			doPlot();
+		else
+			updateSelectedPoints();
 	}
 	gadget.resize();
+}
+
+var updateSelectedPoints = function() {
+	var colorIndexArray;
+  var colorIndex;
+  var point;
+	var ds = gadget.dashboard.getDataSet(getSelectedDataset());
+  // select or unselect all the points in the chart to change the way they look
+  colorIndexArray = ds.getAttributeValues('color');
+  // color selected points
+  for (color in colorIndexArray){
+		var indices = ds.getRecordsIndicesWithAttribute('color', colorIndexArray[color]);
+    for (i in indices)
+			colorChartPoint(indices[i], colorIndexArray[color]); 
+  }
 }
 	
 // Functions that deal with the HTML controls on the page    
@@ -254,7 +243,6 @@ function parseData(args) {
 	var ds = gadget.dashboard.getDataSet(args.dataSetName);
 	if (!ds.isVisible())
 		return [];
-	var colorIndexArray = ds.getAttributeValues('color');
              
  	var graphData = [];
 	for (i=0,len=ds.length(); i<len; i++) {
@@ -267,8 +255,9 @@ function parseData(args) {
 		var yVal = parseFloat(ds.getRecord(i)[getSelectedYAxis()]);
 		// each point has unique id so a pointer to point can be had by chart.get(id)
    	var id = ds.getRecord(i)["id"];
+		var color = ds.getRecord(i)["color"];
    	if (xVal !== NaN && yVal !== NaN && visible){
-   		graphData.push({id: id, x: xVal, y: yVal, color: DEFAULT_MARKER_COLOR });
+   		graphData.push({id: id, x: xVal, y: yVal, color: color });
   		}
   	}
   	return graphData;
@@ -333,6 +322,7 @@ function getBins(data) {
 
 	// Loop through the data points and place each one in the correct bin
 	for (var i = 0; i < data.length; i++) {
+		//data[i].bin = {x: -1, y: -1};
 		// Determine the correct x and y bin to place this data element into
 		var xBin = Math.floor(((data[i].x - domainExtremes.min)/
 				(domainExtremes.max-domainExtremes.min))*numBinsX);
@@ -341,7 +331,11 @@ function getBins(data) {
 
 		// Push this data point onto the array of bins in the correct place
 		_bins[xBin][yBin].push(data[i]);
-
+	
+		/*if (_bins[xBin][yBin].length > maxDensity) {
+			data[i].bin.x = xBin;
+			data[i].bin.y = yBin;
+		}*/
 	}
 
 	return _bins;
@@ -418,7 +412,7 @@ function drawData(sparsePts) {
 				var strokeColor = '#0000FF';
 				// Bins with selected points have a border
 				for (var k = 0; k < bins[i][j].length; k++) {
-					if (bins[i][j][k].color != DEFAULT_MARKER_COLOR) {
+					if (bins[i][j][k].color != 'grey') {
 						strokeWidth = 2;
 						strokeColor = bins[i][j][k].color;
 						break;
@@ -436,7 +430,6 @@ function drawData(sparsePts) {
 
 		var xPos = chart1.xAxis[0].translate(sparsePts[i].x)+chart1.plotLeft;
 		var yPos = chart1.plotHeight-chart1.yAxis[0].translate(sparsePts[i].y)+chart1.plotTop;
-		
 		primitiveObjects.push(chart1.renderer.circle(xPos,yPos,2).attr({fill: sparsePts[i].color,stroke: 'black','stroke-width': 1,zIndex: 100}).add());	
 	}
 
@@ -518,7 +511,6 @@ function handleLoadEvent(chart) {
    originalSizeX = chart.xAxis[0].getExtremes().max - originalMinX;
    originalMinY = chart.yAxis[0].getExtremes().min;
    originalSizeY = chart.yAxis[0].getExtremes().max - originalMinY;
-   //updateSelectedPoints();
 }
 	
 // What to do when the plot is redrawn
@@ -576,7 +568,7 @@ function handleRedrawEvent(chart) {
   	// Determine the density of each part of the plot
 	bins = getBins(pointsInBounds);
 	// Figure out which points to draw individually
-	var sparsePoints = getIndividualPts(pointsInBounds);
+	sparsePoints = getIndividualPts(pointsInBounds);
 	// Draw the rectangles and points
    primitiveObjects = drawData(sparsePoints);
 }
@@ -585,16 +577,38 @@ function handleRedrawEvent(chart) {
 function handleSelectEvent(chart,event) {
 	if (!isRadioZoom() && ("xAxis" in event)) {
 		event.preventDefault();
-		// Check which data points are inside the selection box
+		
+		// Check which bins are inside the selection box
 		var modifiedPointIds = []
-		for (var i = 0; i < dataToPlot.length; i++) {
-			if (dataToPlot[i].x < event.xAxis[0].max && dataToPlot[i].x > event.xAxis[0].min) {
-				if (dataToPlot[i].y < event.yAxis[0].max && dataToPlot[i].y > event.yAxis[0].min) {
-					// Need to strip the first letter from dataToPlot.id to query database
-					modifiedPointIds.push(dataToPlot[i].id);
+		
+		var minBinX = Math.floor(numBinsX*(Math.abs(event.xAxis[0].min-chart.xAxis[0].getExtremes().min))/(Math.abs(chart.xAxis[0].getExtremes().max-chart.xAxis[0].getExtremes().min)));
+		var maxBinX = Math.ceil(numBinsX*(Math.abs(event.xAxis[0].max-chart.xAxis[0].getExtremes().min))/(Math.abs(chart.xAxis[0].getExtremes().max-chart.xAxis[0].getExtremes().min)));
+		var minBinY = Math.floor(numBinsY*(Math.abs(event.yAxis[0].min-chart.yAxis[0].getExtremes().min))/(Math.abs(chart.yAxis[0].getExtremes().max-chart.yAxis[0].getExtremes().min)));
+		var maxBinY = Math.ceil(numBinsY*(Math.abs(event.yAxis[0].max-chart.yAxis[0].getExtremes().min))/(Math.abs(chart.yAxis[0].getExtremes().max-chart.yAxis[0].getExtremes().min)));
+
+		for (var i = minBinX; i < maxBinX; i++) {
+			for (var j = minBinY; j < maxBinY; j++) {
+				if (bins[i][j].length > maxDensity) {
+					for (k in bins[i][j]) {
+						modifiedPointIds.push(bins[i][j][k].id);
+						colorChartPoint(bins[i][j][k].id, getSelectionMarkerColor());
+					}
 				}
 			}
 		}
+		
+		// Check which points are inside the selection box
+		for (var i = 0; i < sparsePoints.length; i++) {
+			if (sparsePoints[i].x < event.xAxis[0].max && sparsePoints[i].x > event.xAxis[0].min) {
+				if (sparsePoints[i].y < event.yAxis[0].max && sparsePoints[i].y > event.yAxis[0].min) {
+					// Need to strip the first letter from dataToPlot.id to query database
+					modifiedPointIds.push(sparsePoints[i].id);
+					colorChartPoint(sparsePoints[i].id, getSelectionMarkerColor());
+				}
+			}
+		}
+		
+		chart1.redraw();
 		var ds = gadget.dashboard.getDataSet(getSelectedDataset());
 		setTimeout(function() { ds.setRecords({'color': getSelectionMarkerColor()}, modifiedPointIds); }, .1);
 	}
@@ -616,8 +630,7 @@ function doPlot() {
    var xAxisName = getSelectedXAxis();
    var yAxisName = getSelectedYAxis();
    
-   // Clear all of the primitive objects, since highcharts does this for us
-   // when the chart is reconstructed
+   // Clear all of the primitive objects
    primitiveObjects = []
    
    if (datasetName ===  "" || xAxisName === "" || yAxisName === "") {
@@ -634,13 +647,13 @@ function doPlot() {
 	dataToPlot = parseData(dataInput);
 	dataExtremes = getDataExtremes(dataToPlot);
 	displayPlot(dataInput);
-	updateSelectedPoints();
 	plottedDataset = datasetName;
 	curXAxis = xAxisName;
 	curYAxis = yAxisName;
 	gadget.setState({ plottedDataset : datasetName});
 	gadget.setState({ curXAxis : xAxisName});
 	gadget.setState({ curYAxis : yAxisName});
+	alreadyPlotted = true
 }
 
 </script>
@@ -650,6 +663,8 @@ function doPlot() {
 
 	<!-- The plot controls -->
 	Dataset: <select id="selDatasetName" onchange="dataSetSelectChange(true);"></select><br>
+	X-Axis Bins: <input type="text" id="numBinsXInput" value="35" />
+	Max Points Per Bin: <input type="text" id="maxDensityInput" value="2" /><br>
 	X-Axis: <input id="invertXAxisButton" type="button" title="Invert X Axis" value=">"> <select id="selXAxis"></select>
 	Y-Axis: <input id="invertYAxisButton" type="button" title="Invert Y Axis" value="^"> <select id="selYAxis"></select><br>
 	
