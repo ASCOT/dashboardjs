@@ -79,7 +79,10 @@ function updateTable() {
   if (dataSet === undefined || dataSet === null) {
     return;
   }
-  var columnNames = sortColumns(dataSet.getColumns());     // custom column order for this table
+	
+	var cols = dataSet.getColumns();
+	cols.push('color');
+  var columnNames = sortColumns(cols);     // custom column order for this table
   var data = new YAHOO.util.DataSource(dataSet.getRecordsJSON());
   var columns = [];
   var newColumn;

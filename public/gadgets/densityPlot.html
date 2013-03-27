@@ -482,7 +482,7 @@ function displayPlot(args) {
 				text: args.yAxis
 			},
 			reversed: axisInverted.y,
-			gridLineWidth: 0,
+			gridLineWidth: 1,
 			startOnTick: false,
 			endOnTick: false,
 			// Make the scales 0.1% longer to keep bin boundaries within the confines of the window
@@ -523,8 +523,8 @@ function handleRedrawEvent(chart) {
    }
    
    // Draw a white rectangle over the background to clear out the previous background image
-	primitiveObjects.push(chart.renderer.rect(0,0,chart.chartWidth, chart.chartHeight, 0)
-    							 .attr({fill: 'white', zIndex: 5}).add());
+	//primitiveObjects.push(chart.renderer.rect(0,0,chart.chartWidth, chart.chartHeight, 0)
+    							 //.attr({fill: 'white', zIndex: 5}).add());
    // Draw the background image
    var currentMinX = chart.xAxis[0].getExtremes().min;
    var currentSizeX = chart.xAxis[0].getExtremes().max - currentMinX;
@@ -544,7 +544,7 @@ function handleRedrawEvent(chart) {
    							.attr({ zIndex: 0}).add());
    // Draw white rectangles over the edges of the chart to prevent the background image from
    // appearing outside of the plot window
-   primitiveObjects.push(chart.renderer.rect(0,chart.plotHeight+chart.plotTop,					// Bottom
+   /*primitiveObjects.push(chart.renderer.rect(0,chart.plotHeight+chart.plotTop,					// Bottom
 						       chart.chartWidth, chart.chartHeight-chart.plotHeight, 0)
     							 .attr({fill: 'white',zIndex: 0}).add());
    primitiveObjects.push(chart.renderer.rect(0,0,															// Left
@@ -552,7 +552,7 @@ function handleRedrawEvent(chart) {
     							 .attr({fill: 'white',zIndex: 0}).add());
    primitiveObjects.push(chart.renderer.rect(chart.plotLeft+chart.plotWidth,0,					// Right
 						       chart.plotLeft, chart.chartHeight, 0)
-    							 .attr({fill: 'white',zIndex: 0}).add());
+    							 .attr({fill: 'white',zIndex: 0}).add());*/
 	
 	// Figure out which data points fall within the current window of the plot
    var pointsInBounds = []

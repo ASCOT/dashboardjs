@@ -91,7 +91,7 @@ var defaultDashboards = [
   }
 ];
 
-var defaultGadgetsSet = {dataInquirer: { number: 1}, plotView: {number: 1}};
+var defaultGadgetsSet = {skyView: { number: 1}, nameResolver: { number: 1}, dataInquirer: { number: 1}, plotView: {number: 1}};
 
 module.exports = function(app, model) {
 
