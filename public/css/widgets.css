@@ -1,5 +1,5 @@
 html{
- color: #3a3a3a; 
+ color: #3a3a3a;
 }
 
 a {
@@ -16,7 +16,7 @@ label {
 }
 
 input, textarea {
-  margin: 5px 10px 5px 0px; 
+  margin: 5px 10px 5px 0px;
   padding: 5px 10px 5px 10px;
   font-size: 12px;
   border-top-color: #CCC;
@@ -26,7 +26,7 @@ input, textarea {
   border-radius: 5px;
   color: #000;
   font-weight: normal;
-  background-color: white;  
+  background-color: white;
   border: 1px solid #CACACA;
 
   transition: border-color 0.1s;
@@ -37,7 +37,7 @@ input, textarea {
 
 textarea {
   /* To give the same inset shadows as input[type='text'] */
-  /* 
+  /*
     Hack to make the same size as text inputs,
     since their native border isn't taken into
     account when calculating width.
@@ -66,7 +66,7 @@ input[type="checkbox"] {
   top: 6px;
   border: 0px solid #DDD;
   position: relative;
-  margin: 0px 5px 0px 10px; 
+  margin: 0px 5px 0px 10px;
 }
 
 input[type="checkbox"]:checked {
@@ -81,7 +81,7 @@ input[type="radio"] {
   height: 18px;
   padding: 0px;
   margin: 0px 5px 0px 10px;
-  vertical-align: middle; 
+  vertical-align: middle;
 }
 
 input[type="radio"]:checked {
@@ -89,7 +89,7 @@ input[type="radio"]:checked {
 }
 
 input[type="range"] {
-  -khtml-appearance: none; 
+  -khtml-appearance: none;
   -webkit-border-image: url(../images/slider-horizontal-track.png) 2 4 2 4 / 2px 4px 2px 4px repeat repeat;
   height: 5px;
   padding: 0;
@@ -99,7 +99,7 @@ input[type="button"],[type="submit"] {
  font-size: 12px;
  color: #555555;
  background: #f1f1f1;
- margin: 0px 10px 0px 5px; 
+ margin: 0px 10px 0px 5px;
  white-space: nowrap;
  overflow: visible;
  cursor: pointer;
@@ -151,6 +151,7 @@ input:focus, textarea:focus{
 }
 
 select {
+  -webkit-appearance: none;
   -khtml-appearance: none;
   min-height: 24px;
   padding: 5px;
@@ -185,29 +186,29 @@ select:active {
 button {
   background: #a29ac4;
   padding: 9px 9px;
-  
+
   -khtml-appearance: none;
   -moz-appearance: none;
 
   color: #ffffff;
   text-shadow: 0 -1px 0 #767577;
-  
+
   border-width: 1px;
   border-style: solid;
-  border-color: #8560a6; 
-  
+  border-color: #8560a6;
+
   -webkit-border-radius: 4px;
   -moz-border-radius: 4px;
   border-radius: 4px;
-  
+
   cursor: pointer;
-  
+
   -webkit-user-select: none;
   -khtml-user-select: none;
   -moz-user-select: none;
   -o-user-select: none;
   user-select: none;
-  
+
   -moz-box-shadow: 1px 2px 2px rgba(0,0,0,0.1);
   -webkit-box-shadow: 1px 2px 2px rgba(0,0,0,0.1);
   box-shadow: 1px 2px 2px rgba(0,0,0,0.1);
@@ -222,20 +223,20 @@ button.big {
 
 button.circle{
   background: #8382a2;
-  
+
   width:18px;
   height:18px;
   padding: 0px;
-  
+
   -moz-box-shadow: 1px 2px 2px rgba(0,0,0,0);
    -webkit-box-shadow: 1px 2px 2px rgba(0,0,0,0);
    box-shadow: 1px 2px 2px rgba(0,0,0,0);
-  
+
   border-width: 0px;
   border-radius:9px;
   -moz-border-radius:9px;
   -webkit-border-radius:9px;
-  
+
   line-height:16px;
   text-shadow: 0px 0px 0px #d2d2d2;
   text-align: center;
@@ -253,7 +254,7 @@ button.circle:hover{
   background: #8382a2;
   border-width: 1px;
   border-color: #e3e0f4;
-}  
+}
 
 button:hover,
 button:focus {
@@ -315,7 +316,7 @@ button:disabled, button:hover:disabled {
   -webkit-border-radius: 4px;
   -moz-border-radius: 4px;
   border-radius: 4px;
-  
+
 }
 
 ::-webkit-scrollbar-track-piece:horizontal:start {
@@ -327,22 +328,22 @@ button:disabled, button:hover:disabled {
 ::-webkit-scrollbar-button:end:increment {
     display: block;
 }
- 
+
 /* Turn off the down area up on top, and up area on bottom */
 ::-webkit-scrollbar-button:start:increment,
 ::-webkit-scrollbar-button:end:decrement {
     display: none;
 }
 
-::-webkit-slider-thumb { 
-  -khtml-appearance: none; 
-  background: url(../images/slider-knob.png) no-repeat; 
-  width: 23px; 
+::-webkit-slider-thumb {
+  -khtml-appearance: none;
+  background: url(../images/slider-knob.png) no-repeat;
+  width: 23px;
   height: 24px;
 }
 
 /*This doesn't seem to be implemented yet*/
-::-webkit-slider-thumb:active { 
+::-webkit-slider-thumb:active {
   background: url(../images/slider-knob-highlighted.png) no-repeat;
 }
 
