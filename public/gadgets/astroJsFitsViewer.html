@@ -82,11 +82,13 @@ var displayWidth;
 var displayHeight;
 var displayContext;
 var editContext;
+var imageDimensions;
 
 gadget.saveState = function(){};
 gadget.loadState = function(state){
 	if (state) {
-		showAnnotations = state.showAnnotations;
+		if (state.showAnnotations != undefined)
+			showAnnotations = state.showAnnotations;
 		$('#showAnnotations').prop('checked', showAnnotations);
 		savedImagePath = state.imagePath;
 		if (state.savedDataSetId !== undefined)
@@ -205,7 +207,7 @@ var renderSuccess = function(){
 	
 	
 	// Ensure that the aspect ratio of the fits canvas matches the aspect ratio of the image
-	var imageDimensions = {width: fitsHeader.get("NAXIS1")[1], height: fitsHeader.get("NAXIS2")[1]};
+	imageDimensions = {width: fitsHeader.get("NAXIS1")[1], height: fitsHeader.get("NAXIS2")[1]};
 	var rat = imageDimensions.width/imageDimensions.height;
 	var canvasWidth = $('#dropbox').width();
 	$('#dropbox').height(canvasWidth*rat);
@@ -218,7 +220,7 @@ var renderSuccess = function(){
 	fitsCanvas = astroJsFits.getCanvas();
 	annotatorCanvas.setAttribute('height', $('#display').height());
 	editCanvas.setAttribute('height', $('#display').height());
-	annotator.init(annotatorCanvas, astroJsFits.pixToScreen);
+	annotator.init(annotatorCanvas, astroJsFits.pixToScreen, showAnnotations);
   
   // Initalize the wcsjs module
   wcs = new WCS.Mapper(fitsHeader);
@@ -258,45 +260,7 @@ var renderSuccess = function(){
 			setImageExtremes(lo, hi);
 		}
 	});
-	
-	var circlePos = wcs.coordinateToPixel(241.12727,10.072308);
-	annotator.addCircleRegion({'xPos': circlePos.x, 'yPos': imageDimensions.height-circlePos.y, 'radius': 10, label: "circle"});
-	document.getElementById("annoSelect").add(new Option("circle", "0"), null);
-	
-	circlePos = wcs.coordinateToPixel(241.15274,9.9070583);
-	annotator.addCircleRegion({'xPos': circlePos.x, 'yPos': imageDimensions.height-circlePos.y, 'radius': 10, label: "circle1"});
-	document.getElementById("annoSelect").add(new Option("circle1", "0"), null);
-	
-	circlePos = wcs.coordinateToPixel(241.04905,10.102285);
-	annotator.addCircleRegion({'xPos': circlePos.x, 'yPos': imageDimensions.height-circlePos.y, 'radius': 10, label: "circle2"});
-	document.getElementById("annoSelect").add(new Option("circle2", "0"), null);
-	
-  /* // Add some sample annotations
-  var circlePos = fits.wcs2pix(241.1766,10.102814);
-	annotator.addCircleRegion({'xPos': circlePos.x, 'yPos': circlePos.y, 'radius': 10, label: "circle"});
-	document.getElementById("annoSelect").add(new Option("circle", "0"), null);
-	
-	var rectCorner1 = fits.wcs2pix(241.14284,10.097803);
-	var rectCorner2 = fits.wcs2pix(241.10768,10.055799);
-	annotator.addRectRegion({'xPos': rectCorner1.x, 'yPos': rectCorner1.y, 
-																 'width': rectCorner2.x-rectCorner1.x, 'height': rectCorner2.y-rectCorner1.y, 
-																 'label': "rectangle"});
-	document.getElementById("annoSelect").add(new Option("rectangle", "0"), null);
-	
-	var polyPoint1 = fits.wcs2pix(241.14991,10.038203);
-	var polyPoint2 = fits.wcs2pix(241.11599,10.038834);
-	var polyPoint3 = fits.wcs2pix(241.09425,10.019755);
-	var polyPoint4 = fits.wcs2pix(241.11591,10.007677);
-	var polyPoint5 = fits.wcs2pix(241.15262,10.008678);
-	var labelPos = fits.wcs2pix(241.10089,10.007713);
-	annotator.addPolyRegion({'vertices': [[polyPoint1.x,polyPoint1.y],
-																							[polyPoint2.x,polyPoint2.y],
-																							[polyPoint3.x,polyPoint3.y],
-																							[polyPoint4.x,polyPoint4.y],
-																							[polyPoint5.x,polyPoint5.y]], 
-																 'label': "polygon", 'labelXPos': labelPos.x, 'labelYPos': labelPos.y});
-	document.getElementById("annoSelect").add(new Option("polygon", "0"), null);*/
-	
+	gadget.resize();
 	draw();
 };
 
@@ -751,7 +715,7 @@ var createCircleAnno = function() {
 		circlePos = wcs.coordinateToPixel(coordA,coordB);
 	else
 		circlePos = {"x": parseFloat(coordA), "y": parseFloat(coordB)};
-	annotator.addCircleRegion({'xPos': circlePos.x, 'yPos': circlePos.y, 'radius': parseFloat(radius), label: label});
+	annotator.addCircleRegion({'xPos': circlePos.x, 'yPos': imageDimensions.height-circlePos.y, 'radius': parseFloat(radius), label: label});
 	document.getElementById("annoSelect").add(new Option(label, "0"), null);
 	draw();
 }
@@ -773,8 +737,8 @@ var createRectAnno = function() {
 		corner1 = {"x": parseFloat(corner1A), "y": parseFloat(corner1B)};
 		corner2 = {"x": parseFloat(corner1A)+parseFloat(width), "y": parseFloat(corner1B)+parseFloat(height)};
 	}
-	annotator.addRectRegion({'xPos': corner1.x, 'yPos': corner1.y, 
-  												 'width': corner2.x-corner1.x, 'height': corner2.y-corner1.y, 
+	annotator.addRectRegion({'xPos': corner1.x, 'yPos': imageDimensions.height-corner1.y, 
+  												 'width': -(corner2.x-corner1.x), 'height': -(corner2.y-corner1.y), 
   												 'label': label});
  	document.getElementById("annoSelect").add(new Option(label, "0"), null);
  	draw();
@@ -784,9 +748,12 @@ var createPolyAnno = function() {
 	var list = document.getElementById("polyPointsSelect");
 	var polyPoints = [];
 	for (i in polyCreateList) {
+		var point = {"x": polyCreateList[i][0], "y": polyCreateList[i][1]};
 		list.remove(0);
-		var point = wcs.coordinateToPixel(polyCreateList[i][0], polyCreateList[i][1])
-		polyPoints.push([point.x, point.y]);
+		
+		if (selectedCoordType == COORD_TYPE.WCS)
+			point = wcs.coordinateToPixel(polyCreateList[i][0], polyCreateList[i][1])
+		polyPoints.push([point.x, imageDimensions.height-point.y]);
 	}
 	
 	polyCreateList = [];
@@ -798,6 +765,8 @@ var createPolyAnno = function() {
 }
 
 var addDataSetPoints = function() {
+	if (gadget.dashboard.getDataSetList()[0] == undefined)
+		return;
 	if (selectedDataSetId == -1 || selectedDataSetId == undefined)
 		selectedDataSetId = gadget.dashboard.getDataSetList()[0].id;
 	selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetId);

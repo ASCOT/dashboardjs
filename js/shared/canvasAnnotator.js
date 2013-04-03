@@ -19,14 +19,16 @@ define('canvasAnnotator', [], function() {
 	var idIndex = 0;
 	var textHeight = 20;
 	var defaultColor = "#ffffff";
+	var showAnnotations = true;
 	
 	// Initalize the canvas attributes
 	// Arguments:
 	//					canvas - The canvas to draw onto
 	//					pixToScreen - The method that converts native pixel coordinates to screen coordinates
-	var init = function(_canvas, _pixToScreen) {
+	var init = function(_canvas, _pixToScreen, _showAnnotations) {
 		canvas = _canvas;
 		context = canvas.getContext('2d');
+		showAnnotations = _showAnnotations;
 		
 		pixToScreen = _pixToScreen
 	}
@@ -40,12 +42,11 @@ define('canvasAnnotator', [], function() {
 	//					label - A string of text to be displayed next to the rectangle
 	// Returns the unique id of the created annotation
 	var addRectRegion = function(arg) {
-		var visible = true;
 		var textVisible = false;
 		idIndex++;
 		annotations.push({ 'type': 'rect',
 											 'id': idIndex,
-											 'visible': visible,
+											 'visible': showAnnotations,
 											 'textVisible': textVisible,
 											 'xPos': arg.xPos,
 											 'yPos': arg.yPos,
@@ -73,7 +74,6 @@ define('canvasAnnotator', [], function() {
 	//					label - A string of text to be displayed next to the rectangle
 	// Returns the unique id of the created annotation
 	var addCircleRegion = function(arg) {
-		var visible = true;
 		var textVisible = false;
 		var useId;
 		var useColor;
@@ -88,7 +88,7 @@ define('canvasAnnotator', [], function() {
 			useColor = arg.color;
 		annotations.push({ 'type': 'circle',
 											 'id': useId,
-											 'visible': visible,
+											 'visible': showAnnotations,
 											 'textVisible': textVisible,
 											 'xPos': arg.xPos,
 											 'yPos': arg.yPos,
@@ -115,13 +115,12 @@ define('canvasAnnotator', [], function() {
 	//					labelXPos - The x position of the top left corner of the label
 	//					labelYPos - The y position of the top left corner of the label
 	var addPolyRegion = function(arg) {
-		var visible = true;
 		var textVisible = false;
 		idIndex++;
 		
 		annotations.push({ 'type': 'poly',
 											 'id': idIndex,
-											 'visible': visible,
+											 'visible': showAnnotations,
 											 'textVisible': textVisible,
 											 'vertices' : arg.vertices,
 											 'screenVertices': arg.vertices,
@@ -366,6 +365,7 @@ define('canvasAnnotator', [], function() {
 	}
 	
 	var hideAnnotations = function() {
+		showAnnotations = false;
 		for (i in annotations) {
 			annotations[i].visible = false;
 		}
@@ -373,6 +373,7 @@ define('canvasAnnotator', [], function() {
 	}
 	
 	var showAnnotations = function() {
+		showAnnotations = true;
 		for (i in annotations) {
 			annotations[i].visible = true;
 		}
