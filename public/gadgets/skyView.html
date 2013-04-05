@@ -67,6 +67,7 @@ function success(instance) {
   gadget.inflateState();
   // Add event listeners
   google.earth.addEventListener(googleEarthInstance.getView(), "viewchangebegin", initCenterOfCoordinates);
+		redrawAll();
 }  
 
 function failure(errorCode) {
@@ -137,7 +138,7 @@ function writeCurrentBounds(){
 // KML
 // Clears all the KML from ge by removing every child.
 function clearKML() {
-  if (googleEarthInstance !== null){
+  if (googleEarthInstance !== undefined){
     var features = googleEarthInstance.getFeatures();
     while (features.getFirstChild()) {
       features.removeChild(features.getFirstChild());
