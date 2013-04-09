@@ -15,9 +15,7 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 <script src="/jquery.ui.slider.js" type="text/javascript"></script>
 <script src="/require.js" type="text/javascript"></script>
-<script src="/glfx.js" type="text/javascript"></script>
-<script src="/pngParser.js" type="text/javascript"></script>
-<script src="/fits.js" type="text/javascript"></script>
+<script src="/wcs.js" type="text/javascript"></script>
 <script src="/canvasAnnotator.js" type="text/javascript"></script>
 <script>
 
@@ -108,12 +106,10 @@ var initViewer = function() {
 // Set configuration options for requirejs
 var config = {
     paths: {
-        'cs': '/cs',
-        'coffee-script': '/coffee-script'
+        'cs': '/cs'
     }
 };
-require(config, ['fits','pngParser', '/binaryajax.js', 'canvasAnnotator', 'cs!/astroJS/display'], function(_fits, PNGParser, BinaryAjax, canvasAnnotator, _astroJsFits) {
-    fits = _fits;
+require(config, ['canvasAnnotator', 'cs!/astroJS/display'], function(canvasAnnotator, _astroJsFits) {
     astroJsFits = _astroJsFits;
     annotator = canvasAnnotator;
     
