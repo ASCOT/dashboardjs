@@ -106,7 +106,8 @@ var initViewer = function() {
 // Set configuration options for requirejs
 var config = {
     paths: {
-        'cs': '/cs'
+        'cs': '/cs',
+        'coffee-script': '/coffee-script'
     }
 };
 require(config, ['canvasAnnotator', 'cs!/astroJS/display'], function(canvasAnnotator, _astroJsFits) {
