@@ -48,7 +48,7 @@ exports.XMLHttpRequest = function() {
 	this.readyState = this.UNSENT; // Current state
 
 	// Result & response
-	this.responseText = "";
+	this.responseText;
 	this.responseXML = "";
 	this.status = null;
 	this.statusText = null;
@@ -126,14 +126,12 @@ exports.XMLHttpRequest = function() {
 	 * @param string data Optional data to send as request body.
 	 */
   this.send = function(data) {
-    
       var host;
       var port;
   	  var ssl = false;
       var url = urlParser.parse(settings.url);
       var uri = url.pathname + (url.search ? url.search : '');
       var options;
-      
       if (this.readyState != this.OPENED) {
         throw "INVALID_STATE_ERR: connection must be opened before send() is called";
 		  }
@@ -152,6 +150,8 @@ exports.XMLHttpRequest = function() {
       	default:
       		throw "Protocol not supported.";
       }
+						
+						port = url.port;
       
       // Set the Host header or the server may reject the request
       this.setRequestHeader("Host", host);
@@ -174,7 +174,6 @@ exports.XMLHttpRequest = function() {
       		this.setRequestHeader("Content-Type", "text/plain; charset=UTF-8");
       	}
       }
-		
 		  options = {
       			host: host,
       			port: port,
@@ -188,7 +187,7 @@ exports.XMLHttpRequest = function() {
       var requestCallback = 
         function(resp) {
       		response = resp;
-      		response.setEncoding("utf8");
+      		response.setEncoding("binary");
 
       		setState(self.HEADERS_RECEIVED);
       		self.status = response.statusCode;
@@ -209,7 +208,6 @@ exports.XMLHttpRequest = function() {
       			self.handleError(error);
       	  });
         };
-
       var request = buildRequest(options, requestCallback).on('error', function(error) { self.handleError(error);});
       // Node 0.4 and later won't accept empty data. Make sure it's needed.
       if (data) {
