@@ -185,6 +185,35 @@ var renderFile = function(file) {
 	reader.readAsArrayBuffer(file);
 }
 
+// Makes an AJAX request through the server and sends the result to the FITS parser to be displayed
+var imageFromUrl = function(path) {
+	$('#init').hide();
+	gadget.resize();
+	if (path == "None")
+		return;
+		
+	// Send an http response to the FITS parser to be displayed
+	var renderImage = function(response) {
+		// convert string object into a binary object
+		var byteArray = new Uint8Array(response.length);
+		for (var i = 0; i < response.length; i++) {
+				byteArray[i] = response.charCodeAt(i) & 0xff;
+		}
+		//fits.renderImage(file, fitsCanvas, renderSuccess);
+		astroJsFits.init1(byteArray.buffer);
+		fitsHeader = astroJsFits.getHeader();
+		renderSuccess();
+	}
+
+	$('#dropLabel').html('Loading file...');
+	$('#loadingBar').show();
+
+	$.ajax({
+		'url': '/xhrProxy/' + encodeURIComponent(path),
+		success: renderImage 
+	});
+}
+
 var setImageExtremes = function(lower, upper) {
 	astroJsFits.changeExtremes(lower, upper);
   draw();
@@ -219,27 +248,6 @@ var renderSuccess = function(){
 	editCanvas.setAttribute('height', $('#display').height());
 	annotator.init(annotatorCanvas, astroJsFits.pixToScreen, showAnnotations);
   
-  // Initalize the wcsjs module
-  wcs = new WCS.Mapper(fitsHeader);
-  // Send the image boundaries to the dashboard
-  var topLeft = wcs.pixelToCoordinate([parseFloat(imageDimensions.width), parseFloat(imageDimensions.height)]);
-  var bottomRight = wcs.pixelToCoordinate([0, 0]);
-  var curBounds = { topLeft: {ra: topLeft.ra, dec: topLeft.dec },
-                    bottomRight: {ra: bottomRight.ra, dec: bottomRight.dec} };
-  
-  if (curBounds.topLeft.ra > curBounds.bottomRight.ra) {
-  	var a = curBounds.topLeft.ra;
-  	curBounds.topLeft.ra = curBounds.bottomRight.ra;
-  	curBounds.bottomRight.ra = a;
-  }
-  if (curBounds.topLeft.dec < curBounds.bottomRight.dec) {
-  	var a = curBounds.topLeft.dec;
-  	curBounds.topLeft.dec = curBounds.bottomRight.dec;
-  	curBounds.bottomRight.dec = a;
-  }
-  
-  gadget.notify('viewBoundsChanged', {'bounds': curBounds, 'source': 'fitsViewer'});
-  
   // Load up a dataset if one was saved
   if (selectedDataSetId != -1)
   	addDataSetPoints();
@@ -259,6 +267,27 @@ var renderSuccess = function(){
 	});
 	gadget.resize();
 	draw();
+	
+	 // Initalize the wcsjs module
+  wcs = new WCS.Mapper(fitsHeader);
+  // Send the image boundaries to the dashboard
+  var topLeft = wcs.pixelToCoordinate([parseFloat(imageDimensions.width), parseFloat(imageDimensions.height)]);
+  var bottomRight = wcs.pixelToCoordinate([0, 0]);
+  var curBounds = { topLeft: {ra: topLeft.ra, dec: topLeft.dec },
+                    bottomRight: {ra: bottomRight.ra, dec: bottomRight.dec} };
+  
+  if (curBounds.topLeft.ra > curBounds.bottomRight.ra) {
+  	var a = curBounds.topLeft.ra;
+  	curBounds.topLeft.ra = curBounds.bottomRight.ra;
+  	curBounds.bottomRight.ra = a;
+  }
+  if (curBounds.topLeft.dec < curBounds.bottomRight.dec) {
+  	var a = curBounds.topLeft.dec;
+  	curBounds.topLeft.dec = curBounds.bottomRight.dec;
+  	curBounds.bottomRight.dec = a;
+  }
+  
+  gadget.notify('viewBoundsChanged', {'bounds': curBounds, 'source': 'fitsViewer'});
 };
 
 // Draw the fits image, annotations, and edit marks
@@ -478,35 +507,6 @@ var handleMousemove = function(e) {
 	else
 		annotator.handleMousemove(e);
 	draw();
-}
-
-// Makes an AJAX request through the server and sends the result to the FITS parser to be displayed
-var imageFromUrl = function(path) {
-	$('#init').hide();
-	gadget.resize();
-	if (path == "None")
-		return;
-		
-	// Send an http response to the FITS parser to be displayed
-	var renderImage = function(response) {
-		// convert string object into a binary object
-		var byteArray = new Uint8Array(response.length);
-		for (var i = 0; i < response.length; i++) {
-				byteArray[i] = response.charCodeAt(i) & 0xff;
-		}
-		//fits.renderImage(file, fitsCanvas, renderSuccess);
-		astroJsFits.init1(byteArray.buffer);
-		fitsHeader = astroJsFits.getHeader();
-		renderSuccess();
-	}
-
-	$('#dropLabel').html('Loading file...');
-	$('#loadingBar').show();
-
-	$.ajax({
-		'url': '/xhrProxy/' + encodeURIComponent(path),
-		success: renderImage 
-	});
 }
   
 // HTML controls
