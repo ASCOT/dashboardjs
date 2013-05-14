@@ -1,0 +1,269 @@
+<!-- Author: Spencer Wallace (spencerw@email.arizona.edu) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Pragma" content="no-cache">
+<title>ASCIIDataLoader</title>
+<!-- ASCOT Basic Style Sheets -->
+<link href="/css/reset.css" rel="stylesheet" type="text/css">
+<link href="/css/text.css" rel="stylesheet" type="text/css">
+<link href="/css/widgets.css" rel="stylesheet" type="text/css">  
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js"></script>
+<script src="/util.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+
+gadget.init = function(callback){
+	gadget.onNotification('dataSetChanged', updateDataSetList);
+	
+	$("#exportContent").hide();
+	$("#importButton").hide();
+	$("#divStatusText").hide();
+	$("#doneButton").hide();
+	callback();
+}
+
+gadget.saveState = function(){
+
+};
+
+gadget.loadState = function(state){
+
+};
+
+// GLOBAL CONSTANTS
+ var ICON_URL_SELECTED = '/images/target_yellow.png',
+     ICON_URL_DEFAULT = '/images/target.png',
+     ICON_URL_SPINNER = '/images/spinnerGrey.gif',
+     ICON_URL_ERROR = '/images/errorIcon.gif',
+     ICON_URL_SUCCESS = '/images/successIcon.gif';
+
+ var ICON = { SUCCESS : ICON_URL_SUCCESS,
+           ERROR : ICON_URL_ERROR,
+           SPINNER : ICON_URL_SPINNER,
+           NONE : ""}
+	
+var textFile = '';							// The text that was read in from the ASCII file
+myFields = { }				     // Pointers to HTML fields on the page
+    
+// When the list of public datasets change, rewrite the list of available datasets to export
+function updateDataSetList(){
+ var el = document.getElementById("selDatasetNameExport");
+	var items = gadget.dashboard.getDataSetList();
+	el.options.length = 0;
+	for (i in items) {
+		var option = document.createElement("OPTION");
+		option.text = items[i].text;
+		option.value = items[i].id;
+		el.options.add(option);
+	}
+}
+
+function dataSetToString(dataSetName) {
+	var ds = gadget.dashboard.getDataSet(dataSetName);
+	var string = '';
+	
+	// Get the column headers
+	var columns = ds.getColumns();
+	for (var i = 0; i < columns.length; i++) {
+		string += columns[i];
+		if (i != (columns.length-1))
+				string += ' ';
+	}
+	
+	// Get the data
+	var dsData = ds.getRecordsJSON();
+	for (var i = 0; i < dsData.length; i++) {
+		string += '<br>';
+		for (var j = 0; j < columns.length; j++) {
+			string += dsData[i][columns[j]];
+			if (j != (columns.length-1))
+				string += ' ';
+		}
+	}
+	
+	return string;
+}
+
+// Create a dataset object from the data array
+function createDataset() {
+	
+	textFile = textFile.split('\n');
+	var columns = textFile[0].split(' ');
+	records = [];
+	var fileEntry;
+	var numRecords = textFile.length;
+	
+	textFile.splice(numRecords+1, numRecords);
+ 	//Row 0 holds the attribute names
+	for (var i = 1; i < numRecords-1; i++) {
+   	fileEntry = textFile[1].split(' ');
+   	textFile.splice(1,1);
+   	newRecord = {};
+		for (var j=0; j < fileEntry.length; j++)
+			newRecord[columns[j]] = parseFloat(fileEntry[j]);
+  records.push(newRecord);
+	}
+	textFile.splice(0, textFile.length);
+	
+	if (records.length == 0){
+   	showError('No objects found');
+   	return;
+ 	}
+ 	else {
+			gadget.dashboard.createDataSet($('#datasetNameInput').val(), "none", "none", function() {}, function() {}, true, records);
+ 		showSuccess("Returned " + records.length + " records.");
+			$("#doneButton").show();
+			$("#importButton").hide();
+ 	}
+}
+	
+// HELPER
+ function clearStatus() {
+     showStatus(ICON.NONE, "");
+ }
+ function showSpinner(text) {
+     showStatus(ICON.SPINNER, text);
+ }
+ function showSuccess(text) {
+     showStatus(ICON.SUCCESS, text);
+ }
+ function showError(text) {
+     showStatus(ICON.ERROR, text);
+ }
+  
+ function showStatus(iconUrl, text){
+     if (iconUrl !== ICON.NONE) {
+         setStatus( '<img id="imgStatus" style="vertical-align:middle;" src="' + iconUrl + '" /> ' + "<span style='vertical-align:middle;'>" + text + "</span>");
+     } else {
+         setStatus(text);
+     }
+ }
+
+ function setStatus(text) {
+     // set text status
+     $("#divStatusText").html(text);
+     // make visible
+     $("#divStatusText").show();
+ }
+
+function getField(field) {
+	if (!(field in myFields) || (myFields[field] === null)) {
+  		myFields[field] = document.getElementById(field);
+   }
+	return myFields[field];
+}
+    
+function getSelectedOption(select) {
+   var selName = getField(select);
+   if (selName.length > 0){
+     return selName.options[selName.selectedIndex].value;
+   } else {
+      return "";
+   }
+}
+
+function setSelectOptions(selectName, options) {
+	var select = getField(selectName);
+   if (select === null) {
+   	return;
+   }
+   // save old selected option so maybe it can be reselected
+   var selectedOption = getSelectedOption(selectName);
+   // Default. First option selected
+   if (selectedOption == "")
+  		 selectedOption == options[0];
+   // clear options
+   select.length = 0;
+   // add options
+   for (var i=0, len=options.length; i<len; i++) {
+   	// if oldOption is in the list, then select it
+      select.add(new Option(options[i], options[i], false, (selectedOption == options[i])), null);
+   }
+   if(select.onchange)
+   	select.onchange();
+}
+	
+function writeNewWindow() {
+	var content = dataSetToString(getSelectedOption("selDatasetNameExport"));
+	top.consoleRef=window.open('','data',
+	'width=640,height=480'
+   +',menubar=0'
+   +',toolbar=1'
+   +',status=0'
+   +',scrollbars=1'
+   +',resizable=1')
+	top.consoleRef.document.writeln(
+	'<html><head><title>' + getSelectedOption("selDatasetNameExport") + '</title></head>'
+	+'<body bgcolor=white onLoad="self.focus()">'
+	+content
+	+'</body></html>');
+	top.consoleRef.document.close();
+}
+
+function displayDataWindow() {
+	writeNewWindow('test');
+}
+
+function loadFile(files) {
+ 	var reader = new FileReader();
+ 	reader.onload = function(e) {
+   		textFile = e.target.result;
+   		$("#importButton").show();
+					$("#divStatusText").show();
+					gadget.resize();
+ 	}
+ 	reader.readAsText(files[0]);
+}
+
+function switchRadioVis() {
+	$("#importContent").toggle();
+	$("#exportContent").toggle();
+	gadget.resize();
+}
+
+function initColumns() {
+	showSpinner('Getting objects...');
+	var dsName = $("#datasetNameInput").val();
+	if (dsName.length < 1) {
+         showError("Enter dataset name");
+         return;
+     }
+	createDataset();
+}
+
+function doneClick() {
+	$("#importButton").hide();
+	$("#doneButton").hide();
+	$("#divStatusText").html('');
+	$("#divStatusText").hide();
+	$("#datasetNameInput").val('');
+	
+	// Reset file upload form
+	$("#fileUpload").wrap('<form>').closest('form').get(0).reset();
+ $("#fileUpload").unwrap();
+	
+	gadget.resize();
+}
+
+</script>
+</head>
+<body>
+
+<input type="radio" id="radImportExport" name="radImportExport" value="import" checked="checked" onclick="switchRadioVis();" /><labe>Import</label>
+<input type="radio" id="radImportExport" name="radImportExport" value="export" onclick="switchRadioVis();" /><label>Export</label>
+
+<div id="importContent">
+	Dataset Name: <input id="datasetNameInput"> <br>
+	<input type="file" onchange="loadFile(this.files)" id="fileUpload"> <br>
+	<input type="button" id="importButton" value="Import" onclick="initColumns();">
+	<input type="button" id="doneButton" value="Done" onclick="doneClick();"><div id="divStatusText" style="display: inline; margin-left: 10px"></div>
+</div>
+
+<div id="exportContent">
+	Dataset: <select id="selDatasetNameExport"></select> <br>
+	<input type="button" value="Export" onclick="displayDataWindow();"> <br>
+</body>
+</html>

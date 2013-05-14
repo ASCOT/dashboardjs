@@ -1,4 +1,11 @@
 var gadgets = {
+		ASCIIDataLoader: { 
+    name: "ASCII Data Loader",
+    fileName: "ASCIIDataLoader.html",
+    description: "Create DataSets from text files formatted into columns.",
+    author: "Spencer Wallace - spencerw@email.arizona.edu",
+    version: "0.1" 
+  },
   dataInquirer: { 
     name: "Data Inquirer",
     fileName: "dataInquirer.html",
