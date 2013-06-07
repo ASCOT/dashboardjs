@@ -37,10 +37,10 @@ var selectedColor = "";
 var selectedDataSetName = "";
 var selectedDataSet;
 var numberOfBins = 10;
+var init = false;
 
 gadget.init = function(finishedLoading){	
-  gadget.update = function() {};
-	gadget.onNotification('dataSetChanged', updateDataSetList);
+	gadget.onNotification('dataSetChanged', gadget.update);
   finishedLoading();
 };
 
@@ -51,10 +51,13 @@ gadget.loadState = function(state){
     selectedXAxis = state.selectedXAxis || "";
     selectedColor = state.selectedColor || "";
     numberOfBins = state.numberOfBins || 10;
+    $('#selectNumberOfBins').val(numberOfBins);
   }
   redraw();
 
 };
+
+gadget.update = gadget.loadState;
 
 var DEFAULT_MARKER_COLOR = 'rgba(160, 160,160, 1)';
 var SELECTED_MARKER_COLOR = 'rgba(210,30,100,.9)';
@@ -74,7 +77,6 @@ var dataToChart;	// The collection of points going into the histogram
 var updateDataSetList = function(){
   populateSelect('selectDataSetName', gadget.dashboard.getDataSetList(), selectedDataSetId);
   updateSelectedPoints();
-  console.log('data set changed');
  	redraw();
 }
 
@@ -104,7 +106,6 @@ var populateSelects = function() {
         'selectedDataSetName' : selectedDataSetName,
         'selectedXAxis' : selectedXAxis
       });
-    	redraw();
     }
   });
 
@@ -112,7 +113,6 @@ var populateSelects = function() {
     if(this.selectedIndex != -1){
     	selectedXAxis = $(this).find('option:selected').val();
       gadget.setState({ 'selectedXAxis' : $(this).find('option:selected').val() });
-      redraw();
     }
   });
   
@@ -125,13 +125,12 @@ var populateSelects = function() {
    $('#selectNumberOfBins').change( function(){
 		numberOfBins = parseInt($(this).val());
 		gadget.setState({'numberOfBins' : numberOfBins});
-		redraw();
-    /*if(this.selectedIndex != -1){
-    	numberOfBins = parseInt($(this).find('option:selected').val());
-      gadget.setState({'numberOfBins' : parseInt($(this).find('option:selected').val()) });
-      redraw();
-    }*/
   });
+
+  if (!init) {
+    init = true;
+    $('#selectDataSetName').change();
+  }   
 
 }
 

@@ -121,13 +121,7 @@ UW.Dashboard = function(_id, container, dashboardUrl){
       var modifiers;
       if (communications) {
         if (op[0].p[0] === 'gadgets') {
-          if (op[0].oi) {
-            gadgets[op[0].p[1]].update(op[0].oi);
-          } else {
-            if (op[0].od) {            
-              gadgets[op[0].p[1]].update(op[0].od);
-            }
-          }
+          gadgets[op[0].p[1]].update(op[0].oi);
         }
         if (op[0].p[0] === 'comments') {
           this.notify("commentPublished", op[0].li, { 'self' : true });
@@ -142,8 +136,8 @@ UW.Dashboard = function(_id, container, dashboardUrl){
               loadedDataSets[op[0].p[1]].applyModifiers([op[0].li]);
             }
             if (op[0].ld) {
-              modifiers = (dashboardModel.at('dataSets').get())[op[0].p[1]].modifiers;
-              loadedDataSets[op[0].p[1]].applyModifiers(modifiers);
+              modifiers = dashboardModel.get().dataSets[op[0].p[1]].modifiers[0]; 
+              loadedDataSets[op[0].p[1]].applyModifiers([modifiers]);
             }
             return;
           }
