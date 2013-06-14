@@ -79,6 +79,7 @@ if (!UW) var UW={};
         for (var i = modifiers.length-1; i >= 0; --i) {
           this.applyModifier(modifiers[i]);
         }
+        this.cleanModifiers();
         if (!silent) {
           this.trigger('changed');
         }
@@ -97,6 +98,15 @@ if (!UW) var UW={};
           this.setRecords(attribute, modifier[value], true);
         } 
       }
+    },
+    
+    // Remove any modifier fields that contain no points
+    cleanModifiers: function() {
+       for (i in this.indices) {
+           for (j in this.indices[i]) {
+               if (this.indices[i][j].length == 0) delete this.indices[i][j];
+           }
+       } 
     },
 
     setAllRecords: function(attributes, silent){

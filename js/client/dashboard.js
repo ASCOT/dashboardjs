@@ -53,20 +53,6 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     if ((dashboardModel.at('dataSets').get())[id]) {
       modifiers = (dashboardModel.at('dataSets').get())[id].modifiers || [];
       loadedDataSets[id].applyModifiers(modifiers);     
-      
-      // Submit the inital state of the dataset to the document so that the undo button
-      // can roll the dataset back to the inital state
-      if (modifiers.length == 0) {
-          modifiers = {'field' : "color", 'grey' : []};
-          for (i in loadedDataSets[id].records) {
-              var color = loadedDataSets[id].records[i].color
-              modifiers[color].push(i);
-          }
-      }
-      dashboardModel.submitOp({
-          p : ['dataSets', data.id, 'modifiers', 0],
-          li : modifiers
-      });
     }
     newDataSet.bind('changed', _.bind(function(data) {
       if (data && data.modifiers) {
@@ -149,6 +135,17 @@ UW.Dashboard = function(_id, container, dashboardUrl){
           if (op[0].p[2] === 'modifiers') {
             if (op[0].li) {
               loadedDataSets[op[0].p[1]].applyModifiers([op[0].li]);
+              return;
+            }
+            else if (op[0].ld) {
+              var modColor = {"field": "color", "grey": []};
+              var modVis = {"field": "visible", "true": []};
+              var ds = loadedDataSets[op[0].p[1]];
+              for (var i = 0; i < ds.records.length; i++) { 
+                modColor['grey'].push(i);
+                modVis['true'].push(i);
+              }
+              ds.applyModifiers([modColor, modVis], false);
             }
             return;
           }
