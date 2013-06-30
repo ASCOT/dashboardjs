@@ -29,11 +29,6 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 	
 	header = null
 	
-	texture1 = null
-	texture2 = null
-	texture3 = null
-	texture4 = null
-	
 	resetParameters = ->
 		programs = null
 		program = null
@@ -62,11 +57,6 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 		yMouseDown = null
 		
 		header = null
-		
-		texture1 = null
-		texture2 = null
-		texture3 = null
-		texture4 = null
 
 	init1 = (buffer) ->
 		resetParameters()
@@ -97,7 +87,6 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 		
 	setupWebGL = ->
 		canvas = WebGL.setupCanvas(container, viewportWidth, viewportHeight)
-		
 		# Set up variables for panning and zooming
 		xOffset = -fitsWidth / 2
 		yOffset = -fitsHeight / 2
@@ -157,11 +146,6 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 
 		gl = WebGL.create3DContext(canvas)
 		ext = gl.getExtension('OES_texture_float')
-		
-		# Make sure the texture we are loading is not larger than the GPU allowed size
-		maxSize = gl.getParameter(gl.MAX_TEXTURE_SIZE)
-		if fitsWidth > maxSize*2 or fitsHeight > maxSize*2
-			alert "Fits image is too large. Maximum size is " + maxSize
 
 		unless ext
 			alert "No OES_texture_float"
@@ -180,19 +164,6 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 		scale = if scale < minScale then minScale else scale
 		drawScene()
 		
-	loadTexture = (data, width, height) =>
-		texture = gl.createTexture()
-		gl.bindTexture(gl.TEXTURE_2D, texture)
-		
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-		
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, width, height, 0, gl.LUMINANCE, gl.FLOAT, data)
-		
-		return texture
-	
 	setupWebGLUI = ->
 		# Store parameters needed for rendering
 		stretch = stretch.value
@@ -225,6 +196,14 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 			gl.enableVertexAttribArray(texCoordLocation)
 			gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0)
 
+			texture = gl.createTexture()
+			gl.bindTexture(gl.TEXTURE_2D, texture)
+
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+
 			# Pass the uniforms
 			gl.uniform2f(extremesLocation, minimum, maximum)
 			gl.uniform2f(offsetLocation, xOffset, yOffset)
@@ -237,113 +216,23 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 			setRectangle(0, 0, fitsWidth, fitsHeight)
 			gl.drawArrays(gl.TRIANGLES, 0, 6)
 
-		# Break the image into 4 separate textures to allow image sizes up to twice that which
-		# is allowed by the GPU
-		sliceWidth = Math.floor(fitsWidth/2)
-		sliceHeight = Math.floor(fitsHeight/2)
-		
-		# Bottom left texture
-		colCount = 0
-		pixDataCount = 0
-		pixData = new Float32Array(sliceWidth*sliceHeight)
-		for i in [1..fitsWidth*sliceHeight]
-			if colCount < sliceWidth
-				pixData[pixDataCount] = hdu.data.data[i]
-				pixDataCount += 1
-			colCount += 1
-			if colCount == fitsWidth
-				colCount = 0
-		
-		texture1 = loadTexture(pixData, sliceWidth, sliceHeight)
-		
-		# Bottom right texture
-		colCount = 0
-		pixDataCount = 0
-		pixData = new Float32Array((fitsWidth-sliceWidth)*sliceHeight)
-		for i in [1..fitsWidth*sliceHeight]
-			if colCount >= sliceWidth
-				pixData[pixDataCount] = hdu.data.data[i]
-				pixDataCount += 1
-			colCount += 1
-			if colCount == fitsWidth
-				colCount = 0
-		
-		texture2 = loadTexture(pixData, fitsWidth-sliceWidth, sliceHeight)
-		
-		# Top left texture
-		colCount = 0
-		pixDataCount = 0
-		pixData = new Float32Array(sliceWidth*(fitsHeight-sliceHeight))
-		for i in [fitsWidth*sliceHeight..fitsWidth*fitsHeight]
-			if colCount < sliceWidth
-				pixData[pixDataCount] = hdu.data.data[i]
-				pixDataCount += 1
-			colCount += 1
-			if colCount == fitsWidth
-				colCount = 0
-		
-		texture3 = loadTexture(pixData, sliceWidth, fitsHeight-sliceHeight)
-		
-		# Top right texture
-		colCount = 0
-		pixDataCount = 0
-		pixData = new Float32Array((fitsWidth-sliceWidth)*(fitsHeight-sliceHeight))
-		for i in [fitsWidth*sliceHeight..fitsWidth*fitsHeight]
-			if colCount >= sliceWidth
-				pixData[pixDataCount] = hdu.data.data[i]
-				pixDataCount += 1
-			colCount += 1
-			if colCount == fitsWidth
-				colCount = 0
-		
-		texture4 = loadTexture(pixData, fitsWidth-sliceWidth, fitsHeight-sliceHeight)
-		
-  gl.bindTexture(gl.TEXTURE_2D, texture1)
-		setRectangle(0, 0, sliceWidth, sliceHeight)
-		gl.drawArrays(gl.TRIANGLES, 0, 6)
-		
-  gl.bindTexture(gl.TEXTURE_2D, texture2)
-		setRectangle(sliceWidth, 0, fitsWidth-sliceWidth, sliceHeight)
-		gl.drawArrays(gl.TRIANGLES, 0, 6)
-		
-		gl.bindTexture(gl.TEXTURE_2D, texture3)
-		setRectangle(0, sliceHeight, sliceWidth, fitsHeight-sliceHeight)
-		gl.drawArrays(gl.TRIANGLES, 0, 6)
-		
-		gl.bindTexture(gl.TEXTURE_2D, texture4)
-		setRectangle(sliceWidth, sliceHeight, fitsWidth-sliceWidth, fitsHeight-sliceHeight)
+		# Update texture
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, fitsWidth, fitsHeight, 0, gl.LUMINANCE, gl.FLOAT, hdu.data.data)
 		gl.drawArrays(gl.TRIANGLES, 0, 6)
 
-	setRectangle = (x, y, width, height) ->
-		[x1, x2] = [x, x + width]
-		[y1, y2] = [y, y + height]
+	setRectangle = (x, y, fitsWidth, fitsHeight) ->
+		[x1, x2] = [x, x + fitsWidth]
+		[y1, y2] = [y, y + fitsHeight]
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]), gl.STATIC_DRAW)
 		
 	drawScene = ->
-		sliceWidth = Math.floor(fitsWidth/2)
-		sliceHeight = Math.floor(fitsHeight/2)
-		
 		gl.clearColor(0.9, 0.9, 0.9, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
 		offsetLocation = gl.getUniformLocation(program, 'u_offset')
 		scaleLocation = gl.getUniformLocation(program, 'u_scale')
 		gl.uniform2f(offsetLocation, xOffset, yOffset)
 		gl.uniform1f(scaleLocation, scale)
-		
-		gl.bindTexture(gl.TEXTURE_2D, texture1)
-		setRectangle(0, 0, sliceWidth, sliceHeight)
-		gl.drawArrays(gl.TRIANGLES, 0, 6)
-		
-  gl.bindTexture(gl.TEXTURE_2D, texture2)
-		setRectangle(sliceWidth, 0, fitsWidth-sliceWidth, sliceHeight)
-		gl.drawArrays(gl.TRIANGLES, 0, 6)
-		
-		gl.bindTexture(gl.TEXTURE_2D, texture3)
-		setRectangle(0, sliceHeight, sliceWidth, fitsHeight-sliceHeight)
-		gl.drawArrays(gl.TRIANGLES, 0, 6)
-		
-		gl.bindTexture(gl.TEXTURE_2D, texture4)
-		setRectangle(sliceWidth, sliceHeight, fitsWidth-sliceWidth, fitsHeight-sliceHeight)
+		setRectangle(0, 0, fitsWidth, fitsHeight)
 		gl.drawArrays(gl.TRIANGLES, 0, 6)
 		
 	getCanvas = ->
