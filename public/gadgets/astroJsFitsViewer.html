@@ -236,7 +236,8 @@ var renderSuccess = function(){
 	imageDimensions = {width: fitsHeader.get("NAXIS1")[1], height: fitsHeader.get("NAXIS2")[1]};
 	var rat = imageDimensions.width/imageDimensions.height;
 	var canvasWidth = $('#dropbox').width();
-	$('#dropbox').height(canvasWidth*rat);
+	var canvasHeight = $('#dropbox').height();
+	$('#dropbox').height(canvasWidth);
 	
 	displayWidth = $('#display').width();
 	displayHeight = $('#display').height();
