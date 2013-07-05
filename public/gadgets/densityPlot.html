@@ -57,6 +57,7 @@ var sparsePoints;
 
 // Gadget intialization
 gadget.init = function(callback){
+  gadget.update();
   gadget.onNotification('dataSetChanged', gadget.update);  
   
   $('#invertXAxisButton').click( function(){

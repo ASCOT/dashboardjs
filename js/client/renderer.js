@@ -21,6 +21,10 @@ UW.Renderer = function(pTarget, numberOfColumns){
     var height = document.getElementById(id).contentDocument['body'].offsetHeight;
     document.getElementById(id).style.height = height + "px";
   }
+
+  this.removeGadget = function(gadgetId, callback){
+    layoutManager.removeElement(gadgetId);
+  };
   
   this.renderGadget = function(gadget, callback){
 
@@ -47,11 +51,17 @@ UW.Renderer = function(pTarget, numberOfColumns){
     gadgetIframe.height = "0px";
     gadgetIframe.style.display = "block";
     gadgetIframe.onload = function() { $(initGadget) };		
-    
+ 
     iframeContainer.className = 'gadgetCanvas'; 
     iframeContainer.appendChild(gadgetIframe);
-    
+
+    var closeGadget = document.createElement('div');
+    closeGadget.id = 'closeGadget';
+    var clickClose = function() {gadget.dashboard.removeGadget(gadget.id);};
+    closeGadget.onclick = clickClose;
+
     gadgetFrame.className = 'gadgetFrame';
+    gadgetFrame.appendChild(closeGadget);
     gadgetFrame.appendChild(iframeContainer);
     
     layoutManager.addElement(gadgetFrame);
@@ -62,5 +72,4 @@ UW.Renderer = function(pTarget, numberOfColumns){
     gadgetIframe.contentWindow.gadget = gadget;
     
   };
-
 };

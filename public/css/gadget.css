@@ -24,6 +24,18 @@ body {
   -webkit-transition: opacity .5s ease-out;
 }
 
+#closeGadget {
+  background-image: url(/images/closePopUp.png);
+  width: 20px;
+  height: 20px;
+  background-size: contain;
+  float: right;
+}
+
+#closeGadget:hover {
+  background-image: url(/images/closePopUpHover.png);
+}
+
 .gadgetCanvas {
   background-color: white;
   padding: 8px;

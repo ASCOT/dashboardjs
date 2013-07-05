@@ -9,21 +9,20 @@
 var UW = UW || {};
 
 UW.Gadget = Backbone.View.extend({
-  
-
   // Default load/save state methods. 
   // The user must define these functions.
   loadState: function(state) {},
     
   onNotification: function(notification, callback){
     var gadgetId = this.id;
-    var newCallback = function(notificationObject){
+    this.notificationCallbacks = this.notificationCallbacks || {};
+    this.notificationCallbacks[notification] = function(notificationObject){
       if(notificationObject['private'] && notificationObject['sourceId'] !== gadgetId){
         return;
       }
       callback(notificationObject.data);
     }  
-    this.dashboard.bind(notification, newCallback);
+    this.dashboard.bind(notification, this.notificationCallbacks[notification]);
   },
   
   notify: function(notification, data, options){
@@ -72,6 +71,13 @@ UW.Gadget = Backbone.View.extend({
   
   debugMessage: function(msg){
     UW.debugMessage("GADGET " + this.getId() + ": " + msg);
+  },
+
+  close: function() {
+    for (notification in this.notificationCallbacks) { 
+      if (this.notificationCallbacks.hasOwnProperty(notification)) {
+	this.dashboard.unbind(notification, this.notificationCallbacks[notification]);
+      }
+    }
   }
-  
 });

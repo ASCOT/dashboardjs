@@ -40,6 +40,7 @@ var numberOfBins = 10;
 var init = false;
 
 gadget.init = function(finishedLoading){	
+  gadget.update();
 	gadget.onNotification('dataSetChanged', gadget.update);
   finishedLoading();
 };

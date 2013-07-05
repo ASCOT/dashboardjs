@@ -60,6 +60,12 @@ UW.layoutManager = function (){
   	 		nextColumn++;
 			},
 			
+			removeElement: function(elementId){
+			    // Grandparent of the gadget iframe is the gadget frame
+			    var gadgetFrame = document.getElementById(elementId).parentNode.parentNode;
+			    gadgetFrame.parentNode.removeChild(gadgetFrame);
+			},
+
 			refreshLayout: function(){
 			
 		 		for(element in elements){

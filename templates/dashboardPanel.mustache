@@ -10,7 +10,30 @@
   </head>
   <body>
     <div id="popUpMask" style="display: none"></div>
-    <div id="popUp" style="display: none"><div class="closePopUp"></div></div>
+    <div id="gadgetPopUp" style="display: none">
+      <div class="closePopUp"></div>
+      <div id="gadgetsPanel">
+      <div id="gadgetSelection" style="width:35%; padding: 15px; padding-top: 0px; float: left">
+        Choose gadgets to add:
+        <form action="#" method="get">   
+          <ul id="gadgetsList"></ul>
+        </form>
+        <button class="big addToDashboard">Add to Dashboard</button>
+      </div> 
+      <div id="gadgetDetails" style="width:53%; padding: 70px 30px 0px 0px; float: right; display: none">
+        <h2 id="gadgetName"></h2>
+        <p id="gadgetDescription"></p>
+        <dl>
+          <dt>Author:</dt>
+          <dd id="gadgetAuthor"></dd>
+        </dl>
+        <dl>
+          <dt>Version:</dt>
+          <dd id="gadgetVersion"></dd>
+        </dl> 
+      </div>
+    </div>
+    </div>
     <div id="note" class="openNote" style="display: none"><a id="closeNote"></a></div>
     
     <table class="content" width="100%">
@@ -37,6 +60,7 @@
                 </div>
                 <div class="buttonGroup">
                   <ul>
+		    <li><a href="#" title="addGadgets" onClick="addGadgets()">Add Gadgets</a></li>
                     <li><a href="#" title="forkDashboard" onClick="forkDashboard()">Fork</a></li>
                   </ul>
                 </div>
@@ -119,6 +143,7 @@
   var dashboardId = {{id}};
   var resourceUrl = {{resourceUrl}};
   var closeAlertTimeout;
+  var selectedGadgets = {};
 
   $(function(){
     initDashboard();
@@ -168,6 +193,7 @@
     ASCOT.dashboard.setUrl(resourceUrl + '/' + dashboardId);
     ASCOT.dashboard.init(finishedLoading);
     initGUI();
+   	initGadgetSelection();
     return ASCOT.dashboard;
   };
 
@@ -190,6 +216,10 @@
       $('#loadDataset').toggle();
       ASCOT.dashboard.fetchDataSet($('#datasetURL').val(), successLoading);
     }
+  }
+
+  function addGadgets() {
+    showPopUp('gadgetPopUp');
   }
 
   function forkDashboard() {
@@ -289,10 +319,97 @@
     $(this).css('background','url("/images/closePopUp.png")');
   }
 
+	function populateGadgetsList(gadgetsList){
+		var entryHtml;  
+		gadgets = gadgetsList; 
+		$("#gadgetsList").empty();
+		for (id in gadgetsList){
+			if(gadgetsList.hasOwnProperty(id)){
+			 entryHtml = '<li><input type="checkbox" value="' + gadgetsList[id].name + 'name="gadget" value="' + id + '" id="' + id + '"/><label>' + gadgetsList[id].name + 
+							     '</label><div class="counter" style="display:none; float: right; margin: 8px"><button type="button" class="circle counter minus">-</button><p style="margin: 10px; display: inline;">0</p><button type="button" class="circle counter plus">+</button></div></li>';
+			 $("#gadgetsList").append(entryHtml);
+			}
+		}
+		$("#gadgetsList li").hover(function(){
+			var selectedId = $(this).find("input").get(0).id;
+			var selectedGadget = gadgets[selectedId];
+			$("#gadgetName").html(selectedGadget.name);
+			$("#gadgetDescription").html(selectedGadget.description);
+			$("#gadgetAuthor").html(selectedGadget.author);
+			$("#gadgetVersion").html(selectedGadget.version);
+			$("#gadgetDetails").css("display","block");
+		});
+
+		$(":checkbox").click(function() {
+			var displayValue = this.checked? 'block' : 'none';
+			if (this.checked){
+				selectedGadgets[this.id] = {};
+				selectedGadgets[this.id].number = 1;
+				$(this).closest('li').find("div.counter").find("p").text("1");
+			}
+			else{
+				delete selectedGadgets[this.id];
+			}
+			$(this).closest('li').find("div.counter").css('display', displayValue);
+		});
+
+		$(".circle.counter").click(function() {
+			var gadgetId = $(this).closest('li').find('input').attr('id');
+			selectedGadgets[gadgetId] = selectedGadgets[gadgetId] || {};
+			selectedGadgets[gadgetId].number = selectedGadgets[gadgetId].number || 1;
+			if($(this).hasClass('minus')) {
+				selectedGadgets[gadgetId].number--;
+				if(selectedGadgets[gadgetId].number == 0){
+				$(this).closest('div.counter').css('display', 'none');
+				$(this).closest('li').find(':checkbox').get(0).checked = false;
+				delete selectedGadgets[gadgetId];
+				}
+			}
+			else{
+				selectedGadgets[gadgetId].number++;
+			}
+			$(this).parent().find("p").text(selectedGadgets[gadgetId].number);
+		});
+	}
+
+	function initGadgetSelection() {
+		$.ajax({
+     'url': '/gadgets/',
+     success: populateGadgetsList });
+   
+   $(".addToDashboard").click(function() {
+     for (i in selectedGadgets) {
+     	var num = selectedGadgets[i].number;
+     	while (num > 0) {
+     		num--;
+     		ASCOT.dashboard.addGadget(i);
+     	}
+     }
+    hidePopUp('gadgetPopUp');
+    resetGadgetSelection();
+   });
+
+   $(".toFront").click(function() {
+     $("#cube").trigger("cube", "front");
+   });
+   
+   $(".quickDashboard").click(function() {
+      requestNewDashboard();
+    });
+	}
+	
+	function resetGadgetSelection() {
+		selectedGadgets = {}
+		$('input[type=checkbox]').each(function () {
+			$(this).prop('checked', false);
+			$(this).closest('li').find("div.counter").css('display', 'none');
+		});
+	}
+
   function initGUI() {
     $('#closeNote').click(hideNote);
     $('.tab').click(tabClicked);
-    $('.closePopUp').click(function() { hidePopUp('popUp') });
+    $('.closePopUp').click(function() { hidePopUp('gadgetPopUp') });
     $('.closePopUp').hover(closePopUpHoverIn, closePopUpHoverOut);
     $('.tab').hover(tabHoverIn, tabHoverOut);
     $('#tabsBar').children().css('cursor','pointer');
@@ -303,7 +420,7 @@
     $('#datasetURL').click(function(){
       $(this).css('color', '#3A3A3A');
     });
-    $(window).resize(function() { placePopUp('popUp') }); 
+    $(window).resize(function() { placePopUp('gadgetPopUp') }); 
   }
 
   function hideNote(){
@@ -330,7 +447,7 @@
     var popUp = $('#' + popUpId);
     var viewPortHeight = $(window).height();
     var viewPortWidth = $(window).width();      
-    var popUpTop = (viewPortHeight - popUp.height())/2 - 200;
+    var popUpTop = (viewPortHeight - popUp.height())/2;
     var popUpLeft = (viewPortWidth - popUp.width())/2;
     var popUpMask = $('#popUpMask');
     popUp.css('top', popUpTop + 'px');
@@ -340,12 +457,12 @@
 
   function showPopUp(popUpId) {
     placePopUp(popUpId);      
-    $('#popUpMask').toggle();     
+    //$('#popUpMask').toggle();     
     $('#' + popUpId).toggle();     
   }
 
   function hidePopUp(popUpId) {
-    $('#popUpMask').toggle();     
+    //$('#popUpMask').toggle();     
     $('#' + popUpId).toggle(); 
   }
   </script>

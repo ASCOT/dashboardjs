@@ -122,8 +122,21 @@ UW.Dashboard = function(_id, container, dashboardUrl){
       var modifiers;
       if (communications) {
         if (op[0].p[0] === 'gadgets') {
-          gadgets[op[0].p[1]].update(op[0].oi);
-        }
+	  if (op[0].p[2] === 'state') {
+	    gadgets[op[0].p[1]].update(op[0].oi);
+	  }
+	  else if (op[0].oi) {
+	    var docGadgetObj = op[0].oi
+	    var newGadget = this.makeGadgetInstance(docGadgetObj);
+	    gadgets[newGadget.id] = newGadget;
+	    renderer.renderGadget(gadgets[newGadget.id],function() {});
+	  }
+	  else if (op[0].od) {
+	    renderer.removeGadget(op[0].od.id);
+	    gadgets[op[0].od.id].close();
+	    delete gadgets[op[0].od.id];
+	  }
+	}
         if (op[0].p[0] === 'comments') {
           this.notify("commentPublished", op[0].li, { 'self' : true });
         }
@@ -208,14 +221,16 @@ UW.Dashboard = function(_id, container, dashboardUrl){
      url = dashboardUrl;
    };
 
-  this.addGadget = function(gadgetState){
-    // Adding reference to the gadget in the global scope of the iframe. The user can have access to the object.
-		var newGadget = new UW.Gadget({ model: gadgetState });
+  this.makeGadgetInstance = function(gadgetInstanceInfo) {
+    newGadgetModel = new UW.GadgetModel(gadgetInstanceInfo.state);
+    newGadget = new UW.Gadget({model: newGadgetModel});
+    newGadget.id = gadgetInstanceInfo.id;
+    newGadget.gadgetInfoId = gadgetInstanceInfo.gadgetInfoId;    
     newGadget.dashboard = this;
     newGadget.dashboardModel = dashboardModel;
-    gadgets[newGadget.id] = newGadget;
-    gadgetModels.add(gadgetState, {silent: true});		  
-  };
+    newGadget.url = '/gadgets/' + gadgetsInfo[newGadget.gadgetInfoId].fileName;
+    return newGadget;
+  }
 
   this.renderGadgets = function(callback){ 
     var gadgetLoaded = _.bind(function() { var finished = callback; this.gadgetLoaded(finished) }, this);
@@ -232,6 +247,39 @@ UW.Dashboard = function(_id, container, dashboardUrl){
 
   this.redo = function(callback) {
     dashboardModel.redo();
+  }
+
+  this.removeGadget = function(gadgetId, success) {
+    // Find the gadget in the gadget list
+    var serverGadgets = dashboardModel.at('gadgets').get();
+    var gadget = serverGadgets[gadgetId];
+    var op1 = {p : ['gadgets', gadgetId],
+               od : gadget};
+    // Find the gadget index in the gadgets order list
+    var list = dashboardModel.at('gadgetsOrder').get();
+    var index = list.indexOf(gadgetId);
+    var op2 = {p : ['gadgetsOrder', index],
+               ld : gadgetId};
+
+    dashboardModel.submitOp([op1, op2]);
+  }
+
+  this.addGadget = function(gadgetName, success) {
+    // Make sure we create the newest instance of the gadget
+    var index = 1;
+    while (gadgets.hasOwnProperty(gadgetName+index.toString()))
+    index++;
+    
+    var newGadgetId = gadgetName+index.toString();
+    var newGadget = {gadgetInfoId: gadgetName, id: newGadgetId};
+
+    var op1 = {p : ['gadgets', newGadgetId],
+               oi : newGadget};
+
+    var op2 = {p : ['gadgetsOrder', 0],
+               li : newGadgetId};
+
+    dashboardModel.submitOp([op1, op2]);
   }
 
   this.createDataSet = function(name, source, query, success, error, staticData, existingRecords){
@@ -372,18 +420,11 @@ UW.Dashboard = function(_id, container, dashboardUrl){
   
   this.inflateState = function(dashboardState, success, error) {  
     var newGadget;
-    var newGadgetModel;
     var gadgetInstanceInfo;
     var loadGadgets = _.bind(function(){ 
       for(var i=0; i < dashboardState.gadgetsOrder.length; ++i){
         gadgetInstanceInfo = dashboardState.gadgets[dashboardState.gadgetsOrder[i]];
-        newGadgetModel = new UW.GadgetModel(gadgetInstanceInfo.state);
-        newGadget = new UW.Gadget({model: newGadgetModel});
-        newGadget.id = gadgetInstanceInfo.id;
-        newGadget.gadgetInfoId = gadgetInstanceInfo.gadgetInfoId;    
-        newGadget.dashboard = this;
-        newGadget.dashboardModel = dashboardModel;
-        newGadget.url = '/gadgets/' + gadgetsInfo[newGadget.gadgetInfoId].fileName;
+	newGadget = this.makeGadgetInstance(gadgetInstanceInfo);
         gadgets[newGadget.id] = newGadget;
         this.loadedGadgets++;
       }

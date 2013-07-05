@@ -74,6 +74,7 @@ var init = false;
 
 // Gadget intialization
 gadget.init = function(callback){
+  gadget.update();
   gadget.onNotification('dataSetChanged', gadget.update);  
   
   $("#checkVerboseInfo").change( function(){

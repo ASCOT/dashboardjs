@@ -444,17 +444,26 @@ div.closePopUp{
   background-size: 100%;   
 }
 
-#popUp {
+#gadgetPopUp {
   position:absolute;
-  background-color: white;
-  width: 500px;
-  height: 300px;
+  background: #b3adc6;
+  width: 960px;
+  height: 490px;
   z-index: 9002; 
   border: 4px solid rgba(0, 0, 0, 1);
   border-radius: 5px;
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px; 
   padding: 5px;
+}
+
+.appendGadgets {
+  display: none;
+  position: absolute;
+  right: 200px;
+  top: 200px;
+  height: 200px;
+  width: 200px;
 }
 
 #tabsBar{
@@ -508,3 +517,47 @@ div.closePopUp{
   -moz-border-radius: 0px 0px 5px 5px;
   border-radius: 0px 0px 5px 5px;
 }
+
+#gadgetsList{
+  margin-top: 25px;
+  margin-bottom: 10px;
+  height: 370px;
+  overflow: auto;
+  width: 100%;
+}
+
+#gadgetsList li{
+  padding-bottom: 10px;
+  padding-left: 5px;
+  margin-bottom: 10px;
+  margin-right: 10px;
+  
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  
+}
+
+#gadgetsList li:hover{
+
+  background: #c4bedd;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+}
+
+#gadgetsList input{
+  padding-left: 5px;
+}
+
+#gadgetsList label{
+  font-size: 15px;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
