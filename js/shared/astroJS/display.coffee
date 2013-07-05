@@ -256,7 +256,7 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 		
 	pixToScreen = (xPix, yPix) ->
 		# Correct y coordinate for rectangular images
-		yPix += (fitsHeight-fitsWidth)/2
+		yPix -= (fitsHeight-fitsWidth)/2
 
 		imgViewPixRatioWidth = (2/scale)/viewportWidth	# Image pixels per screen pixel
 		imgViewPixRatioHeight = (2/scale)/viewportHeight
