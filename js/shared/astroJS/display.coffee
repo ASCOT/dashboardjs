@@ -250,9 +250,14 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 		cursorXNative = ((xCursor+((currentImgWidth-viewportWidth)/2)) / viewportWidth / scale * 2) - imgShiftX
 		cursorYNative = ((yCursor+((currentImgHeight-viewportHeight)/2)) / viewportHeight / scale * 2) + imgShiftY
 		
+		# Correct y coordinate for rectangular images
+		cursorYNative += (fitsHeight-fitsWidth)/2
 		return (x: cursorXNative, y: cursorYNative)
 		
 	pixToScreen = (xPix, yPix) ->
+		# Correct y coordinate for rectangular images
+		yPix += (fitsHeight-fitsWidth)/2
+
 		imgViewPixRatioWidth = (2/scale)/viewportWidth	# Image pixels per screen pixel
 		imgViewPixRatioHeight = (2/scale)/viewportHeight
 		originalScale = (2/fitsWidth)
