@@ -83,6 +83,10 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 		data.data = new Float32Array(fitsWidth * fitsHeight)
 		
 		data.getFrame()
+		# WebGL doesn't like NaN and infinite pixel values. Set these to 0 instead
+		for i, index in data.data
+			if !isFinite(i)
+				data.data[index] = 0
 		data.getExtremes()
 		
 	setupWebGL = ->
