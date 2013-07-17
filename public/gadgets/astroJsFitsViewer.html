@@ -70,6 +70,7 @@ var polyCreateList = []
 var selectedDataSet;
 var selectedDataSetId = -1;
 var fitsHeader;
+var sciDBURLs = []
 
 // Canvases and attributes
 var display;
@@ -91,15 +92,46 @@ gadget.loadState = function(state){
 		savedImagePath = state.imagePath;
 		if (state.savedDataSetId !== undefined)
 			selectedDataSetId = state.savedDataSetId;
-	}
+		if (state.sciDBURLs) {
+                        sciDBURLs = state.sciDBURLs
+                        updateSciDBSelectBox();
+                }
+        }
+	
 }
 
 gadget.init = function(finishedLoading){
 	initViewer();
 	gadget.update = function() {};
 	gadget.onNotification('dataSetChanged', dataSetChanged);
+	gadget.onNotification('loadImageURL', handleSciDBResponse);
   finishedLoading();
 };
+
+function handleSciDBResponse(path) {
+  sciDBURLs.push(path);
+  gadget.setState({sciDBURLs: sciDBURLs});
+  updateSciDBSelectBox();
+}
+
+function updateSciDBSelectBox() {
+  var urlListSelect = $("#sciDBURLSelect");
+  $("#sciDBURLSelect").empty();
+  var firstEntry = "--Select a SciDB image"
+  $("#sciDBURLSelect").append($("<option />").val(firstEntry).text(firstEntry));
+  for (i in sciDBURLs) { 
+    $("#sciDBURLSelect").append($("<option />").val(sciDBURLs[i]).text(sciDBURLs[i]));
+    $("#sciDBURLSelect option:first-child").attr("selected", "selected");
+    $("#sciDBURLSelect").change(function() {
+      if ($("#sciDBURLSelect option:selected").val() !== firstEntry)
+        imageFromUrl($("#sciDBURLSelect option:selected").val());
+    });
+  }
+  if (sciDBURLs.length > 0) {
+    $("#sciDBSelect").show();
+    gadget.resize();
+  }
+}
 
 // Initalize the fits viewer, called when the gadget is initalized
 var initViewer = function() {
@@ -118,17 +150,17 @@ require(config, ['canvasAnnotator', 'cs!/astroJS/display'], function(canvasAnnot
     initHTMLControls();
     
     $('#dropbox').on("dragenter", noopHandler);
-		$('#dropbox').on("dragexit", noopHandler);
-		$('#dropbox').on("dragover", noopHandler);
+    $('#dropbox').on("dragexit", noopHandler);
+    $('#dropbox').on("dragover", noopHandler);
     $('#canvasArea').on('mousedown', handleMousedown);
-		$('#canvasArea').on('mouseup', handleMouseup);
-		$('#canvasArea').on('mousemove', handleMousemove);
-		$('#canvasArea').on('mouseout', handleMouseout);
-		$('#display').on('mousewheel', handleMousewheel);
+    $('#canvasArea').on('mouseup', handleMouseup);
+    $('#canvasArea').on('mousemove', handleMousemove);
+    $('#canvasArea').on('mouseout', handleMouseout);
+    $('#display').on('mousewheel', handleMousewheel);
 		
-		// Bring up an existing image if one is saved to the dashboard state
-		if (savedImagePath != undefined)
-			imageFromUrl(savedImagePath);
+    // Bring up an existing image if one is saved to the dashboard state
+    if (savedImagePath != undefined)
+        imageFromUrl(savedImagePath);
 
     // fits.onHoverPixelChanged = function(pixelInfo){
     //   var x = document.getElementById("xCoordinate");
@@ -147,23 +179,23 @@ require(config, ['canvasAnnotator', 'cs!/astroJS/display'], function(canvasAnnot
 // the display canvas is the surface onto which the other canvases are displayed
 var initCanvases = function() {
 	display = document.getElementById('display');
-  var canvasArea = document.getElementById('canvasArea');
+	var canvasArea = document.getElementById('canvasArea');
 	
-	display.width = canvasArea.offsetWidth;
-	display.height = canvasArea.offsetHeight;
-  displayContext = display.getContext('2d');
-  displayWidth = display.width;
-  displayHeight = display.height;
+    display.width = canvasArea.offsetWidth;
+    display.height = canvasArea.offsetHeight;
+    displayContext = display.getContext('2d');
+    displayWidth = display.width;
+    displayHeight = display.height;
   
-  annotatorCanvas = document.createElement('canvas');
-  annotatorCanvas.setAttribute('width', displayWidth);
-  annotatorCanvas.setAttribute('height', displayHeight);
-  editCanvas = document.createElement('canvas');
-  editCanvas.setAttribute('width', displayWidth);
-  editCanvas.setAttribute('height', displayHeight);
-  editContext = editCanvas.getContext('2d');
-  editContext.fillStyle = "white";
-  editContext.globalAlpha = 0.5;
+    annotatorCanvas = document.createElement('canvas');
+    annotatorCanvas.setAttribute('width', displayWidth);
+    annotatorCanvas.setAttribute('height', displayHeight);
+    editCanvas = document.createElement('canvas');
+    editCanvas.setAttribute('width', displayWidth);
+    editCanvas.setAttribute('height', displayHeight);
+    editContext = editCanvas.getContext('2d');
+    editContext.fillStyle = "white";
+    editContext.globalAlpha = 0.5;
 }
 
 // Send a file object to the FITS parser to be displayed
@@ -187,10 +219,11 @@ var renderFile = function(file) {
 
 // Makes an AJAX request through the server and sends the result to the FITS parser to be displayed
 var imageFromUrl = function(path) {
+    if (path == "None")
+		return;
+	
 	$('#init').hide();
 	gadget.resize();
-	if (path == "None")
-		return;
 		
 	// Send an http response to the FITS parser to be displayed
 	var renderImage = function(response) {
@@ -236,8 +269,7 @@ var renderSuccess = function(){
 	imageDimensions = {width: fitsHeader.get("NAXIS1")[1], height: fitsHeader.get("NAXIS2")[1]};
 	var rat = imageDimensions.width/imageDimensions.height;
 	var canvasWidth = $('#dropbox').width();
-	var canvasHeight = $('#dropbox').height();
-	$('#dropbox').height(canvasWidth);
+	$('#dropbox').height(canvasWidth*rat);
 	
 	displayWidth = $('#display').width();
 	displayHeight = $('#display').height();
@@ -320,7 +352,6 @@ var selectAnnotations = function(start, end) {
 		return;
 	setTimeout(function() { selectedDataSet.setRecords({'color': colorName}, idsToColor); }, .1);
 }
-
 // If a dataset is selected, sync the color of the annotations up with the 
 // color of the points in the dataset
 var updateSelectedPoints = function() {
@@ -416,6 +447,18 @@ var finishDrag = function(e) {
 													 		 'width': end.x-start.x, 'height': end.y-start.y, 
 															 'label': "rect"});
  			document.getElementById("annoSelect").add(new Option("rect", "0"), null);
+ 			
+ 			console.log(wcs.wcsobj.absPixY);
+ 			console.log(fitsHeader.get("NAXIS2")[1]);
+ 			console.log(Math.min(fitsHeader.get("NAXIS2")[1]-start.y,fitsHeader.get("NAXIS2")[1]-end.y));
+ 			console.log(Math.abs(end.y-start.y))
+ 			
+ 			gadget.notify('queryBoundsChanged', {
+ 			        'x': wcs.wcsobj.absPixX+start.x, 
+ 			        'y':wcs.wcsobj.absPixY+Math.min(fitsHeader.get("NAXIS2")[1]-start.y,fitsHeader.get("NAXIS2")[1]-end.y), 
+ 			        'height': Math.abs(end.y-start.y), 
+ 			        'width': Math.abs(end.x-start.x)
+ 			});
 		}
 		else if (selectedAnnoType == ANNO_TYPE.CIRCLE) {
 			annotator.addCircleRegion({'xPos': start.x, 'yPos': start.y, 'radius': Math.abs(end.x-start.x), label: ["another"]});
@@ -811,6 +854,10 @@ var addDataSetPoints = function() {
 					or choose a remote file:
 					<select id="sampleImageSelect"></select><br>
 					<input type="button" id="fetchURL" value="Fetch" style="padding: 3px"><input id="imageURL" value="From URL" size="50">
+				<div id="sciDBSelect" style="display: none; padding: 5px">
+                                                SciDB Image URLs:
+                                                <select id="sciDBURLSelect" style="margin: 0px"></select>
+                                </div>
 				</div>
 				<table id="upperControls" style="display: none; width: 100%">
 					<tc>
@@ -883,3 +930,4 @@ var addDataSetPoints = function() {
 </body>
 
 </html>
+
