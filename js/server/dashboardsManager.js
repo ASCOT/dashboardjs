@@ -120,7 +120,7 @@ module.exports = function(app, model) {
     var newDashboard = {
         author: 'UW',
         numberOfColumns: 2,
-        gadgetsOrder : [],  
+	layoutOrder: {},
         gadgets: {},
         dataSets: {},
         comments: []
@@ -145,6 +145,8 @@ module.exports = function(app, model) {
     };
       
     // Expand list of gadgets  
+    var putInLeft = true;
+    var paneIndex = 0;
     for(id in gadgets){
       if (gadgets.hasOwnProperty(id)) {
         i = gadgets[id].number;
@@ -156,7 +158,10 @@ module.exports = function(app, model) {
             newGadget['state'] = gadgets[id].state;
           }
           newDashboard.gadgets[newGadget.id] = newGadget;
-          newDashboard.gadgetsOrder.push(newGadget.id);
+	  var col = putInLeft ? 0 : 1;
+	  putInLeft = !putInLeft;
+          newDashboard.layoutOrder[newGadget.id] = {parentColumnId: col, parentPaneId: paneIndex};
+	  paneIndex++;
         }
       }
     }

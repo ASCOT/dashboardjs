@@ -293,6 +293,8 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 		dataMin = hdu.data.min
 		dataMax = hdu.data.max
 		
+		console.log hdu.data
+
 		if stretch is 'linear'
 			return (minimum: dataMin, maximum: dataMax)
 		else if stretch is 'logarithm'

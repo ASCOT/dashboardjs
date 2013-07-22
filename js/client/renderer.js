@@ -8,7 +8,7 @@ var UW = UW || {};
 UW.Renderer = function(pTarget, numberOfColumns){
 
   var target = pTarget;
-  var layoutManager = UW.layoutManager();	
+  var layoutManager = UW.tabbedLayoutManager();	
   layoutManager.setRootElement(target);
   if(numberOfColumns){
     layoutManager.setNumColumns(numberOfColumns);
@@ -23,10 +23,10 @@ UW.Renderer = function(pTarget, numberOfColumns){
   }
 
   this.removeGadget = function(gadgetId, callback){
-    layoutManager.removeElement(gadgetId);
+    layoutManager.removeGadget(gadgetId);
   };
-  
-  this.renderGadget = function(gadget, callback){
+
+  this.renderGadget = function(gadget, layoutObj, callback){
 
     var iframeContainer = document.createElement('div');
     var gadgetFrame = document.createElement('div');
@@ -55,21 +55,15 @@ UW.Renderer = function(pTarget, numberOfColumns){
     iframeContainer.className = 'gadgetCanvas'; 
     iframeContainer.appendChild(gadgetIframe);
 
-    var closeGadget = document.createElement('div');
-    closeGadget.id = 'closeGadget';
-    var clickClose = function() {gadget.dashboard.removeGadget(gadget.id);};
-    closeGadget.onclick = clickClose;
-
     gadgetFrame.className = 'gadgetFrame';
-    gadgetFrame.appendChild(closeGadget);
     gadgetFrame.appendChild(iframeContainer);
-    
-    layoutManager.addElement(gadgetFrame);
-    
+
     gadget.resize = function() { 
       autoResize(this.id); 
     };
-    gadgetIframe.contentWindow.gadget = gadget;
+
+    layoutManager.addGadget(gadgetFrame, gadget, layoutObj);
     
+    gadgetIframe.contentWindow.gadget = gadget;
   };
 };

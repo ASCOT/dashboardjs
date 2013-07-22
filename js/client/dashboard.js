@@ -27,6 +27,7 @@ UW.Dashboard = function(_id, container, dashboardUrl){
   var renderer;
   // List of gadgets
   var gadgets = {}; 
+  var layoutOrder = {};
   // Represents the state of the dashboard that will be saved to and load from the server
   
   var loadedDataSets = {};
@@ -121,53 +122,83 @@ UW.Dashboard = function(_id, container, dashboardUrl){
       var communications = bayeuxClient;
       var modifiers;
       if (communications) {
-        if (op[0].p[0] === 'gadgets') {
-	  if (op[0].p[2] === 'state') {
-	    gadgets[op[0].p[1]].update(op[0].oi);
+	for (index in op) {
+	  if (op[index].p[0] === 'gadgets') {
+	    // Update gadget on state change
+	    if (op[index].p[2] === 'state') {
+	      gadgets[op[index].p[1]].update(op[index].oi);
+	    }
+	    else {
+	      // Remove a gadget
+	      if (op[index].od) {
+		gadgets[op[index].od.id].close();
+		delete gadgets[op[index].od.id];
+	      }
+
+	      // Add a new gadget
+	      if (op[index].oi) {
+		var docGadgetObj = op[index].oi
+		var newGadget = this.makeGadgetInstance(docGadgetObj);
+		gadgets[newGadget.id] = newGadget;
+	      }
+	    }
+
 	  }
-	  else if (op[0].oi) {
-	    var docGadgetObj = op[0].oi
-	    var newGadget = this.makeGadgetInstance(docGadgetObj);
-	    gadgets[newGadget.id] = newGadget;
-	    renderer.renderGadget(gadgets[newGadget.id],function() {});
+
+	  if (op[index].p[0] === 'layoutOrder') {
+	    var gadgetId = op[index].p[1];
+	    // Remove an element from the layout
+	    if (op[index].od) {
+	      renderer.removeGadget(gadgetId, function() {});
+	      delete layoutOrder[gadgetId];
+	    }
+	    // Add an element to the layout
+	    if (op[index].oi) {
+	      layoutOrder[gadgetId] = op[index].oi;
+	      renderer.renderGadget(gadgets[gadgetId], layoutOrder[gadgetId], function() {});
+	    }
 	  }
-	  else if (op[0].od) {
-	    renderer.removeGadget(op[0].od.id);
-	    gadgets[op[0].od.id].close();
-	    delete gadgets[op[0].od.id];
+
+	  // Add a comment to the comments page
+	  if (op[index].p[0] === 'comments') {
+	    this.notify("commentPublished", op[index].li, { 'self' : true });
+	  }
+	  if (op[index].p[0] === 'dataSets') {
+	    
+	    // Remove a dataset
+	    if (!op[index].oi && op[index].p.length === 2) {
+	      removeDataSet(op[index].p[1]);
+	      return;
+	    }
+	    if (op[index].p[2] === 'modifiers') {
+
+	      // Apply modifiers to a dataset
+	      if (op[index].li) {
+		loadedDataSets[op[index].p[1]].applyModifiers([op[index].li]);
+		return;
+	      }
+
+	      // Undo dataset modifiers to original state
+	      // The original state is not stored, so we have to explicitly color the points grey
+	      else if (op[index].ld) {
+		var modColor = {"field": "color", "grey": []};
+		var modVis = {"field": "visible", "true": []};
+		var ds = loadedDataSets[op[index].p[1]];
+		for (var j = 0; j < ds.records.length; j++) { 
+		  modColor['grey'].push(j);
+		  modVis['true'].push(j);
+		}
+		ds.applyModifiers([modColor, modVis], false);
+	      }
+	      return;
+	    }
+	    if (loadedDataSets[op[index].oi.id] === undefined) {
+	      this.fetchDataSet(op[index].oi.url);
+	      return;    
+	    }
 	  }
 	}
-        if (op[0].p[0] === 'comments') {
-          this.notify("commentPublished", op[0].li, { 'self' : true });
-        }
-        if (op[0].p[0] === 'dataSets') {
-          if (!op[0].oi && op[0].p.length === 2) {
-            removeDataSet(op[0].p[1]);
-            return;
-          }
-          if (op[0].p[2] === 'modifiers') {
-            if (op[0].li) {
-              loadedDataSets[op[0].p[1]].applyModifiers([op[0].li]);
-              return;
-            }
-            else if (op[0].ld) {
-              var modColor = {"field": "color", "grey": []};
-              var modVis = {"field": "visible", "true": []};
-              var ds = loadedDataSets[op[0].p[1]];
-              for (var i = 0; i < ds.records.length; i++) { 
-                modColor['grey'].push(i);
-                modVis['true'].push(i);
-              }
-              ds.applyModifiers([modColor, modVis], false);
-            }
-            return;
-          }
-          if (loadedDataSets[op[0].oi.id] === undefined) {
-            this.fetchDataSet(op[0].oi.url);
-            return;    
-          }
-        }
-      }
+      } 
     }, this);
 
     var state;
@@ -236,7 +267,7 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     var gadgetLoaded = _.bind(function() { var finished = callback; this.gadgetLoaded(finished) }, this);
     _.each(gadgets, 
             _.bind( function (modelData, index){ 
-              renderer.renderGadget(gadgets[modelData.id], gadgetLoaded);
+              renderer.renderGadget(gadgets[modelData.id], layoutOrder[modelData.id], gadgetLoaded);
             }, this)
       );  			
   };
@@ -249,35 +280,48 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     dashboardModel.redo();
   }
 
-  this.removeGadget = function(gadgetId, success) {
+  this.moveGadget = function(gadgetId, newPaneId, newColumnId) {
+    // Find the gadget in the gadget list
+    var serverGadgets = dashboardModel.at('gadgets').get();
+    var oldLayoutObj = layoutOrder[gadgetId];
+    
+    var newLayoutObj = { parentColumnId: newColumnId, parentPaneId: newPaneId };
+    var op1 = {p : ['layoutOrder', gadgetId],
+               od : oldLayoutObj,
+	       oi : newLayoutObj };
+
+    dashboardModel.submitOp([op1]);
+  }
+
+  this.removeGadget = function(gadgetId) {
     // Find the gadget in the gadget list
     var serverGadgets = dashboardModel.at('gadgets').get();
     var gadget = serverGadgets[gadgetId];
     var op1 = {p : ['gadgets', gadgetId],
                od : gadget};
-    // Find the gadget index in the gadgets order list
-    var list = dashboardModel.at('gadgetsOrder').get();
-    var index = list.indexOf(gadgetId);
-    var op2 = {p : ['gadgetsOrder', index],
-               ld : gadgetId};
+    
+    var layoutObj = layoutOrder[gadgetId];
+    var op2 = {p : ['layoutOrder', gadgetId],
+	       od : layoutObj};
 
     dashboardModel.submitOp([op1, op2]);
   }
 
-  this.addGadget = function(gadgetName, success) {
+  this.addGadget = function(gadgetName, columnId, paneId) {
     // Make sure we create the newest instance of the gadget
     var index = 1;
     while (gadgets.hasOwnProperty(gadgetName+index.toString()))
-    index++;
+      index++;
     
     var newGadgetId = gadgetName+index.toString();
     var newGadget = {gadgetInfoId: gadgetName, id: newGadgetId};
 
+    var layoutObj = { parentColumnId: columnId, parentPaneId: paneId };
+
     var op1 = {p : ['gadgets', newGadgetId],
                oi : newGadget};
-
-    var op2 = {p : ['gadgetsOrder', 0],
-               li : newGadgetId};
+    var op2 = {p : ['layoutOrder', newGadgetId],
+               oi : layoutObj};
 
     dashboardModel.submitOp([op1, op2]);
   }
@@ -422,8 +466,9 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     var newGadget;
     var gadgetInstanceInfo;
     var loadGadgets = _.bind(function(){ 
-      for(var i=0; i < dashboardState.gadgetsOrder.length; ++i){
-        gadgetInstanceInfo = dashboardState.gadgets[dashboardState.gadgetsOrder[i]];
+    layoutOrder = dashboardState.layoutOrder;
+      for(i in dashboardState.gadgets){
+        gadgetInstanceInfo = dashboardState.gadgets[i];
 	newGadget = this.makeGadgetInstance(gadgetInstanceInfo);
         gadgets[newGadget.id] = newGadget;
         this.loadedGadgets++;
