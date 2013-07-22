@@ -82,13 +82,6 @@ var gadgets = {
     description: "Displays Timeseries graphs, connected with astroJsFitsViewer to get boundaries from SciDB CoAdds",
     author: "Matthew Moyers - mmoyers@gmail.com",
     version: "0.1"
-  },
-  tabbedFits: { 
-    name: "Tabbed Astro Fits Viewer",
-    fileName: "tabbedAstroJsFitsViewer.html",
-    description: "",
-    author: "",
-    version: "0.1"
   }
   /*
   fitsViewer_PDR: { 
