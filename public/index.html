@@ -14,7 +14,7 @@
 <script src="/gfx/gfx.js" type="text/javascript" charset="utf-8"></script>
 <script src="/gfx/gfx.flip.js" type="text/javascript" charset="utf-8"></script>
 <script src="/gfx/gfx.cube.js" type="text/javascript" charset="utf-8"></script>
-<script src="/jquery.postmessage.min.js" type="text/javascript"></script>
+
 <script src="/xhr.js" type="text/javascript" charset="utf-8"></script>
 
 <script type="text/javascript">
@@ -110,25 +110,6 @@ $(".circle.counter").click(function() {
 });
  
 }
-
-// receive resize commands
-window.addEventListener( "message",
-      function (e) {
-            alert(e.data);
-      },
-      false
-  );
-
-
-$.receiveMessage(function(e) {
-    // Get the height from the passsed data.
-    var h = Number( e.data.replace( /.*if_height=(\d+)(?:&|$)/, '$1' ) );
-    
-    if ( !isNaN( h ) && h > 0 && h !== if_height ) {
-        // Height has changed, update the iframe.
-        iframe.height( if_height = h );
-    }
-});
 
 </script>
 

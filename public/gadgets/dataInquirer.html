@@ -77,7 +77,7 @@ var boundSources = [];
 
 // create HR object
 gadget.init = function(finishedLoading){
-	gadget.update = function(){};
+	gadget.update = gadget.loadState; 
   gadget.onNotification('viewBoundsChanged', viewBoundsUpdate);
 	
 	$("#divCatalog").hide();
@@ -147,9 +147,9 @@ var createDataSet = function() {
   var query = $("#txtQueryString").val(); 
   var dataSource = $("#selectCatalog option:selected").text();
   
-  gadget.setState({ currentQueryText: query});
-  gadget.setState({ selectedCatalog: $("#selectCatalog option:selected").text()});
-  gadget.setState({ datasetName: $("#txtDatasetName").val()});
+  gadget.setState({ 'currentQueryText': query, 
+                    'selectedCatalog': $("#selectCatalog option:selected").text(),
+                    'datasetName': $("#txtDatasetName").val()});
 
   var createDataSetSuccess = function(newDataSetId) {
     //var numberOfRows = newDataSet.length();
