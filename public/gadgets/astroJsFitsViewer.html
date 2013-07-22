@@ -383,6 +383,10 @@ var stretchSelectChange = function() {
 	var el = document.getElementById("stretchSelect");
 	var newStretch = el.options[el.selectedIndex].value;
 	astroJsFits.changeStretch(newStretch);
+	var lower = parseInt($("#scalingSlider").slider("values", 0));
+        var upper = parseInt($("#scalingSlider").slider("values", 1));
+	astroJsFits.changeExtremes(lower, upper);
+	draw();
 }
 
 var dataSetSelectChange = function() {
