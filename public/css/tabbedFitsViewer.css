@@ -1,0 +1,131 @@
+canvas {
+  cursor: crosshair;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+}
+
+svg,canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+canvas:active {
+  cursor: move;
+}
+
+input{
+	margin: 0;
+	padding: 0;
+}
+#title{
+ font-weight: bold;
+ font-size: 50px;
+}
+#slogan{
+ font-size: 30px; 
+ vertical-align: middle;
+ line-height: 2;
+}
+#logo{
+ position: absolute;
+ top: 0px;
+ left: 0px;
+ background-image: url(../images/logo.png);
+ width: 399px;
+ height: 252px;
+ z-index: -1; 
+}
+#wrapper{ 
+	position: relative;
+  width: auto;    
+  height: auto; 
+  margin: auto; 
+  padding: 10px;
+}
+.canvas{
+  display: block;
+  background-color: #F0EFD1;
+  border-radius: 5px;
+  padding: 10px;
+  width: auto;
+  height: 480px;
+  border: 2px solid black;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  text-align: center;
+  position: relative;
+}
+.annoControlsContainer{
+  display: block;
+  background-color: #F0EFD1;
+  border-radius: 5px;
+  padding: 10px;
+  width: auto;
+  height: 100%;
+  border: 2px solid black;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  text-align: left;
+}
+.infoAndSliders{
+  display: block;
+  background-color: #F0EFD1;
+  border-radius: 5px;
+  padding: 10px;
+  width: auto;
+  height: 270px;
+  border: 2px solid black;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  text-align: left;
+}
+.infobox{
+  height: 600px;
+  width: 340px;
+  float: right;
+}
+.canvas span {
+  display: inline-block;
+  margin-top: 200px;
+  font: 22px 'Lucida Grande', 'Helvetica Neue', Arial, sans-serif;
+}
+.fileChooser{
+	display: block;
+	height: 32px;
+}
+
+.scalingSlider{
+    margin: 10px;
+}
+
+.mouseOverInfo {
+    float: right;
+}
+  
+.ui-slider {
+  position: relative;
+  width: 300px;
+  height: 3px;
+  background: #3F3F3F;
+  margin-top: 8px;
+}
+
+.ui-slider-handle {
+  cursor: default;
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #DFDFDF;
+  background: -moz-linear-gradient(#EFEFEF, #BFBFBF);
+  background: -webkit-gradient(linear, left top, left bottom, from(#EFEFEF), to(#BFBFBF));
+  border: 1px solid #3F3F3F;
+  margin: -5px 0 0 -7px;
+  border-radius: 7px;
+  -moz-border-radius: 7px;
+  -webkit-border-radius: 7px;
+}
+
+.ui-state-active { background: white; }
+.ui-state-focus { outline: none; }

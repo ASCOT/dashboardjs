@@ -52,15 +52,14 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     var modifiers;
     if ((dashboardModel.at('dataSets').get())[id]) {
       modifiers = (dashboardModel.at('dataSets').get())[id].modifiers || [];
-      loadedDataSets[id].applyModifiers(modifiers);     
+      loadedDataSets[id].applyModifiers(modifiers);
     }
     newDataSet.bind('changed', _.bind(function(data) {
       if (data && data.modifiers) {
         for (var i = 0; i < data.modifiers.length; ++i) {
           dashboardModel.submitOp({
             p : ['dataSets', data.id, 'modifiers', 0],
-            li : data.modifiers[i],
-	    ld : dashboardModel.at('dataSets').get()[data.id].modifiers[0]
+            li : data.modifiers[i]
           });
         }
       }
@@ -122,7 +121,13 @@ UW.Dashboard = function(_id, container, dashboardUrl){
       var modifiers;
       if (communications) {
         if (op[0].p[0] === 'gadgets') {
-          gadgets[op[0].p[1]].update(op[0].oi);
+          if (op[0].oi) {
+            gadgets[op[0].p[1]].update(op[0].oi);
+          } else {
+            if (op[0].od) {            
+              gadgets[op[0].p[1]].update(op[0].od);
+            }
+          }
         }
         if (op[0].p[0] === 'comments') {
           this.notify("commentPublished", op[0].li, { 'self' : true });
@@ -135,17 +140,10 @@ UW.Dashboard = function(_id, container, dashboardUrl){
           if (op[0].p[2] === 'modifiers') {
             if (op[0].li) {
               loadedDataSets[op[0].p[1]].applyModifiers([op[0].li]);
-              return;
             }
-            else if (op[0].ld) {
-              var modColor = {"field": "color", "grey": []};
-              var modVis = {"field": "visible", "true": []};
-              var ds = loadedDataSets[op[0].p[1]];
-              for (var i = 0; i < ds.records.length; i++) { 
-                modColor['grey'].push(i);
-                modVis['true'].push(i);
-              }
-              ds.applyModifiers([modColor, modVis], false);
+            if (op[0].ld) {
+              modifiers = (dashboardModel.at('dataSets').get())[op[0].p[1]].modifiers;
+              loadedDataSets[op[0].p[1]].applyModifiers(modifiers);
             }
             return;
           }

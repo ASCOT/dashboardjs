@@ -380,11 +380,6 @@
       this.wcsobj.lonpole = header['LONPOLE'] || 0;
       this.wcsobj.latpole = header['LATPOLE'] || 0;
       this.wcsobj.equinox = header['EQUINOX'] || 2000;
-      
-      this.wcsobj.absPixX = header['ABSPIXX'] || 0;
-      this.wcsobj.absPixY = header['ABSPIXY'] || 0;
-      this.wcsobj.absPixZ = header['ABSPIXZ'] || 0;
-      
       date = new Date();
       this.wcsobj.dateObs = header['DATE_OBS'] || (date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate());
       this.wcsobj.dateObs = header['DATE_OBS'] || ("" + (date.getFullYear()) + "-" + (date.getMonth() + 1) + "-" + (date.getDate()));

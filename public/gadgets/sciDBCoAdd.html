@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Pragma" content="no-cache">
+    <title>Data Inquirer</title>
+    
+    <!-- ASCOT Basic Style Sheets -->
+    <link href="/css/reset.css" rel="stylesheet" type="text/css">
+    <link href="/css/text.css" rel="stylesheet" type="text/css"> 
+    <link href="/css/widgets.css" rel="stylesheet" type="text/css">
+    <style type="text/css">
+    .hidden {
+        display: none;
+    }
+    </style>
+</head>
+<body>
+    <div id="content" class="extraPadding">
+        <h2>SciDB Co-Add</h2>
+        <div style="display: inline-block; ">
+            <div style="float: right; margin-left:20px">
+                <input id="z_scale" type="checkbox" /><span>Sigma Cliping</span><input id="z_value" type="text" style="margin: 0px 0px 0px 30px"/><br />
+                <input id="boundingBox" type="checkbox" onchange="updateQuery()"/><span>Bounding Box</span>
+                <div style="margin: 0px 0px 0px 30px">
+                    <input id="ra_min" type="text" placeholder="ra min" onchange="updateQuery()" style="margin: 0px 0px 0px 3px"/>
+                    <input id="ra_max" type="text" placeholder="ra max" onchange="updateQuery()" style="margin: 0px 0px 0px 3px"/><br />
+                    <input id="dec_min" type="text" placeholder="dec min" onchange="updateQuery()" style="margin: 0px 0px 0px 3px"/>
+                    <input id="dec_max" type="text" placeholder="dec max" onchange="updateQuery()" style="margin: 0px 0px 0px 3px"/>
+                </div>
+            </div>
+            <div style="float: left; ">
+                <div>
+                Table: 
+                    <select id="tableName" style="margin-left: 16px" onchange="updateQuery()">
+                        <option value="CCD">CCD</option>
+                        <option value="CCDF_SAMPLE_SUB">CCDF_SAMPLE_SUB</option>
+                        <option value="CCD_DEMO2">CCD_DEMO2</option>
+                        <option value="CCDNEW">CCDNEW</option>
+                    	<option value="subarray(CCD,0,276750,308750,24,277749,309249)">Q1</option>
+		    </select>
+                </div>
+                <div>
+                Aggerate Function:
+                    <select id="aggFunction" onchange="updateQuery()">
+                        <option value="sum" selected="selected" >sum</option>
+                    </select>
+                </div>
+            </div>
+            
+        </div>
+        <div>
+            <div>
+                <textarea id="txtQueryString" rows="2" style="width : 95%"></textarea>
+            </div>
+            <div>
+                <input id="submitQuery" type="button" value="Submit" />
+                <input id="showQuery" type="button" value="Show Query" onclick="toggle('txtQueryString');"/>
+                <input id="replaceQuery" disabled type="button" value="Grab Query from TimeSeries" onclick="showQueryFromBuffer()"/>
+            </div>
+            <div id="divStatusText" style="display: inline;"></div> 
+        </div>
+    </div>
+</body>
+<script src="http://code.jquery.com/jquery-1.8.1.min.js" type="text/javascript"></script>
+<script src="/util.js" type="text/javascript"></script>
+<script type="text/javascript" src="/astrojs/wcs.js"></script>
+<script type="text/javascript">
+
+var scidbServerAPI = "http://vega.cs.washington.edu:5551/"
+  
+// Status Icons
+var ICON_URL_SELECTED = '/images/targetYellow.png';
+var ICON_URL_DEFAULT = '/images/target.png';
+var ICON_URL_SPINNER = '/images/spinnerSmallWhite.gif';
+var ICON_URL_ERROR = '/images/errorIcon.gif';
+var ICON_URL_SUCCESS = '/images/successIcon.gif';
+
+var myFields = {}
+
+// Gadget State Variables
+var viewportBounds;
+var currentQuery = {};
+var boundSources = [];
+
+var bufferedQuery;
+
+// create HR object
+gadget.init = function(callback) {
+    gadget.update = function(){};
+    
+    gadget.onNotification('queryUpdate', function(json) {
+            bufferedQuery = json['query'];
+            document.getElementById('replaceQuery').disabled = false;
+            console.log("query Updated " + bufferedQuery);
+    });
+    
+    callback();
+}
+
+gadget.saveState = function(){
+  return {}
+};
+
+gadget.loadState = function(state){
+};
+
+function showQueryFromBuffer() {
+    document.getElementById('txtQueryString').value = bufferedQuery;
+}
+
+function toggle(id) {
+    $element = $("#" + id);
+    if($element.hasClass("hidden")) {
+        $element.removeClass("hidden");
+    } else {
+        $element.addClass("hidden");
+    }
+    
+    gadget.resize();
+}
+
+function updateQuery() {
+    var agg = document.getElementById("aggFunction");
+    var agg_text = agg.options[agg.selectedIndex].text;
+    
+    var table = document.getElementById("tableName");
+    var table_text = table.options[table.selectedIndex].value;
+    
+    var subtable_text;
+    
+    if($("#boundingBox").attr("checked") == "checked") {
+        var ra_min = $("#ra_min").attr("value");
+        var dec_min = $("#dec_min").attr("value");
+        var ra_max = $("#ra_max").attr("value");
+        var dec_max = $("#dec_max").attr("value");
+        
+        var stg = {
+            "NAXIS": 2,
+            "CRPIX1": 440250,
+            "CRPIX2": 353595,
+            "CRVAL1": 60,
+            "CRVAL2": 10.8123169635717,
+            "CTYPE1": "RA---STG",
+            "CTYPE2": "DEC--STG",
+            "CD1_1": -0.000055555555,
+            "CD1_2": 0,
+            "CD2_1": 0,
+            "CD2_2": 0.000055555555
+        };
+        var wcs = new WCS.Mapper(stg);
+        
+        // Sky to pixel transformation
+        var sky = [ra_min, dec_min];
+        var pix_min = wcs.coordinateToPixel(sky[0], sky[1]);
+        sky = [ra_max, dec_max];
+        var pix_max = wcs.coordinateToPixel(sky[0], sky[1]);
+        
+        table_text = "subarray(" + table_text + ", 0, " + 
+            parseInt(pix_min.y+247750) + ", " + parseInt(pix_min.x+259750) + ", 24, " + 
+            parseInt(pix_max.y+247750) + ", " + parseInt(pix_max.x+259750) + ")";
+    }
+    
+    document.getElementById('txtQueryString').value = "select " + agg_text +  "(data) from " + table_text + " group by row, col";
+    
+    //document.getElementById('txtQueryString').value = "store(project(aggregate(" + table_text + ", avg(data), stdev(data),row,col),data_avg,data_stdev),T)\n" +
+    //                 + "store(newextrusion(CCD_DEMO_SUB,T,CCD_DEMO_SUB.data <= (T.data_avg + 2 * T.data_stdev) and CCD_DEMO_SUB.data >= (T.data_avg - 2 * T.data_stdev)),temp)";
+
+    
+    //select sum(data) from CCD group by row, col
+    //store(project(aggregate(CCD_DEMO_SUB, avg(data), stdev(data),row,col),data_avg,data_stdev),T)
+}
+
+function showStatus(iconUrl, text) {
+    var statusDiv = $('#divStatusText')[0];
+    text = text || "DataSet Loaded";
+    var status = text; 
+    if (iconUrl !== "") {
+        status = '<img id="imgStatus" style="vertical-align:middle;" src="' + iconUrl + '" /> ' + "<span style='vertical-align:middle;'>" + text + "</span>";
+    } 
+    statusDiv.style.visibility = 'inline';
+    statusDiv.innerHTML = status;
+}
+
+window.onload = function() {
+    $("#ra_min").attr("value", "81.146788");
+    $("#dec_min").attr("value", "-7.1579849");
+    $("#ra_max").attr("value", "81.099268");
+    $("#dec_max").attr("value", "-7.1062816");
+    
+    // Set Up Buttons
+    $('#submitQuery').on("click", function() {
+        var request = {};
+        request['language'] = 'aql';
+        request['query'] =  $('#txtQueryString').attr('value');
+        request['iterative'] = false;
+        request['iteration'] = 0;
+        request['z_scale'] = $("#z_scale").attr("checked") == "checked";
+        request['z_value'] = $("#z_value").attr("value");
+        
+        console.log('Sending Request:' + JSON.stringify(request));
+        
+        $.ajax({
+            url: scidbServerAPI + "process/query/fits/",
+            type: "POST",
+            contentType: "application/json",
+            dataType: "jsonp",
+            data: request,
+            beforeSend: function() { showStatus(ICON_URL_SPINNER, "Processing Query..."); gadget.resize();},
+            error: function() { showStatus(ICON_URL_ERROR, "A network errored occured while processing the query."); },
+            success: function(result) {
+                console.log("Received Result:");
+                console.log(result);
+                if (result['status'] === 'OK') {
+                    showStatus(ICON_URL_SUCCESS, "Query Complete.");
+                    
+                    gadget.notify('loadImageURL', scidbServerAPI + "get/" + result['fits_file']);
+                    
+                } else {
+                    showStatus(ICON_URL_ERROR, "An errored occured while processing the query.");
+                }
+            }
+        });
+    });    
+    
+    toggle('txtQueryString');
+    updateQuery();  
+}; // End of onload
+</script>
+</html>
