@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Pragma" content="no-cache">
+    <title>Data Inquirer</title>
+    
+    <!-- ASCOT Basic Style Sheets -->
+    <link href="/css/reset.css" rel="stylesheet" type="text/css">
+    <link href="/css/text.css" rel="stylesheet" type="text/css"> 
+    <link href="/css/widgets.css" rel="stylesheet" type="text/css"> 
+    
+    <style type="text/css">
+        svg {
+          font-size: 10px;
+        }
+        
+        .axis {
+          shape-rendering: crispEdges;
+        }
+        
+        .axis path, .axis line {
+          fill: none;
+          stroke-width: .5px;
+        }
+        
+        .x.axis path {
+          stroke: #000;
+        }
+        
+        .x.axis line {
+          stroke: #fff;
+          stroke-opacity: .5;
+        }
+        
+        .y.axis line {
+          stroke: #ddd;
+        }
+        
+        path.line {
+          fill: none;
+          stroke: #000;
+          stroke-width: .5px;
+        }
+        
+        rect.pane {
+          cursor: move;
+          fill: none;
+          pointer-events: all;
+        }
+        
+    </style>
+    
+</head>
+<body>
+    <div id="content" class="extraPadding">
+        <h2>Time Series</h2>
+        <div id="divQueryBox" style="width : 96%; margin-top: 10px;">
+            Query String: <input onclick="generateLightCurveQuery();" type="button" value="Generate Query" />
+            <div>
+                <textarea id="txtQueryString" rows="2" style="width : 100%"></textarea>
+            </div>
+        </div>
+        <div>
+            <input onclick="executeTimeSeries();" type="button" value="Submit" style="margin-left: 0px"/>
+            <div id="divStatusText" style="display: inline;">
+            </div> 
+        </div>
+        <div id="timeseries_plot">
+        </div>
+    </div>
+</body>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js" type="text/javascript"></script>
+<script src="/util.js" type="text/javascript"></script>
+<script src="/highcharts.src.js" type="text/javascript"></script>
+<script src="/jquery.postmessage.min.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+
+var scidbServerAPI = "http://vega.cs.washington.edu:5551/"
+  
+// Status Icons
+var ICON_URL_SELECTED = '/images/targetYellow.png';
+var ICON_URL_DEFAULT = '/images/target.png';
+var ICON_URL_SPINNER = '/images/spinnerSmallWhite.gif';
+var ICON_URL_ERROR = '/images/errorIcon.gif';
+var ICON_URL_SUCCESS = '/images/successIcon.gif';
+
+var myFields = {}
+
+// Gadget State Variables
+var viewportBounds;
+var currentQuery = {};
+var boundSources = [];
+
+var bounds;
+var chart;
+
+gadget.init = function(callback){
+    gadget.update = function(){};
+    
+    bounds = new Object();
+    bounds.x = 0;
+    bounds.y = 0;
+    bounds.height = 0;
+    bounds.width = 0;
+    
+    gadget.onNotification('queryBoundsChanged', function(rectangle) {
+            bounds.x = Math.round( rectangle['x'] );
+            bounds.y = Math.round( rectangle['y'] );
+            bounds.height = Math.round( rectangle['height'] );
+            bounds.width = Math.round( rectangle['width'] );
+            
+            console.log(rectangle);
+    });
+    
+    callback();
+}
+
+gadget.saveState = function(){
+  return {}
+};
+
+gadget.loadState = function(state){
+};
+
+var test_result = {
+    "status": "OK", 
+    "data": {
+        "data": [{"attrs.sum": 7.2778480728156865, "dims.time": 0}, {"attrs.sum": 10.353321023285389, "dims.time": 1}, {"attrs.sum": 0.5902700820588507, "dims.time": 3}, {"attrs.sum": -11.706432002130896, "dims.time": 4}, {"attrs.sum": -10.979982542805374, "dims.time": 5}, {"attrs.sum": 9.779655086109415, "dims.time": 6}, {"attrs.sum": 3.9463298295158893, "dims.time": 7}, {"attrs.sum": -0.6161024236644153, "dims.time": 8}, {"attrs.sum": -8.951704198494554, "dims.time": 9}, {"attrs.sum": -9.406752100214362, "dims.time": 12}, {"attrs.sum": -4.121807849616744, "dims.time": 13}, {"attrs.sum": -26.786204288946465, "dims.time": 14}, {"attrs.sum": -4.484482452273369, "dims.time": 15}, {"attrs.sum": -3.316492626850959, "dims.time": 16}, {"attrs.sum": 1.8450488892849535, "dims.time": 17}, {"attrs.sum": -0.6729967319406569, "dims.time": 19}, {"attrs.sum": 6.372211468522437, "dims.time": 20}, {"attrs.sum": -7.989161420147866, "dims.time": 21}, {"attrs.sum": -12.57854351052083, "dims.time": 22}, {"attrs.sum": 3.9247247973107733, "dims.time": 23}, {"attrs.sum": 1.5312600695178844, "dims.time": 24}], 
+        "names": [{"name": "attrs.sum", "isattr": true}, {"name": "dims.time", "isattr": false}], 
+        "types": {"attrs.sum": "double", "dims.time": "int32"},
+        "request": null
+    }
+};
+
+function generateLightCurveQuery() {
+    var genQuery = "select sum(data) from subarray(CCD, 0, " + bounds.y + ", " + bounds.x + " , 24, " + (bounds.y+bounds.height) + ", "  + (bounds.x+bounds.width) + ") group by time";
+    document.getElementById("txtQueryString").value = genQuery;
+}
+
+function generateCoAddQuery() {
+    var query = document.getElementById("txtQueryString").value;
+    var query = query.split("group by")[0];
+    var points = chart.series[0].data;
+    
+    var xpoints = chart.xAxis[0].categories; 
+    console.log(xpoints);
+    var wheres = new Array();
+    for(var i = 0; i < points.length; i++) {
+        var point = points[i];
+        if(point.selected) {
+            wheres.push(" time = " + xpoints[i] + " ");
+        }
+    }
+    
+    if(wheres.length > 0) {
+        query += " where " + wheres.join("or");
+    }
+    
+    return query + " group by row, col";
+}
+ 
+function executeTimeSeries() {
+    var request = { 'query': $('#txtQueryString').attr('value') };
+
+    if($('#afl').attr('checked')) {
+        request['language'] =  'afl';
+    } else {
+    	request['language'] = 'aql';
+    }
+    
+    console.log('Sending Request:' + JSON.stringify(request));
+    
+    $.ajax({
+        url: scidbServerAPI + "process/timeseries/",
+        contentType: "application/json",
+        dataType: "jsonp",
+        data: request,
+        beforeSend: function() { showStatus(ICON_URL_SPINNER, "Processing Time Series..."); },
+        error: function() { showStatus(ICON_URL_ERROR, "A network errored occured while processing the time series."); },
+        success: function(result) {
+            console.log("Received Result:");
+            console.log(result);
+            if (result['status'] === 'OK') {
+                showStatus(ICON_URL_SUCCESS, "Time Series Complete.");
+                draw_timeseries(result['data']);
+                gadget.resize();
+            } else {
+                showStatus(ICON_URL_ERROR, "An errored occured while processing the time series.");
+            }
+        }
+    });
+}
+
+function showStatus(iconUrl, text){
+  var statusDiv = $('#divStatusText')[0];
+  text = text || "DataSet Loaded";
+  var status = text; 
+  if (iconUrl !== "") {
+    status = '<img id="imgStatus" style="vertical-align:middle;" src="' + iconUrl + '" /> ' + "<span style='vertical-align:middle;'>" + text + "</span>";
+  } 
+  statusDiv.style.visibility = 'inline';
+  statusDiv.innerHTML = status;
+}
+
+
+function draw_timeseries(data_json) {
+    var data = data_json['data'];
+    
+    var x_axis = 'time';
+    var x_data = [];
+    var y_axis = 'data';
+    var y_data = [];
+    for (var i=0; i<data.length; i++) {
+        x_data[i] = (data[i]["dims.time"])
+        y_data[i] = (data[i]["attrs.sum"])
+    }
+    
+    console.log(x_data);
+    console.log(y_data);
+    
+    chart = new Highcharts.Chart({
+        chart: {
+            renderTo: 'timeseries_plot',
+            type: 'scatter',
+            marginBottom: 35,
+            events: {
+                selection: function(event) {
+                    // select correct points and reset selection on points not in the box
+                    for (var i = 0; i < this.series[0].data.length; i++) {
+                        var point = this.series[0].data[i];
+                        if (point.x >= event.xAxis[0].min &&
+                            point.x <= event.xAxis[0].max &&
+                            point.y >= event.yAxis[0].min &&
+                            point.y <= event.yAxis[0].max) {
+                                point.select(true, true);
+                            } else if(point.selected) {
+                                point.select(false, true);
+                            }
+                    }
+                    
+                    gadget.notify('queryUpdate', {'query': generateCoAddQuery()});
+                    
+                    return false;
+                }
+            },
+            zoomType: 'xy'
+        },
+        title: {
+            text: 'Timeseries',
+            x: -20 //center
+        },
+        subtitle: {
+            text: '',
+            x: -20
+        },
+        xAxis: {
+            title: {
+                text: x_axis
+            },
+                categories: x_data
+            },
+        yAxis: {
+            title: {
+                text: y_axis
+            },
+            plotLines: [{
+                value: 0,
+                width: 1,
+                color: '#808080'
+            }]
+        },
+        tooltip: {
+            formatter: function() {
+                    return '(' + this.x + ', ' + this.y + ')';
+            }
+        },
+        legend: {
+            enabled: false
+        },
+        plotOptions: {
+                column: { allowPointSelect: true },
+                series: {
+                    cursor: 'pointer',
+                    events: {
+                        click: function(event) {
+                            gadget.notify('queryUpdate', {'query': generateCoAddQuery()});
+                        }
+                    }
+                }
+        },
+        series: [{ data: y_data }]
+    });
+    
+}
+</script>
+</html>

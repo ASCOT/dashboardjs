@@ -97,7 +97,6 @@ gadget.loadState = function(state){
                         updateSciDBSelectBox();
                 }
         }
-	
 }
 
 gadget.init = function(finishedLoading){
@@ -264,6 +263,7 @@ var renderSuccess = function(){
   gadget.resize();
   imageLoaded = true;
 	
+  	annotator.removeAllAnnotations();
 	
 	// Ensure that the aspect ratio of the fits canvas matches the aspect ratio of the image
 	imageDimensions = {width: fitsHeader.get("NAXIS1")[1], height: fitsHeader.get("NAXIS2")[1]};
@@ -271,12 +271,16 @@ var renderSuccess = function(){
 	
 	displayWidth = $('#display').width();
 	displayHeight = $('#display').height();
+		
+	console.log(displayWidth + " " + displayHeight);
 	initCanvases();
+	console.log(displayWidth + " " + displayHeight);
 	astroJsFits.init2($('#display'), $('#display').width(), $('#display').height());
 
 	fitsCanvas = astroJsFits.getCanvas();
 	annotatorCanvas.setAttribute('height', $('#display').height());
 	editCanvas.setAttribute('height', $('#display').height());
+	
 	annotator.init(annotatorCanvas, astroJsFits.pixToScreen, showAnnotations);
   
   // Load up a dataset if one was saved
@@ -445,8 +449,7 @@ var finishDrag = function(e) {
 		var start = astroJsFits.cursorToPix(dragStart.x, dragStart.y);
 		var end = astroJsFits.cursorToPix(e.offsetX, e.offsetY);
 		if (selectedAnnoType == ANNO_TYPE.RECT) {
-			annotator.addRectRegion({'xPos':start.x, 'yPos': start.y, 
-													 		 'width': end.x-start.x, 'height': end.y-start.y, 
+			annotator.addRectRegion({'xPos':start.x, 'yPos': start.y, 'width': end.x-start.x, 'height': end.y-start.y, 
 															 'label': "rect"});
  			document.getElementById("annoSelect").add(new Option("rect", "0"), null);
  			

@@ -16,7 +16,6 @@
 <script type="text/javascript">
 
 gadget.init = function(callback){
-        gadget.update = gadget.loadState;
 	gadget.onNotification('dataSetChanged', updateDataSetList);
 	
 	$("#exportContent").hide();
@@ -31,7 +30,7 @@ gadget.saveState = function(){
 };
 
 gadget.loadState = function(state){
-    $('#datasetNameInput').val(state.datasetName);
+
 };
 
 // GLOBAL CONSTANTS
@@ -119,7 +118,6 @@ function createDataset() {
 			$("#doneButton").show();
 			$("#importButton").hide();
  	}
-        gadget.setState({'datasetName' : $('#datasetNameInput').val()});
 }
 	
 // HELPER

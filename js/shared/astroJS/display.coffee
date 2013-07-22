@@ -308,3 +308,4 @@ define ['cs!/astroJS/fits', 'cs!/astroJS/WebGL'], (FITS, WebGL) ->
 		return hdu.data.getPixel(parseInt(xPix), parseInt(yPix))
 	return ( init1: init1, init2: init2, getCanvas: getCanvas , getHeader: getHeader, cursorToPix: cursorToPix, pixToScreen: pixToScreen, changeStretch: changeStretch, changeExtremes: changeExtremes, getImageExtremes: getImageExtremes, getPixelValue: getPixelValue)
 	
+

@@ -53,15 +53,14 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     var modifiers;
     if ((dashboardModel.at('dataSets').get())[id]) {
       modifiers = (dashboardModel.at('dataSets').get())[id].modifiers || [];
-      loadedDataSets[id].applyModifiers(modifiers);     
+      loadedDataSets[id].applyModifiers(modifiers);
     }
     newDataSet.bind('changed', _.bind(function(data) {
       if (data && data.modifiers) {
         for (var i = 0; i < data.modifiers.length; ++i) {
           dashboardModel.submitOp({
             p : ['dataSets', data.id, 'modifiers', 0],
-            li : data.modifiers[i],
-	    ld : dashboardModel.at('dataSets').get()[data.id].modifiers[0]
+            li : data.modifiers[i]
           });
         }
       }

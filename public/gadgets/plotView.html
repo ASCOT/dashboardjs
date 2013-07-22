@@ -70,8 +70,6 @@ var selectionObject;
 var loadingState = false;
 //Load gadget state
 
-var init = false;
-
 // Gadget intialization
 gadget.init = function(callback){
   gadget.update();
@@ -199,11 +197,6 @@ function populateSelects() {
   $('#selectColor').bind('change', function(){
     selectedColor =  $(this).find('option:selected').val();
   });    
-  
-  if(!init) {
-    init = true;
-    $('#selectDatasetName').change();
-  }
 
 };
 
