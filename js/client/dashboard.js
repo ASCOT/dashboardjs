@@ -490,7 +490,7 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     }
     else{
     
-      renderer = new UW.Renderer(domContainer, dashboardState.numberOfColumns);
+      renderer = new UW.Renderer(domContainer, dashboardState.numberOfColumns, dashboardState.layoutOrder.length);
       
       id = dashboardState.id;
       this.initCommunications(id);

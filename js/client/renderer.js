@@ -5,10 +5,10 @@
 
 var UW = UW || {};
 
-UW.Renderer = function(pTarget, numberOfColumns){
+UW.Renderer = function(pTarget, numberOfColumns, numberOfPanes){
 
   var target = pTarget;
-  var layoutManager = UW.tabbedLayoutManager();	
+  var layoutManager = UW.tabbedLayoutManager(numberOfPanes);	
   layoutManager.setRootElement(target);
   if(numberOfColumns){
     layoutManager.setNumColumns(numberOfColumns);

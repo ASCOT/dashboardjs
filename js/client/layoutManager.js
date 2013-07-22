@@ -43,7 +43,7 @@ UW.log = function (){
 
 }();	
 
-UW.tabbedLayoutManager = function() {
+UW.tabbedLayoutManager = function(numberOfPanes) {
 
   var rootElement;
   var numColumns = 0;
@@ -52,7 +52,7 @@ UW.tabbedLayoutManager = function() {
   var gadgetObjects = [];
 
   var tabCount = 0;
-  var paneCount = 0;
+  var paneCount = numberOfPanes;
 
   function setupAddToPaneButton(pane) {
     var addToPaneHTML =
