@@ -267,9 +267,7 @@ var renderSuccess = function(){
 	
 	// Ensure that the aspect ratio of the fits canvas matches the aspect ratio of the image
 	imageDimensions = {width: fitsHeader.get("NAXIS1")[1], height: fitsHeader.get("NAXIS2")[1]};
-	var rat = imageDimensions.width/imageDimensions.height;
 	var canvasWidth = $('#dropbox').width();
-	$('#dropbox').height(canvasWidth*rat);
 	
 	displayWidth = $('#display').width();
 	displayHeight = $('#display').height();
