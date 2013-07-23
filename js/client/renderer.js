@@ -18,8 +18,8 @@ UW.Renderer = function(pTarget, numberOfColumns, numberOfPanes){
   }
   
   function autoResize(id){
-    var height = parent.document.getElementById(id).contentDocument['body'].offsetHeight;
-    parent.document.getElementById(id).style.height = height + "px";
+    var height = document.getElementById(id).contentDocument['body'].offsetHeight;
+    document.getElementById(id).style.height = height + "px";
   }
 
   this.removeGadget = function(gadgetId, callback){
