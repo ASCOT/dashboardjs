@@ -165,7 +165,11 @@ UW.tabbedLayoutManager = function(numberOfPanes) {
       $("#colGadgetsList"+colId+" li").click(function() {
 	var buttonId = $(this).parent().attr('id');
 	var colId = parseInt(buttonId.charAt(buttonId.length-1));
-	var paneId = paneCount;
+
+        // Keep incrementing the pane id until we find a nonexistent one
+	var paneId = 0;
+	while ($("#pane"+paneId).length !== 0)
+	   paneId++;
 	ASCOT.dashboard.addGadget($(this).attr('id'), colId, paneId);
 	paneCount++;
 	$("#gadgetSelectionCol"+colId).hide();
@@ -309,9 +313,21 @@ UW.tabbedLayoutManager = function(numberOfPanes) {
   }
 
   return {
+    // Providing a column id or a pane id of -1 tells the layout manager
+    // to automatically choose an (unused) id
     addGadget: function(gadgetFrame, gadgetObject, layoutObj) {
       var columnId = layoutObj.parentColumnId;
-      var paneId = layoutObj.parentPaneId;      
+      var paneId = layoutObj.parentPaneId;   
+
+      if (columnId === -1)
+	columnId = 1;
+      if (paneId === -1) {
+        paneIndex = 0
+        while($("#pane"+paneIndex).length !== 0)
+          paneIndex++;
+        paneId = paneIndex;
+      }
+   
       if ($("#pane"+paneId).length === 0) {
 	addPane(columnId, paneId);
       }

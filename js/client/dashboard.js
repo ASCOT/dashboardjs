@@ -307,14 +307,14 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     dashboardModel.submitOp([op1, op2]);
   }
 
-  this.addGadget = function(gadgetName, columnId, paneId) {
+  this.addGadget = function(gadgetName, columnId, paneId, state) {
     // Make sure we create the newest instance of the gadget
     var index = 1;
     while (gadgets.hasOwnProperty(gadgetName+index.toString()))
       index++;
     
     var newGadgetId = gadgetName+index.toString();
-    var newGadget = {gadgetInfoId: gadgetName, id: newGadgetId};
+    var newGadget = {gadgetInfoId: gadgetName, id: newGadgetId, state: state};
 
     var layoutObj = { parentColumnId: columnId, parentPaneId: paneId };
 
@@ -490,7 +490,10 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     }
     else{
     
-      renderer = new UW.Renderer(domContainer, dashboardState.numberOfColumns, dashboardState.layoutOrder.length);
+      var statePanes = dashboardState.layoutOrder.length;
+      if (typeof statePanes === 'undefined')
+	statePanes = 0
+      renderer = new UW.Renderer(domContainer, dashboardState.numberOfColumns, statePanes);
       
       id = dashboardState.id;
       this.initCommunications(id);
