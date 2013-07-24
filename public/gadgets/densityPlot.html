@@ -170,9 +170,7 @@ function populateSelects() {
         selectedYAxis = populateSelect("selectYAxis", columnNames, selectedYAxis).val();
       }
       gadget.setState({ 
-        'selectedDataSetName' : selectedDataSetName,
-        'selectedXAxis' : selectedXAxis,
-        'selectedYAxis' : selectedYAxis
+        'selectedDataSetName' : selectedDataSetName
       });
     }    
   });
@@ -576,7 +574,8 @@ function displayPlot(args) {
 // What to do when the plot is loaded
 function handleLoadEvent(chart) {
 	// Set the number of y bins so that the bins stay square
-	numBinsY = Math.ceil(numBinsX * (chart.plotHeight/chart.plotWidth));
+	var useWidth = chart.plotWidth !== 0 ? chart.plotWidth : 200;
+	numBinsY = Math.ceil(numBinsX * (chart.plotHeight/useWidth));
 	// Record the scale and minimums of the axes so the background can be resized accordingly later on
    originalMinX = chart.xAxis[0].getExtremes().min;
    originalSizeX = chart.xAxis[0].getExtremes().max - originalMinX;

@@ -176,11 +176,7 @@ function populateSelects() {
         selectedXAxis = populateSelect("selectXAxis", columnNames, selectedXAxis).val();
         selectedYAxis = populateSelect("selectYAxis", columnNames, selectedYAxis).val();
       }
-      gadget.setState({ 
-        'selectedDataSetName' : selectedDataSetName,
-        'selectedXAxis' : selectedXAxis,
-        'selectedYAxis' : selectedYAxis
-      });
+      gadget.setState({ 'selectedDataSetName' : selectedDataSetName });
     }    
   });
   
