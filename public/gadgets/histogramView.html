@@ -103,9 +103,7 @@ var populateSelects = function() {
     if(this.selectedIndex != -1){
       selectedDataSetName = $(this).find('option:selected').text();
       selectedDataSet = gadget.dashboard.getDataSet($(this).val());
-      gadget.setState({ 
-        'selectedDataSetName' : selectedDataSetName,
-      });
+      gadget.setState({ 'selectedDataSetName' : selectedDataSetName });
     }
   });
 
