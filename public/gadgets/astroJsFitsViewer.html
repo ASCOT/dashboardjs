@@ -459,8 +459,8 @@ var finishDrag = function(e) {
  			console.log(Math.abs(end.y-start.y))
  			
  			gadget.notify('queryBoundsChanged', {
- 			        'x': wcs.wcsobj.absPixX+start.x, 
- 			        'y':wcs.wcsobj.absPixY+Math.min(fitsHeader.get("NAXIS2")[1]-start.y,fitsHeader.get("NAXIS2")[1]-end.y), 
+ 			        'x': wcs.wcsobj.absPixY+start.x, 
+ 			        'y':wcs.wcsobj.absPixX+Math.min(fitsHeader.get("NAXIS2")[1]-start.y,fitsHeader.get("NAXIS2")[1]-end.y), 
  			        'height': Math.abs(end.y-start.y), 
  			        'width': Math.abs(end.x-start.x)
  			});
