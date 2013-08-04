@@ -272,6 +272,10 @@ UW.Dashboard = function(_id, container, dashboardUrl){
       );  			
   };
 
+  this.getColumnWidth = function() {
+    return $("#column0").width();
+  }
+
   this.undo = function(callback) {
     dashboardModel.undo();
   }

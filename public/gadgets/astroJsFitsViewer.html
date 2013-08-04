@@ -180,7 +180,8 @@ var initCanvases = function() {
 	display = document.getElementById('display');
 	var canvasArea = document.getElementById('canvasArea');
 	
-    display.width = canvasArea.offsetWidth;
+    colWidth = gadget.dashboard.getColumnWidth();
+    display.width = canvasArea.offsetWidth===0?colWidth-46:canvasArea.offsetWidth;
     display.height = canvasArea.offsetHeight;
     displayContext = display.getContext('2d');
     displayWidth = display.width;
@@ -221,6 +222,8 @@ var imageFromUrl = function(path) {
     if (path == "None")
 		return;
 	
+    gadget.setState({imagePath: path});
+
 	$('#init').hide();
 	gadget.resize();
 		
@@ -269,7 +272,6 @@ var renderSuccess = function(){
 	imageDimensions = {width: fitsHeader.get("NAXIS1")[1], height: fitsHeader.get("NAXIS2")[1]};
 	var canvasWidth = $('#dropbox').width();
 	
-	displayWidth = $('#display').width();
 	displayHeight = $('#display').height();
 		
 	console.log(displayWidth + " " + displayHeight);
