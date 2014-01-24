@@ -69,7 +69,7 @@ var parseLSSTQueryResult = function(queryResults){
 
 var dataSources = {
   sdss: {
-    url: 'http://skyserver.sdss3.org/public/en/tools/search/x_sql.asp',
+    url: 'http://skyserver.sdss3.org/dr9/en/tools/search/x_sql.asp',
     type: 'sql',
     queryResultParser: parseSDSSQueryResult,
     dataInquirer: querySDSS
