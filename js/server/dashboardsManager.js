@@ -160,7 +160,7 @@ module.exports = function(app, model) {
           newDashboard.gadgets[newGadget.id] = newGadget;
 	  var col = putInLeft ? 0 : 1;
 	  putInLeft = !putInLeft;
-          newDashboard.layoutOrder[newGadget.id] = {parentColumnId: col, parentPaneId: paneIndex};
+          newDashboard.layoutOrder[newGadget.id] = {id: newGadget.id, parentColumnId: col, parentPaneId: paneIndex, tabPos: 0};
 	  paneIndex++;
         }
       }

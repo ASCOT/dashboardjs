@@ -231,7 +231,7 @@ UW.tabbedLayoutManager = function(numberOfPanes) {
   function handleMoveTab(tabToMove, moveFrom, moveTo, insertIndex) {
     var gadgetId = gadgetObjects[tabToMove].id;
     var newColumnId = paneObjects[moveTo].parentColumnId;
-    ASCOT.dashboard.moveGadget(gadgetId, moveTo, newColumnId);
+    ASCOT.dashboard.moveGadget(gadgetId, moveTo, newColumnId, insertIndex);
     /*// Generate a new DOM object for the tab
     var li = "<li id='tab"+tabToMove+"' class='draggableTab'><a href='#tabContent"+tabToMove+"'>Tab "+tabToMove+"</a> <span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>"
     
@@ -318,6 +318,7 @@ UW.tabbedLayoutManager = function(numberOfPanes) {
     addGadget: function(gadgetFrame, gadgetObject, layoutObj) {
       var columnId = layoutObj.parentColumnId;
       var paneId = layoutObj.parentPaneId;   
+      var tabPos = layoutObj.tabPos;
 
       if (columnId === -1)
 	columnId = 1;
