@@ -152,11 +152,27 @@ UW.Dashboard = function(_id, container, dashboardUrl){
 	    if (op[index].od) {
 	      renderer.removeGadget(gadgetId, function() {});
 	      delete layoutOrder[gadgetId];
+	      delete gadgetRenderOrder[gadgetId];
 	    }
 	    // Add an element to the layout
 	    if (op[index].oi) {
 	      layoutOrder[gadgetId] = op[index].oi;
-	      renderer.renderGadget(gadgets[gadgetId], layoutOrder[gadgetId], function() {});
+	      // Clear the DOM and redraw all of the gadgets
+	      for (i in gadgetRenderOrder) {
+		renderer.removeGadget(gadgetRenderOrder[i].id, function() {});
+	      }
+	      // Dont add the gadget to the render list if we only moved it
+	      var gadgetExistsIndex = -1;
+	      for (i in gadgetRenderOrder) {
+		if (gadgetRenderOrder[i].id === gadgetId) {
+		  gadgetExistsIndex = i;
+		  break;
+		}
+	      }
+	      if (gadgetExistsIndex === -1) gadgetRenderOrder.push(layoutOrder[gadgetId]);
+	      else gadgetRenderOrder[gadgetExistsIndex] = op[index].oi;
+	      sortRenderOrder();
+	      this.renderGadgets(function() {});
 	    }
 	  }
 
@@ -269,42 +285,18 @@ UW.Dashboard = function(_id, container, dashboardUrl){
   // gadgetRenderOrder list and sorts the objects so that gadgets from the same panes are grouped together
   // and sorted in ascending order of tab position. This ensures that tab ordering is displayed correctly.
   function sortRenderOrder() {
-    // First sort by column
-    for (var i = 0; i < gadgetRenderOrder.length; i++) {
-      for (var j = 0; j < gadgetRenderOrder.length; j++) {
-	var a = layoutOrder[gadgetRenderOrder[i]];
-	var b = layoutOrder[gadgetRenderOrder[j]];
-	if (a.columnId > b.columnId) {
-	  var t = gadgetRenderOrder[i];
-	  gadgetRenderOrder[i] = gadgetRenderOrder[j];
-	  gadgetRenderOrder[j] = t;
-	}
-      }
+    
+    var sortBy = function(field, reverse, primer){
+      var key = primer ? function(x) {return primer(x[field])} : function(x) {return x[field]};
+      reverse = [-1, 1][+!!reverse];
+      return function (a, b) {
+	return a = key(a), b = key(b), reverse * ((a > b) - (b > a));
+      } 
     }
-    // Now sort by pane
-    for (var i = 0; i < gadgetRenderOrder.length; i++) {
-      for (var j = 0; j < gadgetRenderOrder.length; j++) {
-	var a = layoutOrder[gadgetRenderOrder[i]];
-	var b = layoutOrder[gadgetRenderOrder[j]];
-	if (a.paneId > b.paneId) {
-	  var t = gadgetRenderOrder[i];
-	  gadgetRenderOrder[i] = gadgetRenderOrder[j];
-	  gadgetRenderOrder[j] = t;
-	}
-      }
-    }
-    // Finally, sort by tab index 
-    for (var i = 0; i < gadgetRenderOrder.length; i++) {
-      for (var j = 0; j < gadgetRenderOrder.length; j++) {
-	var a = layoutOrder[gadgetRenderOrder[i]];
-	var b = layoutOrder[gadgetRenderOrder[j]];
-	if (a.tabPos > b.tabPos) {
-	  var t = gadgetRenderOrder[i];
-	  gadgetRenderOrder[i] = gadgetRenderOrder[j];
-	  gadgetRenderOrder[j] = t;
-	}
-      }
-    }
+  
+    gadgetRenderOrder.sort(sortBy("tabPos", true, parseInt));
+    gadgetRenderOrder.sort(sortBy("paneId", true, parseInt));
+    gadgetRenderOrder.sort(sortBy("parentColumnId", true, parseInt));
   }
 
   this.renderGadgets = function(callback){ 
@@ -313,13 +305,8 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     // Sort the list of gadgets to render in order of their tab position
     sortRenderOrder();
     for (i in gadgetRenderOrder) {
-      renderer.renderGadget(gadgets[gadgetRenderOrder[i]], layoutOrder[gadgetRenderOrder[i]], gadgetLoaded);
+      renderer.renderGadget(gadgets[gadgetRenderOrder[i].id], layoutOrder[gadgetRenderOrder[i].id], gadgetLoaded);
     }
-    /*_.each(layoutOrder, 
-            _.bind( function (modelData, index){ 
-              renderer.renderGadget(gadgets[modelData.id], layoutOrder[modelData.id], gadgetLoaded);
-            }, this)
-      );*/  			
   };
 
   this.getColumnWidth = function() {
@@ -341,12 +328,18 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     var opsToSubmit = [];
 
     // Make sure to update the position of all existing tabs in the receiving pane
+    var tabIndex = 0;
+    var oldTabPos = -1;
     for (i in layoutOrder) {
       lObj = layoutOrder[i];
       // Skip over the tab that we are moving (it will be deleted)
-      if (lObj.id === gadgetId) continue;
+      if (lObj.id === gadgetId) {
+	oldTabPos = tabIndex;
+	continue;
+      }
+      tabIndex++;
       if (lObj.parentColumnId === newColumnId && lObj.parentPaneId === newPaneId) {
-	if (lObj.tabPos >= newTabPos) {
+	if (lObj.tabPos >= newTabPos && newTabPos !== oldTabPos) {
 	  var newLayoutObj = { id: lObj.id, parentColumnId: lObj.parentColumnId, parentPaneId: lObj.parentPaneId, tabPos: lObj.tabPos+1 };
 	  var op1 = {p : ['layoutOrder', lObj.id],
 		     od : layoutOrder[lObj.id],
@@ -379,7 +372,7 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     dashboardModel.submitOp([op1, op2]);
   }
 
-  this.addGadget = function(gadgetName, columnId, paneId, state) {
+  this.addGadget = function(gadgetName, columnId, paneId, tabPos, state) {
     // Make sure we create the newest instance of the gadget
     var index = 1;
     while (gadgets.hasOwnProperty(gadgetName+index.toString()))
@@ -388,7 +381,7 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     var newGadgetId = gadgetName+index.toString();
     var newGadget = {gadgetInfoId: gadgetName, id: newGadgetId, state: state};
 
-    var layoutObj = { parentColumnId: columnId, parentPaneId: paneId };
+    var layoutObj = { id: newGadgetId, parentColumnId: columnId, parentPaneId: paneId, tabPos: tabPos };
 
     var op1 = {p : ['gadgets', newGadgetId],
                oi : newGadget};
@@ -540,7 +533,7 @@ UW.Dashboard = function(_id, container, dashboardUrl){
     var loadGadgets = _.bind(function(){ 
     layoutOrder = dashboardState.layoutOrder;
     for (i in layoutOrder) {
-      gadgetRenderOrder.push(layoutOrder[i].id);
+      gadgetRenderOrder.push(layoutOrder[i]);
     }
     for(i in dashboardState.gadgets){
       gadgetInstanceInfo = dashboardState.gadgets[i];

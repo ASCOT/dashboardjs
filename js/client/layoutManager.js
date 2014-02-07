@@ -78,7 +78,8 @@ UW.tabbedLayoutManager = function(numberOfPanes) {
       var success = function() {
 	$("#gadgetSelectionPane"+paneId).show();
       }
-      constructPaneGadgetSelect(paneId, success);
+      var tabPos = $("#"+paneObjects[paneId].element.children()[0].id).children().size();
+      constructPaneGadgetSelect(paneId, tabPos, success);
     });
 
     $("#gadgetSelectClosePane"+pane).click(function() {
@@ -125,7 +126,7 @@ UW.tabbedLayoutManager = function(numberOfPanes) {
     });
   }
 
-  function constructPaneGadgetSelect(paneId, success) {
+  function constructPaneGadgetSelect(paneId, tabPos, success) {
     function populateGadgetsList(gadgetsList) {
       var entryHTML;  
       gadgets = gadgetsList; 
@@ -140,7 +141,7 @@ UW.tabbedLayoutManager = function(numberOfPanes) {
 	var buttonId = $(this).parent().attr('id');
 	var paneId = parseInt(buttonId.charAt(buttonId.length-1));
 	var columnId = paneObjects[paneId].parentColumnId;
-	ASCOT.dashboard.addGadget($(this).attr('id'), columnId, paneId);
+	ASCOT.dashboard.addGadget($(this).attr('id'), columnId, paneId, tabPos);
 	$("#gadgetSelectionPane"+paneId).hide();
       });
       success();
@@ -170,7 +171,7 @@ UW.tabbedLayoutManager = function(numberOfPanes) {
 	var paneId = 0;
 	while ($("#pane"+paneId).length !== 0)
 	   paneId++;
-	ASCOT.dashboard.addGadget($(this).attr('id'), colId, paneId);
+	ASCOT.dashboard.addGadget($(this).attr('id'), colId, paneId, 0);
 	paneCount++;
 	$("#gadgetSelectionCol"+colId).hide();
 	$("#addGadgetToCol"+colId).show();
@@ -207,16 +208,12 @@ UW.tabbedLayoutManager = function(numberOfPanes) {
 	var moveFrom = parseInt(ui.draggable[0].parentNode.id.charAt(7));
         var moveTo = parseInt(this.parentNode.id.charAt(7));
 	var nodeList = this.parentElement.childNodes;
+	
+	// Determine the new position of the dropped tab in the tab bar
 	var insertIndex = 0;
 	for (i in nodeList) {
-	  if (nodeList[i] === this) {
-	    break;
-	  }
-	  if (moveFrom === moveTo) {
-	    if (nodeList[i] === $("#tab"+tabToMove)[0]) {
-	      continue;
-	    }
-	  }
+	  if (nodeList[i] === ui.draggable[0]) continue;
+	  if (nodeList[i] === event.target) break;
 	  insertIndex++;
 	}
 	handleMoveTab(tabToMove, moveFrom, moveTo, insertIndex);
