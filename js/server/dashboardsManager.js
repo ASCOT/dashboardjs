@@ -6,10 +6,21 @@ var dashboardIdCounter = 0;
 var defaultDashboards = [{
 	author: 'UW',
 	numberOfColumns: 2,
-	gadgetsOrder: ["skyView", "nameResolver", "dataSetSelector", "dataInquirer", "tableView", "plotView"],
+	layout: 
+	{ '0': [ {'pane': '0', 'tabs': ['skyView1']}, {'pane': '2', 'tabs': ['dataSetSelector1']}, {'pane': '4', 'tabs': ['tableView1']} ], 
+	  '1': [ {'pane': '1', 'tabs': ['nameResolver1']}, {'pane': '3', 'tabs': ['dataInquirer1']}, {'pane': '5', 'tabs': ['plotView1']} ] 
+	 },
+  paneIdCounter: 6,
+  activeTab: 
+   { '0': 'skyView1',
+     '1': 'nameResolver1',
+     '2': 'dataSetSelector1',
+     '3': 'dataInquirer1',
+     '4': 'tableView1',
+     '5': 'plotView1' },
 	gadgets: {
-		"skyView": {
-			"id": "skyView",
+		"skyView1": {
+			"id": "skyView1",
 			"gadgetInfoId": "skyView",
 			state: {
 				"longitude": -47.17500000000001,
@@ -17,24 +28,24 @@ var defaultDashboards = [{
 				"flySpeed": 1
 			}
 		},
-		"nameResolver": {
-			"id": "nameResolver",
+		"nameResolver1": {
+			"id": "nameResolver1",
 			"gadgetInfoId": "nameResolver"
 		},
-		"dataSetSelector": {
-			"id": "dataSetSelector",
+		"dataSetSelector1": {
+			"id": "dataSetSelector1",
 			"gadgetInfoId": "dataSetSelector"
 		},
-		"dataInquirer": {
-			"id": "dataInquirer",
+		"dataInquirer1": {
+			"id": "dataInquirer1",
 			"gadgetInfoId": "dataInquirer"
 		},
-		"tableView": {
-			"id": "tableView",
+		"tableView1": {
+			"id": "tableView1",
 			"gadgetInfoId": "tableView"
 		},
-		"plotView": {
-			"id": "plotView",
+		"plotView1": {
+			"id": "plotView1",
 			"gadgetInfoId": "plotView"
 		}
 	},
@@ -43,10 +54,20 @@ var defaultDashboards = [{
 }, {
 	author: 'GalaxyZOO',
 	numberOfColumns: 2,
-	gadgetsOrder: ["skyView", "nameResolver", "dataSetSelector", "dataInquirer", "tableView"],
+	layout: 
+	{ '0': [ {'pane': '0', 'tabs': ['skyView1']}, {'pane': '2', 'tabs': ['dataSetSelector1']}, {'pane': '4', 'tabs': ['tableView1']} ], 
+	  '1': [ {'pane': '1', 'tabs': ['nameResolver1']}, {'pane': '3', 'tabs': ['dataInquirer1']} ] 
+	 },
+  paneIdCounter: 5,
+  activeTab: 
+   { '0': 'skyView1',
+     '1': 'nameResolver1',
+     '2': 'dataSetSelector1',
+     '3': 'dataInquirer1',
+     '4': 'tableView1' },
 	gadgets: {
-		"skyView": {
-			"id": "skyView",
+		"skyView1": {
+			"id": "skyView1",
 			"gadgetInfoId": "skyView",
 			state: {
 				"longitude": -47.17500000000001,
@@ -54,20 +75,20 @@ var defaultDashboards = [{
 				"flySpeed": 1
 			}
 		},
-		"nameResolver": {
-			"id": "nameResolver",
+		"nameResolver1": {
+			"id": "nameResolver1",
 			"gadgetInfoId": "nameResolver"
 		},
-		"dataSetSelector": {
-			"id": "dataSetSelector",
+		"dataSetSelector1": {
+			"id": "dataSetSelector1",
 			"gadgetInfoId": "dataSetSelector"
 		},
-		"dataInquirer": {
-			"id": "dataInquirer",
+		"dataInquirer1": {
+			"id": "dataInquirer1",
 			"gadgetInfoId": "dataInquirer"
 		},
-		"tableView": {
-			"id": "tableView",
+		"tableView1": {
+			"id": "tableView1",
 			"gadgetInfoId": "tableView"
 		}
 	},
@@ -76,10 +97,18 @@ var defaultDashboards = [{
 }, {
 	author: 'GalaxyZOO',
 	numberOfColumns: 2,
-	gadgetsOrder: ["skyView", "nameResolver", "dataSetSelector"],
+	layout: 
+	{ '0': [ {'pane': '0', 'tabs': ['skyView1']}, {'pane': '2', 'tabs': ['dataSetSelector1']} ], 
+	  '1': [ {'pane': '1', 'tabs': ['nameResolver1']} ] 
+	 },
+  paneIdCounter: 3,
+  activeTab: 
+   { '0': 'skyView1',
+     '1': 'nameResolver1',
+     '2': 'dataSetSelector1' },
 	gadgets: {
-		"skyView": {
-			"id": "skyView",
+		"skyView1": {
+			"id": "skyView1",
 			"gadgetInfoId": "skyView",
 			state: {
 				"longitude": -47.17500000000001,
@@ -87,34 +116,13 @@ var defaultDashboards = [{
 				"flySpeed": 1
 			}
 		},
-		"nameResolver": {
-			"id": "nameResolver",
+		"nameResolver1": {
+			"id": "nameResolver1",
 			"gadgetInfoId": "nameResolver"
 		},
-		"dataSetSelector": {
-			"id": "dataSetSelector",
+		"dataSetSelector1": {
+			"id": "dataSetSelector1",
 			"gadgetInfoId": "dataSetSelector"
-		}
-	},
-	dataSets: {},
-	comments: []
-}, {
-	author: 'Spencer',
-	name: 'fitsViewer',
-	numberOfColumns: 2,
-	gadgetsOrder: ["dataInquirer", "fitsViewer", "plotView"],
-	gadgets: {
-		"dataInquirer": {
-			"id": "dataInquirer",
-			"gadgetInfoId": "dataInquirer"
-		},
-		"fitsViewer": {
-			"id": "fitsViewer",
-			"gadgetInfoId": "fitsViewer"
-		},
-		"plotView": {
-			"id": "plotView",
-			"gadgetInfoId": "plotView"
 		}
 	},
 	dataSets: {},
@@ -123,18 +131,26 @@ var defaultDashboards = [{
 	author: 'Spencer',
 	name: 'astroJsFitsViewer',
 	numberOfColumns: 2,
-	gadgetsOrder: ["dataInquirer", "astroJsFitsViewer", "plotView"],
+	layout: 
+	{ '0': [ {'pane': '0', 'tabs': ['dataInquirer1']}, {'pane': '2', 'tabs': ['astroJsFitsViewer1']} ], 
+	  '1': [ {'pane': '1', 'tabs': ['plotView1']} ] 
+	 },
+  paneIdCounter: 3,
+  activeTab: 
+   { '0': 'dataInquirer1',
+     '1': 'astroJsFitsViewer1',
+     '2': 'plotView1' },
 	gadgets: {
-		"dataInquirer": {
-			"id": "dataInquirer",
+		"dataInquirer1": {
+			"id": "dataInquirer1",
 			"gadgetInfoId": "dataInquirer"
 		},
-		"astroJsFitsViewer": {
-			"id": "astroJsFitsViewer",
+		"astroJsFitsViewer1": {
+			"id": "astroJsFitsViewer1",
 			"gadgetInfoId": "astroJsFitsViewer"
 		},
-		"plotView": {
-			"id": "plotView",
+		"plotView1": {
+			"id": "plotView1",
 			"gadgetInfoId": "plotView"
 		}
 	},
@@ -144,47 +160,47 @@ var defaultDashboards = [{
 	author: 'Spencer',
 	name: 'ScatterPlotHistogramAndASCIILoader',
 	numberOfColumns: 2,
-	gadgetsOrder: ["asciiFileLoader", "nameResolver", "dataSetSelector", "dataInquirer", "tableView", "scalableScatter", "histogramView"],
-	gadgets: {
-		"asciiFileLoader": {
-			"id": "asciiFileLoader",
-			"gadgetInfoId": "asciiFileLoader"
+	layout: 
+	{ '0': [ {'pane': '0', 'tabs': ['ASCIIDataLoader1']}, {'pane': '2', 'tabs': ['dataSetSelector1']}, {'pane': '4', 'tabs': ['tableView1']}, {'pane': '6', 'tabs': ['histogramView1']} ], 
+	  '1': [ {'pane': '1', 'tabs': ['nameResolver1']}, {'pane': '3', 'tabs': ['dataInquirer1']}, {'pane': '5', 'tabs': ['scalableScatter1']} ] 
+	 },
+  paneIdCounter: 7,
+  activeTab: 
+   { '0': 'ASCIIDataLoader1',
+     '1': 'nameResolver1',
+     '2': 'dataSetSelector1',
+     '3': 'dataInquirer1',
+     '4': 'tableView1',
+     '5': 'scalableScatter1',
+     '6': 'histogramView1' },
+  gadgets: {
+		"ASCIIDataLoader1": {
+			"id": "ASCIIDataLoader1",
+			"gadgetInfoId": "ASCIIDataLoader"
 		},
-		"nameResolver": {
-			"id": "nameResolver",
+		"nameResolver1": {
+			"id": "nameResolver1",
 			"gadgetInfoId": "nameResolver"
 		},
-		"dataSetSelector": {
-			"id": "dataSetSelector",
+		"dataSetSelector1": {
+			"id": "dataSetSelector1",
 			"gadgetInfoId": "dataSetSelector"
 		},
-		"dataInquirer": {
-			"id": "dataInquirer",
+		"dataInquirer1": {
+			"id": "dataInquirer1",
 			"gadgetInfoId": "dataInquirer"
 		},
-		"tableView": {
-			"id": "tableView",
+		"tableView1": {
+			"id": "tableView1",
 			"gadgetInfoId": "tableView"
 		},
-		"scalableScatter": {
-			"id": "scalableScatter",
+		"scalableScatter1": {
+			"id": "scalableScatter1",
 			"gadgetInfoId": "scalableScatter"
 		},
-		"histogramView": {
-			"id": "histogramView",
+		"histogramView1": {
+			"id": "histogramView1",
 			"gadgetInfoId": "histogramView"
-		}
-	},
-	dataSets: {},
-	comments: []
-}, {
-	author: 'Diego',
-	numberOfColumns: 1,
-	gadgetsOrder: ["newFitsViewer1"],
-	gadgets: {
-		"newFitsViewer1": {
-			"id": "newFitsViewer1",
-			"gadgetInfoId": "newFitsViewer"
 		}
 	},
 	dataSets: {},
