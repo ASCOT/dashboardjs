@@ -17,7 +17,6 @@ label {
 
 input, textarea {
   margin: 5px 10px 5px 0px;
-  padding: 5px 10px 5px 10px;
   font-size: 12px;
   border-top-color: #CCC;
   border-bottom-color: #EAEAEA;
@@ -33,6 +32,10 @@ input, textarea {
   -moz-transition: border-color 0.1s; /* Firefox 4 */
   -webkit-transition: border-color 0.1s; /* Safari and Chrome */
   -o-transition: border-color 0.1s; /* Opera */
+}
+
+input {
+	padding: 5px;
 }
 
 textarea {

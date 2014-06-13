@@ -603,6 +603,14 @@ div.closePopUp{
 .gadgetsListInternal {
   height: 165px;
   overflow: auto;
+  background: #fff;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, .4);
+  padding-right: 5px;
 }
 
 .gadgetsListInternal li {
@@ -679,3 +687,56 @@ div.closePopUp{
   position: relative;
   top: -5px;
 }
+
+.panePlaceholder {
+	padding: 10px;
+	border: 2px dashed #999;
+}
+
+.paneList {
+	min-height: 50px;
+}
+
+#dashboardPanel .helper {
+	background-color: rgba(255, 255, 255, .8);
+	border-radius: 5px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: rgba(0, 0, 0, .4);
+}
+
+#dashboardPanel .columnContainer {
+	float: left;
+	min-height: 100px;
+}
+
+#dashboardPanel .column {
+	min-height: 10px;
+}
+
+#dashboardPanel .pane {
+	width: auto;
+	padding: 1px;
+}
+
+#dashboardPanel .paneContent {
+	padding: 1px;
+}
+
+#dashboardPanel li {
+	list-style-type: none;
+}
+
+#dashboardPanel .panePlaceholder {
+	padding: 1px;
+	border: 2px dashed #999;
+}
+
+#dashboardPanel .tabPlaceholder {
+	border: 2px dashed #999;
+	height: 100%;
+}
+
+/* Jquery tabs */
+.ui-tabs .ui-tabs-nav li a {font-size:8pt;}
+.ui-tabs .ui-widget-header {height: 26px;

@@ -1,387 +1,383 @@
 /**
  * @namespace The global ASCOT namespace
- * @type {Object} 
+ * @type {Object}
  */
 var UW = UW || {};
 
 
 var logConsole = window.console ? window.console :
-                 window.opera   ? window.opera.postError : undefined;
+	window.opera ? window.opera.postError : undefined;
 
 /**
  * @static
  * @namespace Support for basic logging capability.
  * @name UW.log
  */
-UW.log = function (){
+UW.log = function () {
 
 	function logMessage(level, message) {
-  
- 		 if (level === "WARNING" && logConsole.warn) {
- 		   logConsole.warn(message);
- 		 } else if (level === "ERROR" && logConsole.error) {
- 		   logConsole.error(message);
- 		 } else if (logConsole.log) {
- 		   logConsole.log(message);
- 		 }
-  
-	};
 
-	return{
-	
-		warning: function(message){
-			logMessage("WARNING",message);
-		},
-		error: function(message){
-			logMessage("ERROR",message);
-		},
-		log: function(message){
-			logMessage("LOG",message);
+		if (level === "WARNING" && logConsole.warn) {
+			logConsole.warn(message);
 		}
-	
+		else if (level === "ERROR" && logConsole.error) {
+			logConsole.error(message);
+		}
+		else if (logConsole.log) {
+			logConsole.log(message);
+		}
+
 	};
 
-}();	
+	return {
 
-UW.tabbedLayoutManager = function(numberOfPanes) {
+		warning: function (message) {
+			logMessage("WARNING", message);
+		},
+		error: function (message) {
+			logMessage("ERROR", message);
+		},
+		log: function (message) {
+			logMessage("LOG", message);
+		}
 
-  var rootElement;
-  var numColumns = 0;
-  var columns = [];
-  var paneObjects = [];
-  var gadgetObjects = [];
+	};
 
-  var tabCount = 0;
-  var paneCount = numberOfPanes;
+}();
 
-  function setupAddToPaneButton(pane) {
-    var addToPaneHTML =
-    "<div id='addGadgetPane"+pane+"' style='float: right'>" +
-      "<div id='gadgetSelectionPane"+pane+"' class='addGadgetPane addGadgetPaneSmall' style='float: left'>" +
-	"<div style='float: left'><b>Add a gadget:</b></div>"+
-	"<span class='ui-icon ui-icon-close closeGadgetSelectButton' id='gadgetSelectClosePane"+pane+"' role='presentation' style='float: right'>"+
-	  "Close Gadget Selection"+
-	"</span><br>" +
-	"<form action='#' method='get'>" +
-	  "<ul id='paneGadgetsList"+pane+"' class='gadgetsListInternal gadgetsListSmall'></ul>" +
-	"</form>" +
-      "</div>"+
-      "<button id='addGadgetToPane"+pane+"' class='addGadgetToPanelButton'>"+
-	"<span class='ui-icon ui-icon-plus adjustPlusIcon' role='presentation'>Add Pane</span>"+
-      "</button>"+
-    "</div>";
-    $("#pane"+pane).append(addToPaneHTML);
-    $("#gadgetSelectionPane"+pane).hide();
-    $("#addGadgetToPane"+pane).click(function() {
-      var buttonId = $(this).attr('id');
-      var paneId = parseInt(buttonId.charAt(buttonId.length-1));
-      var success = function() {
-	$("#gadgetSelectionPane"+paneId).show();
-      }
-      var tabPos = $("#"+paneObjects[paneId].element.children()[0].id).children().size();
-      constructPaneGadgetSelect(paneId, tabPos, success);
-    });
+UW.layoutManager = function (rootElement) {
+	var layoutInitalized = false;
 
-    $("#gadgetSelectClosePane"+pane).click(function() {
-      var buttonId = $(this).attr('id');
-      var colId = parseInt(buttonId.charAt(buttonId.length-1));
-      $("#gadgetSelectionPane"+colId).hide();
-      $("#addGadgetToPane"+colId).show();
-    });
-  }
-
-  function setupAddToColButton(column) {
-    var addButtonHTML = 
-    "<div id='addGadgetCol"+column+"' class='addGadgetColFrame'>" +
-      "<div id='gadgetSelectionCol"+column+"' class='addGadgetCol' style='float: left'>" +
-	"<div style='float: left'><b>Add a gadget:</b></div>"+
-	"<span class='ui-icon ui-icon-close' id='gadgetSelectCloseCol"+column+"' class='closeGadgetSelectButton' role='presentation' style='float: right'>"+
-	  "Close Gadget Selection"+
-	"</span><br>" +
-	"<form action='#' method='get'>" +
-	  "<ul id='colGadgetsList"+column+"' class='gadgetsListInternal'></ul>" +
-	"</form>" +
-      "</div>"+
-      "<button id='addGadgetToCol"+column+"' style='width: 100%'>"+
-	"<span class='ui-icon ui-icon-plus' role='presentation'>Add Pane</span>"+
-      "</button>"+
-    "</div>";
-    $("#column"+column).append(addButtonHTML);
-    $("#gadgetSelectionCol"+column).hide();
-    $("#addGadgetToCol"+column).click(function() {
-      var buttonId = $(this).attr('id');
-      var colId = parseInt(buttonId.charAt(buttonId.length-1));
-      $(this).hide();
-      var success = function() {
-	$("#gadgetSelectionCol"+colId).show();
-      }
-      constructColGadgetSelect(colId, success);
-    });
-    
-    $("#gadgetSelectCloseCol"+column).click(function() {
-      var buttonId = $(this).attr('id');
-      var colId = parseInt(buttonId.charAt(buttonId.length-1));
-      $("#gadgetSelectionCol"+colId).hide();
-      $("#addGadgetToCol"+colId).show();
-    });
-  }
-
-  function constructPaneGadgetSelect(paneId, tabPos, success) {
-    function populateGadgetsList(gadgetsList) {
-      var entryHTML;  
-      gadgets = gadgetsList; 
-      $("#paneGadgetsList"+paneId).empty();
-      for (id in gadgetsList){
-	if(gadgetsList.hasOwnProperty(id)){
-	  entryHTML = "<li id='"+id+"'>"+gadgetsList[id].name+"</li>";
-	  $("#paneGadgetsList"+paneId).append(entryHTML);
+	function helperEl() {
+		var helperDiv = $("<div class='helper'></div>");
+		return helperDiv;
 	}
-      }
-      $("#paneGadgetsList"+paneId+" li").click(function() {
-	var buttonId = $(this).parent().attr('id');
-	var paneId = parseInt(buttonId.charAt(buttonId.length-1));
-	var columnId = paneObjects[paneId].parentColumnId;
-	ASCOT.dashboard.addGadget($(this).attr('id'), columnId, paneId, tabPos);
-	$("#gadgetSelectionPane"+paneId).hide();
-      });
-      success();
-    }
 
-    $.ajax({
-      'url': '/gadgets/',
-      success: populateGadgetsList });
-  }
+	function makeSortable() {
+		var movePane = this.movePane;
+		var paneDragSourceColId;
+		var paneDragSourcePos;
+		var tabsInPane;
+		var oldSelectedTab;
+		var tabDragSourcePaneId;
+		var tabDragSourcePos;
+		var sourcePanePos;
+		var sourceCol;
 
-  function constructColGadgetSelect(colId, success) {
-    function populateGadgetsList(gadgetsList) {
-      var entryHTML;  
-      gadgets = gadgetsList; 
-      $("#colGadgetsList"+colId).empty();
-      for (id in gadgetsList){
-	if(gadgetsList.hasOwnProperty(id)){
-	  entryHTML = "<li id='"+id+"'>"+gadgetsList[id].name+"</li>";
-	  $("#colGadgetsList"+colId).append(entryHTML);
-	}
-      }
-      $("#colGadgetsList"+colId+" li").click(function() {
-	var buttonId = $(this).parent().attr('id');
-	var colId = parseInt(buttonId.charAt(buttonId.length-1));
-
-        // Keep incrementing the pane id until we find a nonexistent one
-	var paneId = 0;
-	while ($("#pane"+paneId).length !== 0)
-	   paneId++;
-	ASCOT.dashboard.addGadget($(this).attr('id'), colId, paneId, 0);
-	paneCount++;
-	$("#gadgetSelectionCol"+colId).hide();
-	$("#addGadgetToCol"+colId).show();
-      });
-      success();
-    }
-    
-    $.ajax({
-      'url': '/gadgets/',
-      success: populateGadgetsList });
-  }
-
-  function getNewPaneHTML(paneId) {
-    var tabsList = "<ul id='tabList"+paneId+"' class='tabBar'></ul>";
-    return "<div id='pane"+paneId+"' class='tabPane'>"+tabsList+"</div>"
-  }
-
-  function getNewTabHTML(tabName) {
-    var li = "<li id='tab"+tabCount+"' class='draggableTab'><span class='ui-icon ui-icon-close' id='closeTab"+tabCount+"' style='float: right' role='presentation'>Remove Tab</span><a href='#tabContent"+tabCount+"'>"+tabName+"</a></li>";
-    var content = "<div id='tabContent"+tabCount+"' class='tabContentOuter'></div>";
-    return { tab: li, newContent: content };
-  }
-
-  function initDraggableTabs() {
-    $(".draggableTab").draggable({
-     revert: "invalid",
-     zIndex: 300
-    });
-    $(".draggableTab").droppable({
-     accept: ".draggableTab",
-     hoverClass: "ui-state-highlight",
-     drop: function(event, ui) {
-        var tabToMove = parseInt(ui.draggable[0].id.charAt(3));
-	var moveFrom = parseInt(ui.draggable[0].parentNode.id.charAt(7));
-        var moveTo = parseInt(this.parentNode.id.charAt(7));
-	var nodeList = this.parentElement.childNodes;
+		// Make the panes sortable
+		$(".column").sortable({
+			connectWith: $(".column"),
+			placeholder: 'panePlaceholder',
+			forcePlaceholderSize: true,
+			forceHelperSize: true,
+			opacity: 0.8,
+			handle: '.ui-widget-header',
+			helper: helperEl,
+			dropOnEmpty: true,
+			start: function (e, ui) {
+				paneDragSourceColId = ui.item.parent().attr('id').charAt(ui.item.parent().attr('id').length-1);
+				paneDragSourcePos = ui.item.parent().children().index(ui.item);
+				oldSelectedTab = ui.item.find('.ui-state-active').attr('id').substring(5);
+				
+				tabsInPane = [];
+				ui.item.children().find('li').each(function(index) {
+					tabsInPane.push($(this).attr('id').substring(5));
+				});
+			},
+			stop: function (e, ui) {
+				// Let the server handle movement of DOM elements
+				var paneId = ui.item.attr('id').charAt(ui.item.attr('id').length-1);
+				var toColId = ui.item.parent().attr('id').charAt(ui.item.parent().attr('id').length-1);
+				var dropPos = ui.item.parent().children().index(ui.item);
 	
-	// Determine the new position of the dropped tab in the tab bar
-	var insertIndex = 0;
-	for (i in nodeList) {
-	  if (nodeList[i] === ui.draggable[0]) continue;
-	  if (nodeList[i] === event.target) break;
-	  insertIndex++;
+				// Remove all tabs from the pane
+				// Remove the pane
+				// Add a pane in the new position
+				// Add the old tabs to the new pane
+				$(this).sortable('cancel');
+				for (index in tabsInPane) {
+					ASCOT.dashboard.removeTab(paneDragSourceColId, 0, paneId);
+				}
+				ASCOT.dashboard.removePane(paneDragSourcePos, paneDragSourceColId);
+				
+				ASCOT.dashboard.addPane(dropPos, toColId, paneId);
+				for (index in tabsInPane) {
+					ASCOT.dashboard.addTab(toColId, index, paneId, tabsInPane[index]);
+				}
+				ASCOT.dashboard.selectTab(paneId, oldSelectedTab);
+			}
+		});
+
+		// Make the tabs sortable
+		var sortableItems = $(".tabHandle");
+		$(".tabHandle").sortable({
+			items: sortableItems,
+			connectWith: $('.ui-tabs-nav'),
+			placeholder: 'tabPlaceholder',
+			forcePaceholderSize: true,
+			helper: helperEl,
+			forceHelperSize: true,
+			opacity: 0.8,
+			delay: 50,
+			start: function (e, ui) {
+				tabDragSourcePaneId = ui.item.parent().parent().parent().parent().attr('id').charAt(ui.item.parent().parent().parent().parent().attr('id').length-1);
+				tabDragSourcePos = ui.item.parent().children("li").index(ui.item);
+				sourcePanePos = ui.item.parent().parent().parent().parent().parent().children().index(ui.item.parent().parent().parent().parent());
+				sourceCol = ui.item.parent().parent().parent().parent().parent().attr('id').charAt(ui.item.parent().parent().parent().parent().parent().attr('id').length-1);
+				
+				ui.placeholder.css('min-width', ui.item.width() + 'px');
+				ui.placeholder.css('min-height', ui.item.height() + 'px');
+			},
+			stop: function (e, ui) {
+				// Let the server handle movement of DOM elements
+				var tabId = ui.item.attr('id').substring(5);
+				var destCol;
+				
+				var toPaneId = ui.item.parent().parent().parent().parent().attr('id').charAt(ui.item.parent().parent().parent().parent().attr('id').length-1);
+				var dropPos = ui.item.parent().children().index(ui.item);
+				destCol = ui.item.parent().parent().parent().parent().parent().attr('id').charAt(ui.item.parent().parent().parent().parent().parent().attr('id').length-1);
+				
+				// Dont do anything if we dropped the tab back into the same spot
+				if (sourceCol === destCol && tabDragSourcePos === dropPos && tabDragSourcePaneId === toPaneId) return;
+				
+				$(this).sortable('cancel');
+				ASCOT.dashboard.removeTab(sourceCol, tabDragSourcePos, tabDragSourcePaneId);
+				// If this is the last tab in the pane, also remove the pane
+				if ($("#paneTabs"+tabDragSourcePaneId+ " ul").children().length === 0) {
+					ASCOT.dashboard.removePane(sourcePanePos, sourceCol);
+				}
+				ASCOT.dashboard.addTab(destCol, dropPos, toPaneId, tabId);
+			}
+		});
 	}
-	handleMoveTab(tabToMove, moveFrom, moveTo, insertIndex);
-      }
-    });
-  }
 
-  // tabToMove - The id of the tab that is being dragged
-  // moveFrom - The id of the panel from which the drag started
-  // moveTo - The id of the panel to which the tab is being dragged
-  // insertIndex - The position in the tab list that the new tab will have (0 = first position)
-  function handleMoveTab(tabToMove, moveFrom, moveTo, insertIndex) {
-    var gadgetId = gadgetObjects[tabToMove].id;
-    var newColumnId = paneObjects[moveTo].parentColumnId;
-    ASCOT.dashboard.moveGadget(gadgetId, moveTo, newColumnId, insertIndex);
-    /*// Generate a new DOM object for the tab
-    var li = "<li id='tab"+tabToMove+"' class='draggableTab'><a href='#tabContent"+tabToMove+"'>Tab "+tabToMove+"</a> <span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>"
-    
-    $("#tab"+tabToMove).remove();
-    
-    // Add the new tab DOM object in the correct position
-    var insertIndexCount = 0;
-    $("#tabList"+moveTo+" > .draggableTab").each(function(index) {
-	if (insertIndexCount === insertIndex) {
-	  $(this).before(li);
-	  return false;
+	function populateGadgetList(listUl, liClickFunction) {
+		var success = function(listResults) {
+			listUl.empty();
+			for (id in listResults) {
+				if (listResults.hasOwnProperty(id)) {
+					var li = $("<li id='"+id+"'>"+listResults[id].name+"</li>");
+					li.click(function(e) { liClickFunction(e) });
+					listUl.append(li);
+				}
+			}
+		};
+		
+		$.ajax({
+			'url': '/gadgets/',
+			success: success
+		});
 	}
-	else
-	  insertIndexCount++;
-    });
-    // Make sure the new tab is draggable and droppable
-    initDraggableTabs();
 
-    // Set the iframe content window to the 'gadget' namespace
-    $("#pane"+moveTo).append($("#tabContent"+tabToMove));
-    $("#tabContent"+tabToMove).children().children().children()[0].contentWindow.gadget = gadgetObjects[tabToMove]; 
-
-    $("#pane"+moveTo).tabs("refresh");
-    $("#pane"+moveFrom).tabs("refresh");
-    cleanEmptyPanes();*/
-  }
-  
-  function cleanEmptyPanes() {
-    for (i in paneObjects) {
-      if ($("#tabList"+i).children().length < 1) {
-	$("#pane"+i).remove();
-	delete paneObjects[i];
-      }
-    }
-  }
-
-  function initInterface() {
-    for (i in paneObjects) {
-      if (paneObjects[i].initalized) {
-	$("#pane"+i).tabs('refresh');
-      }
-      else {
-	$("#pane"+i).tabs();
-	paneObjects[i].initalized = true;
-      }
-    } 
-    initDraggableTabs();
-  }
-
-  function addPane(columnNum, newPaneId) {
-    column = $("#column"+columnNum);
-    var newPane = $(getNewPaneHTML(newPaneId));
-    var paneObject = { element: newPane, parentColumnId: columnNum, id: newPaneId, initalized: false  };
-    paneObjects[newPaneId] = paneObject;
-    $("#addGadgetCol"+columnNum).before(newPane);
-    setupAddToPaneButton(newPaneId);
-  }
-
-  function addTab(paneId, tabContent, tabName) {
-    var tabList = $("#tabList"+paneId);
-    var newTab = getNewTabHTML(tabName);
-    var newTabContent = $(newTab.newContent);
-    newTabContent.append(tabContent);
-    var tabId = tabCount;
-    tabCount++;
-
-    var parentPane = $("#pane"+paneId);
-    parentPane.append(newTabContent);
-    tabList.append($(newTab.tab));
-
-    $("#closeTab"+tabId).click(function() {
-      var idStr = $(this).attr('id');
-      var id = parseInt(idStr.charAt(idStr.length-1));
-      ASCOT.dashboard.removeGadget(gadgetObjects[id].id);
-    });
-
-    initInterface();
-    return tabId;
-  }
-
-  return {
-    // Providing a column id or a pane id of -1 tells the layout manager
-    // to automatically choose an (unused) id
-    addGadget: function(gadgetFrame, gadgetObject, layoutObj) {
-      var columnId = layoutObj.parentColumnId;
-      var paneId = layoutObj.parentPaneId;   
-      var tabPos = layoutObj.tabPos;
-
-      if (columnId === -1)
-	columnId = 1;
-      if (paneId === -1) {
-        paneIndex = 0
-        while($("#pane"+paneIndex).length !== 0)
-          paneIndex++;
-        paneId = paneIndex;
-      }
-   
-      if ($("#pane"+paneId).length === 0) {
-	addPane(columnId, paneId);
-      }
-      var id = addTab(paneId, gadgetFrame, gadgetObject.id);
-      gadgetObjects[id] = gadgetObject;
-    },
-    removeGadget: function(gadgetId) {
-      var index;
-      for (i in gadgetObjects) {
-	if (gadgetObjects[i].id === gadgetId) {
-	  index = i;
-	  break;
+	function getAddGadgetDiv(colId) {
+		var addGadgetDiv = $("<div id='addToCol"+colId+"'></div>");
+		
+		// The button
+		var addButton = $("<button id='addGadgetToCol"+colId+"' style='width: 100%'></button>");
+		var addIcon = $("<span class='ui-icon ui-icon-plus' id='addSpan"+colId+"' role='presentation'>Add Pane</span>");
+		addButton.append(addIcon);
+		
+		// The gadgets list
+		var list = $("<ul id='colGadgetsList"+colId+"' class='gadgetsListInternal'></ul>");
+		addGadgetDiv.append(list);
+		
+		addGadgetDiv.append(addButton);
+		list.hide();
+		addButton.click(function() { 
+			addIcon.toggleClass('ui-icon-plus');
+			addIcon.toggleClass('ui-icon-minus');
+			list.toggle();
+		});
+		
+		// Function for clicking a gadget name
+		var clickGadgetName = function(e) {
+			var gadgetName = $(e.target).attr('id');
+			var columnNum = $(e.target).parent().parent().parent().attr('id').charAt($(e.target).parent().parent().parent().attr('id').length-1);
+			
+			ASCOT.dashboard.addGadget(gadgetName, columnNum);
+			addIcon.toggleClass('ui-icon-plus');
+			addIcon.toggleClass('ui-icon-minus');
+			list.hide();
+		}
+		populateGadgetList(list, clickGadgetName);
+		return addGadgetDiv;
 	}
-      }
-      $("#tab"+index).remove();
-      $("#tabContent"+index).remove();
-      delete gadgetObjects[index];
-      cleanEmptyPanes();
-    },
-    setRootElement: function(el) {
-      rootElement = el;
-    },
-    setClickAddEvent: function(addFunc) {
-      clickAddGadget = addFunc;
-    },
-    setNumColumns: function(newNumColumns) {
 
-      if(typeof rootElement == "undefined")
-	UW.log.error("PRECONDITION VIOLATION","Undefined root element");
-					
-      for(var i=0; i < numColumns; i++){
-	delete columns[i];
-      }
-      columns = [];
+	function addColumn(colId, width) {
+		var colDiv = $("<div id='colContainer" + colId + "' class='columnContainer' style='width: "+width+"'></div>");
+		var newCol = $("<ul id='col" + colId + "' class='column'></ul>");
+		rootElement.append(colDiv);
+		colDiv.append(newCol);
 	
-      numColumns = newNumColumns;
-      var columnWidth = (100 / numColumns) + "%";
+		var addGadgetDiv = getAddGadgetDiv(colId);
+		colDiv.append(addGadgetDiv);
+	}
 
-      for(var i=0; i < numColumns; i++){
-	var newColumn = document.createElement('div');
-	newColumn.id = "column" + i;
-	newColumn.style.width =  columnWidth;
-	newColumn.style.cssFloat = "left";
+	function addPane(colNum, paneId, pos) {
+		var newPane = $("<li class='pane' id='pane" + paneId + "'></li>");
+		var paneContent = $("<div class='paneContent' id='paneContent" + paneId + "'></div>");
+		var paneTabs = $("<div id='paneTabs" + paneId + "' class='tabContainer'><ul></ul></div>");
+
+		if (pos === undefined) {
+			$("#col" + colNum).append(newPane);
+		}
+		else if (pos > 0) {
+			$("#col" + colNum).children().eq(pos - 1).after(newPane);
+		}
+		else if (pos === 0) {
+			$("#col" + colNum).prepend(newPane);
+		}
+
+		newPane.append(paneContent);
+		paneContent.append(paneTabs);
+	}
 	
-	columns.push(newColumn);
-	rootElement.appendChild(newColumn);
+	function removePane(paneId) {
+		$("#pane" + paneId).remove();
+	}
 
-	setupAddToColButton(i);
-      }
+	function addTab(tabContentCode, paneNum, pos, tabId) {
+		var pos = parseInt(pos);
+		var tabDiv = $("#paneTabs" + paneNum);
+		var ul = $("#paneTabs" + paneNum + " > ul");
+		var newLi = $("<li id='tabLi" + tabId + "' class='tabHandle'><a href='#tabContent" + tabId + "' style='padding-right: 0px'>" + tabId + "</a></li>");
+		var newContent = $("<div id='tabContent" + tabId + "'></div>");
 
-      // To make sure that the root element adapts its size to the content
-      var closeElement = document.createElement('div');
-      closeElement.style.clear = 'both';
-      rootElement.appendChild(closeElement); 
+		var numTabs = ul.children().length;
 
-      return columns;
-    }
-  };
+		if (pos > 0) {
+			ul.children().eq(pos - 1).after(newLi);
+			tabDiv.children("div").eq(pos - 1).after(newContent);
+		}
+		else if (pos === 0) {
+			ul.prepend(newLi);
+			ul.after(newContent);
+		}
+
+		var ejectTabButton = $("<span class='ui-icon ui-icon-arrowthickstop-1-n' id='ejectTab" + tabId + "' style='float: right' role='presentation'>Remove Tab</span>");
+		ejectTabButton.click(function (e) {
+			var sourceCol = $(e.target).parent().parent().parent().parent().parent().parent().attr('id').charAt($(e.target).parent().parent().parent().parent().parent().parent().attr('id').length-1);
+			var tabPos = $(e.target).parent().parent().children().index($(e.target).parent());
+			var ejectPaneId = $(e.target).parent().parent().parent().attr('id').charAt($(e.target).parent().parent().parent().attr('id').length-1);
+			var panePos = $(e.target).parent().parent().parent().parent().parent().parent().children().index($(e.target).parent().parent().parent().parent().parent());
+			
+			ASCOT.dashboard.removeTab(sourceCol, tabPos, ejectPaneId);
+			if ($("#paneTabs"+ejectPaneId+ " ul").children().length === 0) {
+				ASCOT.dashboard.removePane(panePos, sourceCol);
+			}
+			var newPaneId = ASCOT.dashboard.addPane(panePos, sourceCol);
+			ASCOT.dashboard.addTab(sourceCol, 0, newPaneId, tabId);
+			ASCOT.dashboard.selectTab(newPaneId, tabId);
+		});
+
+		var closeTabButton = $("<span class='ui-icon ui-icon-close' id='closeTab" + tabId + "' style='float: right' role='presentation'>Remove Tab</span>");
+		closeTabButton.click(function (e) {
+			var tabToClose = e.target.id.charAt(e.target.id.length - 1);
+			var colIndex = $(e.target).parent().parent().parent().parent().parent().parent().attr('id').charAt($(e.target).parent().parent().parent().parent().parent().parent().attr('id').length-1);
+			var panePos = $(e.target).parent().parent().parent().parent().parent().parent().children().index($(e.target).parent().parent().parent().parent().parent());
+			var tabPos = $(e.target).parent().parent().children().index($(e.target).parent());
+			var paneId = $(e.target).parent().parent().parent().attr('id').charAt($(e.target).parent().parent().parent().attr('id').length-1);
+			var gadgetId = e.target.id.substr(8);
+			
+			// Tell the server to remove the tab and gadget
+			ASCOT.dashboard.removeTab(colIndex, tabPos, paneId);
+			ASCOT.dashboard.removeGadget(gadgetId);
+			// Remove the pane if this is the last tab in it
+			if ($("#paneTabs"+paneId+ " ul").children().length === 0) {
+				ASCOT.dashboard.removePane(panePos, colIndex);
+			}
+		});
+		newLi.append(closeTabButton);
+		newLi.append(ejectTabButton);
+
+		var tabContent = $(tabContentCode);
+		newContent.append(tabContent);
+		
+		return tabContent;
+	}
+
+	function removeTab(tabId) {
+		$("#tabLi" + tabId).remove();
+		$("#tabContent" + tabId).remove();
+	}
+	
+	function selectTab(tabId) {
+		var tabLi = $("#tabLi"+tabId);
+		var index = tabLi.parent().children().index(tabLi);
+		var paneId = tabLi.parent().parent().attr('id').charAt(tabLi.parent().parent().attr('id').length-1);
+		$("#paneTabs"+paneId).tabs('option', 'active', index);
+	}
+
+	function moveTab(fromPaneId, fromPos, toPaneId, toPos) {
+		var liToMove = $("#paneTabs" + fromPaneId + " > ul").children().eq(fromPos);
+		var contentToMove = $("#paneTabs" + fromPaneId + " > div").eq(fromPos);
+		var toUl = $("#paneTabs" + toPaneId + " > ul");
+		var toContent = $("#paneTabs" + toPaneId);
+
+		if (toPos > 0) {
+			toUl.children().eq(toPos - 1).after(liToMove);
+			toContent.children("div").eq(toPos - 1).after(contentToMove);
+		}
+		else if (toPos === 0) {
+			toUl.prepend(liToMove);
+			toUl.after(contentToMove);
+		}
+
+		// Remove the old pane if it is now empty
+		var numSourceTabs = $("#paneTabs" + fromPaneId + " > ul").children().length;
+		if (numSourceTabs === 0) {
+			$("#pane" + fromPaneId).remove();
+		}
+	}
+	
+	function refreshPanes() {
+		makeSortable();
+	}
+	
+	function initTabs($container) {
+		$container.tabs({
+			activate: function (event, ui) {
+				if (!layoutInitalized) return false;
+				var paneId = ui.newTab.parent().parent().attr('id').charAt(ui.newTab.parent().parent().attr('id').length-1)
+				var tabId = ui.newTab.attr('id').substring(5)
+				ASCOT.dashboard.selectTab(paneId, tabId);
+			}
+		});
+	}
+	
+	function refreshTabs() {
+		// New containers need to be initalized
+		// Existing containers need to be refreshed
+		$(".tabContainer").each(function() {
+			if ($(this).hasClass("ui-tabs")) {
+				$(this).tabs('refresh');
+			}
+			else {
+				initTabs($(this));
+			}
+		});
+	}
+	
+	function initalize(activeTabs) {
+		refreshTabs();
+		refreshPanes();
+		
+		for (i in activeTabs) {
+			selectTab(activeTabs[i]);
+		}
+		
+		layoutInitalized = true;
+	}
+
+	return {
+		addCol: addColumn,
+		addPane: addPane,
+		removePane: removePane,
+		addTab: addTab,
+		removeTab: removeTab,
+		selectTab: selectTab,
+		refreshPanes: refreshPanes,
+		refreshTabs: refreshTabs,
+		initalize: initalize
+	}
 };
