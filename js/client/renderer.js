@@ -34,7 +34,7 @@ UW.Renderer = function(container, layout, activeTab, gadgets) {
 		var tabContentEl = layoutManager.addTab(tabCode, paneNum, pos, tabId);
 		tabContentEl.load(function(){ gadget.init(successCallback); });
 		tabContentEl[0].contentWindow.gadget = gadget;
-		tabContentEl[0].contentWindow.resize = autoResize;
+		gadget.resize = function() { autoResize(this.id); };
 	};
 	
 	this.removeTab = function (tabId) {
