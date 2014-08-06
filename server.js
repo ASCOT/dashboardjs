@@ -98,14 +98,17 @@ app.post('/uploadFITS/:dashboardId', function(req, res) {
 	// Add the image to /images/fitsViewer/(dashboardId)
 	var tmpPath = req.files.fitsImage.path;
 	var dashboardId = req.params.dashboardId;
-	var targetPath = './public/images/fitsViewer/' + dashboardId;
+	var targetPath = './public/images/fitsViewer/';
 	
 	// Create the directory if it doesnt exist
 	if (!fs.existsSync(targetPath)) {
 		fs.mkdirSync(targetPath);
 	}
+	if (!fs.existsSync(targetPath + dashboardId)) {
+		fs.mkdirSync(targetPath + dashboardId);
+	}
 	
-	targetPath +=  '/' + req.files.fitsImage.name;
+	targetPath +=  dashboardId + '/' + req.files.fitsImage.name;
 	fs.rename(tmpPath, targetPath, function(err) {
 		if (err) throw err;
 		fs.unlink(tmpPath, function() {
