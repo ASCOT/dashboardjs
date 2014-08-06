@@ -431,9 +431,9 @@ function generatePoints(){
   
   for (i=0,len=selectedDataSet.length(); i<len; i++) {
     xValue = selectedDataSet.getRecord(i)[selectedXAxis]; 
-    xValue = /\./.test(xValue)? parseFloat(xValue) : xValue;
+    xValue = parseFloat(xValue);
     yValue = selectedDataSet.getRecord(i)[selectedYAxis];
-    yValue = /\./.test(yValue)? parseFloat(yValue) : yValue;
+    yValue = parseFloat(yValue);
     var v = selectedDataSet.getRecord(i)["visible"];
     if (v == "false" || v == false)
     	visible = false;

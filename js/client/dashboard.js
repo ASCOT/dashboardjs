@@ -570,7 +570,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		}
 		this.trigger(notification, notificationObject);
 		if (!options.self) {
-			bayeuxClient.publish('/dashboard/' + id, notificationObject);
+			//bayeuxClient.publish('/dashboard/' + id, notificationObject);
 		}
 	};
 
@@ -621,7 +621,9 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 			this.renderGadgets(_.bind(function () {
 				this.notify('dataSetChanged');
 			}, this));
-
+			
+		renderer = new UW.Renderer(domContainer, layout, activeTab, gadgets);
+		
 		}, this);
 
 		if (!dashboardState)
@@ -637,6 +639,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		else {
 
 			id = dashboardState.id;
+			this.id = id;
 			this.initCommunications(id);
 
 			if (dashboardModel.at('dataSets').get()) {
@@ -645,8 +648,6 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 			else {
 				loadGadgets();
 			}
-		
-			renderer = new UW.Renderer(domContainer, layout, activeTab, gadgets);
 		}
 	};
 

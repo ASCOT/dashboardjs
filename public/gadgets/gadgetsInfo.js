@@ -13,11 +13,11 @@ var gadgets = {
     author: "Ian Smith - imsmith@uw.edu",
     version: "0.1" 
   },
-  astroJsFitsViewer: { 
-    name: "AstroJS Fits Viewer",
-    fileName: "astroJsFitsViewer.html",
-    description: "Display and interact with fits files. Powered by Amit Kapadia's AstroJS FITS parser.",
-    author: "Amit Kapadia - amit@zooniverse.com, Spencer Wallace - spencerw@email.arizona.edu",
+  fitsViewer: { 
+    name: "FITS Viewer",
+    fileName: "fitsViewer.html",
+    description: "Display and interact with fits files.",
+    author: "Spencer Wallace - spencerw@email.arizona.edu",
     version: "0.1"
   },
   skyView: {
@@ -83,14 +83,6 @@ var gadgets = {
     author: "Matthew Moyers - mmoyers@gmail.com",
     version: "0.1"
   }
-  /*
-  fitsViewer_PDR: { 
-    name: "Fits Viewer PDR",
-    fileName: "fitsViewer_PDR.html",
-    description: "Display and interact with fits files. This version fetches images from simulated LSST data.",
-    author: "Diego Marcos - diego.marcos@gmail.com, Spencer Wallace - spencerw@email.arizona.edu",
-    version: "0.1"
-  },*/
 }
 
 module.exports.all = gadgets;

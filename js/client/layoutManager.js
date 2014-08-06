@@ -147,6 +147,7 @@ UW.layoutManager = function (rootElement) {
 					ASCOT.dashboard.removePane(sourcePanePos, sourceCol);
 				}
 				ASCOT.dashboard.addTab(destCol, dropPos, toPaneId, tabId);
+				ASCOT.dashboard.selectTab(toPaneId, tabId)
 			}
 		});
 	}

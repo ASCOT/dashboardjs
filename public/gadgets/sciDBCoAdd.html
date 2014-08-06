@@ -214,8 +214,9 @@ window.onload = function() {
                 if (result['status'] === 'OK') {
                     showStatus(ICON_URL_SUCCESS, "Query Complete.");
                     
+                    gadget.notify('newSciDbURL', scidbServerAPI + "get/" + result['fits_file']);
                     //gadget.notify('loadImageURL', scidbServerAPI + "get/" + result['fits_file']);
-		    gadget.dashboard.addGadget('astroJsFitsViewer', -1, -1, {imagePath: scidbServerAPI + "get/" + result['fits_file']});
+		    //gadget.dashboard.addGadget('astroJsFitsViewer', -1, -1, {imagePath: scidbServerAPI + "get/" + result['fits_file']});
                     
                 } else {
                     showStatus(ICON_URL_ERROR, "An errored occured while processing the query.");

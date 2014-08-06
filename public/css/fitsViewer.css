@@ -1,110 +1,129 @@
-canvas { 
-  cursor: pointer; 
-  -webkit-user-select: none;
-}
-input{
+/* Reset */
+.menu,
+.menu ul,
+.menu li,
+.menu div {
 	margin: 0;
 	padding: 0;
+	border: none;
+	outline: none;
 }
-#title{
- font-weight: bold;
- font-size: 50px;
+
+/* Menu */
+.menu-top {	
+	height: 40px;
+
+	background: -webkit-gradient(linear, 0% 40%, 0% 70%, from(rgb(245, 245, 245)), to(rgb(241, 241, 241)));
+	box-shadow: 0 0 0 1px #aaa inset;
+	
+	border-top-left-radius: 5px;
+	border-top-right-radius: 5px;
 }
-#slogan{
- font-size: 30px; 
- vertical-align: middle;
- line-height: 2;
+
+.menu-bot {	
+	height: 30px;
+
+	background: -webkit-gradient(linear, 0% 40%, 0% 70%, from(rgb(245, 245, 245)), to(rgb(241, 241, 241)));
+	box-shadow: 0 0 0 1px #aaa inset;
+
+	border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 5px;
 }
-#logo{
- position: absolute;
- top: 0px;
- left: 0px;
- background-image: url(../images/logo.png);
- width: 399px;
- height: 252px;
- z-index: -1; 
-}
-#wrapper{ 
+
+.menu li {
 	position: relative;
-  width: auto;    
-  height: auto; 
-  margin: auto; 
-  padding: 10px;
-}
-#dropbox{
-  display: block;
-  background-color: #F0EFD1;
-  border-radius: 5px;
-  padding: 10px;
-  width: auto;
-  height: 480px;
-  border: 2px solid black;
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  text-align: center;
-  position: relative;
-}
-#annoControlsContainer{
-  display: block;
-  background-color: #F0EFD1;
-  border-radius: 5px;
-  padding: 10px;
-  width: auto;
-  height: 100%;
-  border: 2px solid black;
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  text-align: left;
-}
-#infoAndSliders{
-  display: block;
-  background-color: #F0EFD1;
-  border-radius: 5px;
-  padding: 10px;
-  width: auto;
-  height: 270px;
-  border: 2px solid black;
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  text-align: left;
-}
-#infobox{
-  height: 600px;
-  width: 340px;
-  float: right;
-}
-#dropLabel{
-  display: inline-block;
-  margin-top: 200px;
-  font: 22px 'Lucida Grande', 'Helvetica Neue', Arial, sans-serif;
-}
-#fileChooser{
+	list-style: none;
+	float: left;
 	display: block;
-	height: 32px;
-}
-  
-.ui-slider {
-  position: relative;
-  width: 300px;
-  height: 3px;
-  background: #3F3F3F;
-  margin-top: 8px;
+	height: 40px;
 }
 
-.ui-slider-handle {
-  cursor: default;
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  background: #DFDFDF;
-  background: -moz-linear-gradient(#EFEFEF, #BFBFBF);
-  background: -webkit-gradient(linear, left top, left bottom, from(#EFEFEF), to(#BFBFBF));
-  border: 1px solid #3F3F3F;
-  margin: -5px 0 0 -7px;
-  border-radius: 7px;
-  -moz-border-radius: 7px;
-  -webkit-border-radius: 7px;
+/* Links */
+
+.menu li div {
+	display: block;
+	padding: 0 14px;
+	margin: 6px 0;
+	line-height: 28px;
+	text-decoration: none;
+
+	font-family: Arial;
+	font-weight: bold;
+	font-size: 12px;
+
+	color: #555;
+
+	-webkit-transition: color .2s ease-in-out;
+	-moz-transition: color .2s ease-in-out;
+	-o-transition: color .2s ease-in-out;
+	-ms-transition: color .2s ease-in-out;
+	transition: color .2s ease-in-out;
 }
 
-.ui-state-active { background: white; }
-.ui-state-focus { outline: none; }
+.menu li:hover > div { 
+	box-shadow: 0 0 0 1px #cacaca inset;
+	cursor: default;
+}
+
+/* Sub Menu */
+
+.menu ul {
+	position: absolute;
+	top: 40px;
+	left: 0;
+
+	opacity: 0;
+	
+	background: -webkit-gradient(linear, 0% 40%, 0% 70%, from(rgb(245, 245, 245)), to(rgb(241, 241, 241)));	
+	box-shadow: 0 0 0 1px #aaa inset;
+
+	-webkit-border-radius: 0 0 5px 5px;
+	-moz-border-radius: 0 0 5px 5px;
+	border-radius: 0 0 5px 5px;
+
+	-webkit-transition: opacity .25s ease .1s;
+	-moz-transition: opacity .25s ease .1s;
+	-o-transition: opacity .25s ease .1s;
+	-ms-transition: opacity .25s ease .1s;
+	transition: opacity .25s ease .1s;
+}
+
+.menu ul li {
+	height: 0;
+	overflow: hidden;
+	padding: 0;
+	
+	-webkit-transition: height .25s ease .1s;
+	-moz-transition: height .25s ease .1s;
+	-o-transition: height .25s ease .1s;
+	-ms-transition: height .25s ease .1s;
+	transition: height .25s ease .1s;
+}
+
+.menu li:hover > ul li {
+	height: 36px;
+	overflow: visible;
+	padding: 0;
+}
+
+.menu ul li div {
+	width: 130px;
+	padding: 4px 4px 4px 4px;
+	margin: 0;
+}
+
+.menu ul li:last-child div { border: none; }
+
+.dot {
+	background: #555;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	float: left; 
+	position: relative; 
+	top: 8px;
+}
+
+#canvas:active {
+	cursor: pointer;
+}

@@ -1,832 +1,736 @@
-<!-- Author: Spencer Wallace (spencerw@email.arizona.edu) -->
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Pragma" content="no-cache">
-<title>Fits Viewer</title>
+<title>FITS Viewer</title>
+
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css">
+<script type="text/javascript" src="http://code.jquery.com/jquery-2.1.1.js"></script>
+<script type="text/javascript" src="http://code.jquery.com/ui/1.11.0/jquery-ui.js"></script>
+<link href="/css/fitsViewer.css" rel="stylesheet" type="text/css">
+
+<!-- Libraries for FITS viewer -->
+<script type="text/javascript" src="/fitsViewer/gl-matrix-min.js"></script>
+<script type="text/javascript" src="/fitsViewer/fits.js"></script>
+<script type="text/javascript" src="/wcs.js"></script>
+<script type="text/javascript" src="/fitsViewer/fitsVis.js"></script>
 
 <!-- ASCOT Basic Style Sheets -->
 <link href="/css/reset.css" rel="stylesheet" type="text/css">
 <link href="/css/text.css" rel="stylesheet" type="text/css"> 
 <link href="/css/widgets.css" rel="stylesheet" type="text/css"> 
-<link href="/css/fitsViewer.css" rel="stylesheet" type="text/css">
 </head>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-<script src="/jquery.ui.slider.js" type="text/javascript"></script>
-<script src="/require.js" type="text/javascript"></script>
-<script src="/glfx.js" type="text/javascript"></script>
-<script src="/pngParser.js" type="text/javascript"></script>
-<script src="/fits.js" type="text/javascript"></script>
-<script src="/canvasAnnotator.js" type="text/javascript"></script>
-<script>
+<script type="text/javascript">
 
-// Brightness and contrast sliders
-var sliders = [{name : 'brightness', label : 'Brightness', min : -1, max : 1, value : 0, step : 0.01 },
-               {name : 'contrast', label : 'Contrast', min : -1, max : 1, value : 0, step : 0.01 }];
-
-// List of remote image to load from server           
-var imageFiles = [
-    {
-      path: 'none',
-      name: '--From Server--'
-    }, 
-    {
-      path: '/images/FITSViewerSamples/m101_dss.fits',
-      name: 'm101.fits'
-    },
-    {
-    	path: '/images/FITSViewerSamples/stsci_dss_001.fits',
-    	name: 'stsci_dss_001.fits'
-    }];
-
-// Selection color options
-var DEFAULT_MARKER_COLOR = '#ffffff';
-var MARKER_COLOR = {
-  red: '#ff0000',
-  green: '#00ff00',
-  blue: '#0000ff',
-  yellow: '#dcdc00',
-  unselect: '#ffffff' 
-};  
-
-// RequireJS modules
-var annotator;
-var fits;
-
-// Gadget state
-var savedImagePath;
-var showAnnotations = true;
-var imageLoaded = false;
-var dataSetImported = false;
-var mouseDown = false;
-var prevSelectedIndex = -1;
-var dragStart = {x: '', y: ''};
-var EDIT_TYPE = {ADD: 1, REMOVE: 2, ZOOM: 3, PAN: 4, SELECT: 5};
-var ANNO_TYPE = {RECT: 1, CIRCLE: 2, POLY: 3, DATA: 4};
-var COORD_TYPE = {PIXEL: 1, WCS: 2};
-var selectedCoordType = COORD_TYPE.WCS;
-var selectedEditType = EDIT_TYPE.PAN;
-var selectedAnnoType = ANNO_TYPE.CIRCLE;
-var polyCreateList = []
-var selectedDataSet;
-var selectedDataSetId = -1;
-
-// Canvases and attributes
-var display;
-var fitsCanvas;
-var annotatorCanvas;
-var editCanvas;
-var displayWidth;
-var displayHeight;
-var displayContext;
-var editContext;
-
-gadget.saveState = function(){};
-gadget.loadState = function(state){
-	if (state) {
-		showAnnotations = state.showAnnotations;
-		$('#showAnnotations').prop('checked', showAnnotations);
-		savedImagePath = state.imagePath;
-		if (state.savedDataSetId !== undefined)
-			selectedDataSetId = state.savedDataSetId;
-	}
-}
-
-gadget.init = function(finishedLoading){
-	initViewer();
-	gadget.update = function() {};
-	gadget.onNotification('dataSetChanged', dataSetChanged);
+gadget.init = function(finishedLoading) {
+	gadget.update = gadget.loadState;
+	gadget.onNotification('dataSetChanged', updateDsPoints);
+	gadget.onNotification('newSciDbURL', handleSciDbResponse);
+	gadget.onNotification('requestViewBounds', handleViewBoundsRequest);
+	initHTML();
   finishedLoading();
 };
 
-// Initalize the fits viewer, called when the gadget is initalized
-var initViewer = function() {
-require(['fits','pngParser', '/binaryajax.js', 'canvasAnnotator'], function(_fits, PNGParser, BinaryAjax, canvasAnnotator) {
-    fits = _fits;
-    annotator = canvasAnnotator;
-    
-    initCanvases();
-    initHTMLControls();
-    
-    $('#dropbox').on("dragenter", noopHandler);
-		$('#dropbox').on("dragexit", noopHandler);
-		$('#dropbox').on("dragover", noopHandler);
-		$('#dropbox').on("drop", drop);
-    $('#canvasArea').on('mousedown', handleMousedown);
-		$('#canvasArea').on('mouseup', handleMouseup);
-		$('#canvasArea').on('mousemove', handleMousemove);
-		$('#canvasArea').on('mouseout', handleMouseout);
-		$('#display').on('mousewheel', handleMousewheel);
-		
-		// Bring up an existing image if one is saved to the dashboard state
-		if (savedImagePath != undefined)
-			imageFromUrl(savedImagePath);
+gadget.saveState = function() {
 
-    // fits.onHoverPixelChanged = function(pixelInfo){
-    //   var x = document.getElementById("xCoordinate");
-    //   var y = document.getElementById("yCoordinate");
-    //   var value = document.getElementById("pixelValue");
-    //   x.innerHTML = pixelInfo.x;
-    //   y.innerHTML = pixelInfo.y;
-    //   value.innerHTML = pixelInfo.value;
-    // };
-
-  });
-}
-
-// Create and set canvas attributes; The fits canvas holds the pixels from the fits image; The annotator canvas
-// is used for drawing annotations; The edit canvas is used for drawing edit marks like selection boxes and
-// the display canvas is the surface onto which the other canvases are displayed
-var initCanvases = function() {
-	display = document.getElementById('display');
-  var canvasArea = document.getElementById('canvasArea');
-	display.width = canvasArea.offsetWidth;
-	display.height = canvasArea.offsetHeight;
-  displayContext = display.getContext('2d');
-  displayWidth = display.width;
-  displayHeight = display.height;
-  
-  fitsCanvas = document.createElement('canvas');
-  fitsCanvas.setAttribute('width', displayWidth);
-  fitsCanvas.setAttribute('height', displayHeight);
-  annotatorCanvas = document.createElement('canvas');
-  annotatorCanvas.setAttribute('width', displayWidth);
-  annotatorCanvas.setAttribute('height', displayHeight);
-  editCanvas = document.createElement('canvas');
-  editCanvas.setAttribute('width', displayWidth);
-  editCanvas.setAttribute('height', displayHeight);
-  editContext = editCanvas.getContext('2d');
-  editContext.fillStyle = "white";
-  editContext.globalAlpha = 0.5;
-}
-
-// Send a file object to the FITS parser to be displayed
-var renderFile = function(file) {
-	$('#dropLabel').html('Loading file...');
-	$('#loadingBar').show();
-	fits.renderImage(file, fitsCanvas, renderSuccess);
-}
-
-// Executes after a FITS file is successfully loaded
-var renderSuccess = function(){
-  $('#dropLabel').hide();
-  $('#loadingBar').hide();
-  $('#fitsCanvas').show();
-  $('#display').show();
-  $('#init').hide();
-  $('#unloadImageButton').show();
-  $('#annoControlsContainer').show();
-  $('#slidersList').show();
-  gadget.resize();
-  imageLoaded = true;
-  
-  // Initalize the annotator
-	var imageDimensions = fits.getImageDimensions();
-	annotator.init(annotatorCanvas, imageDimensions.width, imageDimensions.height);
-  
-  // Send the image boundaries to the dashboard
-  var topLeft = fits.pix2wcs(parseFloat(imageDimensions.width), parseFloat(imageDimensions.height));
-  var bottomRight = fits.pix2wcs(0.0, 0.0);
-  var curBounds = { topLeft: {ra: topLeft.c1, dec: topLeft.c2 },
-                    bottomRight: {ra: bottomRight.c1, dec: bottomRight.c2} };   
-  gadget.notify('viewBoundsChanged', curBounds);
-  
-  // Load up a dataset if one was saved
-  if (selectedDataSetId != -1)
-  	addDataSetPoints();
-  
-  /*// Add some sample annotations
-  var circlePos = fits.wcs2pix(241.1766,10.102814);
-	annotator.addCircleRegion({'xPos': circlePos.x, 'yPos': circlePos.y, 'radius': 10, label: "circle"});
-	document.getElementById("annoSelect").add(new Option("circle", "0"), null);
-	
-	var rectCorner1 = fits.wcs2pix(241.14284,10.097803);
-	var rectCorner2 = fits.wcs2pix(241.10768,10.055799);
-	annotator.addRectRegion({'xPos': rectCorner1.x, 'yPos': rectCorner1.y, 
-																 'width': rectCorner2.x-rectCorner1.x, 'height': rectCorner2.y-rectCorner1.y, 
-																 'label': "rectangle"});
-	document.getElementById("annoSelect").add(new Option("rectangle", "0"), null);
-	
-	var polyPoint1 = fits.wcs2pix(241.14991,10.038203);
-	var polyPoint2 = fits.wcs2pix(241.11599,10.038834);
-	var polyPoint3 = fits.wcs2pix(241.09425,10.019755);
-	var polyPoint4 = fits.wcs2pix(241.11591,10.007677);
-	var polyPoint5 = fits.wcs2pix(241.15262,10.008678);
-	var labelPos = fits.wcs2pix(241.10089,10.007713);
-	annotator.addPolyRegion({'vertices': [[polyPoint1.x,polyPoint1.y],
-																							[polyPoint2.x,polyPoint2.y],
-																							[polyPoint3.x,polyPoint3.y],
-																							[polyPoint4.x,polyPoint4.y],
-																							[polyPoint5.x,polyPoint5.y]], 
-																 'label': "polygon", 'labelXPos': labelPos.x, 'labelYPos': labelPos.y});
-	document.getElementById("annoSelect").add(new Option("polygon", "0"), null);*/
-	
-	draw();
 };
 
-// Draw the fits image, annotations, and edit marks
-var draw = function() {
-	annotator.draw();
-	displayContext.clearRect(0, 0, displayWidth, displayHeight);
-  displayContext.drawImage(fitsCanvas, 0, 0, displayWidth, displayHeight, 0, 0, displayWidth, displayHeight);
-  displayContext.drawImage(annotatorCanvas, 0, 0, displayWidth, displayHeight, 0, 0, displayWidth, displayHeight);
-  displayContext.drawImage(editCanvas, 0, 0, displayWidth, displayHeight, 0, 0, displayWidth, displayHeight);
-}
-
-// Used to prevent something from happening when an event fires
-var noopHandler = function(evt) {
-	evt.stopPropagation();
-	evt.preventDefault();
-}
-
-// Called when a file is dropped into the drop box
-var drop = function(evt) {
-	var files = evt.dataTransfer.files;
-	var count = files.length;
-	evt.stopPropagation();
-	evt.preventDefault();
-	// Only call the handler if 1 or more files was dropped.
-	if (count > 0) {
-		$('#dropLabel').html("Processing " + files[0].name);
-		renderFile(files[0]);
-	}
-}
-
-// Select all annotations between two pixel coordinates on the image and mark those
-// annotations in the global dataset
-var selectAnnotations = function(start, end) {
-	var startNative = fits.cursorToPix(start.x, start.y);
-	var endNative = fits.cursorToPix(end.x, end.y);
-
-	var selectEl = document.getElementById("selectionColorSelect");
-	var colorName = selectEl.options[selectEl.selectedIndex].value;
-	var idsToColor = annotator.selectAnnotations(startNative, endNative, MARKER_COLOR[colorName]);
-	
-	if (!dataSetImported)
-		return;
-	setTimeout(function() { selectedDataSet.setRecords({'color': colorName}, idsToColor); }, .1);
-}
-
-// If a dataset is selected, sync the color of the annotations up with the 
-// color of the points in the dataset
-var updateSelectedPoints = function() {
-	if (!dataSetImported)
-		return;
- 	for (var i = 0; i < selectedDataSet.length(); i++) {
- 		var color = MARKER_COLOR[selectedDataSet.getRecord(i).color];
- 		var id = selectedDataSet.getRecord(i).id;
- 		if (color != undefined)
- 			annotator.colorAnnotation(id, color);
- 	}
-}
-
-// Repopulate the data selection dropdown and update all of the displayed points
-// when the global dataset changes
-var dataSetChanged = function() {
-	
-	populateDataSetSelect();
-	
-	if (!imageLoaded)
-		return;
-	
-	updateSelectedPoints();
-	draw();
-}
-
-var dataSetSelectChange = function() {
-	var el = document.getElementById("datasetNameSelect");
-	selectedDataSetId = parseInt(el.options[el.selectedIndex].value);
-}
-
-// Gets all of the dataset names and puts them in the import dataset dropdown
-var populateDataSetSelect = function() {
-	var el = document.getElementById("datasetNameSelect");
-	var items = gadget.dashboard.getDataSetList();
-	el.options.length = 0;
-	for (i in items) {
-		var option = document.createElement("OPTION");
-		option.text = items[i].text;
-		option.value = items[i].id;
-		el.options.add(option);
-	}
-	selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetId);
-}
-
-// Event handlers for the canvases
-
-var handleMousedown = function(e) {
-	if (!imageLoaded)
-		return;
-	// Send event to fits image canvas
-	if (selectedEditType == EDIT_TYPE.PAN) {
-		var evObj = document.createEvent('MouseEvents');
-		evObj.initMouseEvent( 'mousedown', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
-		fitsCanvas.dispatchEvent(evObj);
-	}
-
-	mouseDown = true;
-	if (selectedEditType == EDIT_TYPE.ADD || selectedEditType == EDIT_TYPE.SELECT) {
-		dragStart = {x: e.offsetX, y: e.offsetY};
-	}
-	annotator.handleMousedown(e.originalEvent);
-	draw();
-}
-
-var finishDrag = function(e) {
-	if (selectedEditType == EDIT_TYPE.ADD) {
-		editContext.clearRect(0,0,640,480);
-		var start = fits.cursorToPix(dragStart.x, dragStart.y);
-		var end = fits.cursorToPix(e.offsetX, e.offsetY);
-		if (selectedAnnoType == ANNO_TYPE.RECT) {
-			annotator.addRectRegion({'xPos':start.x, 'yPos': start.y, 
-													 		 'width': end.x-start.x, 'height': end.y-start.y, 
-															 'label': "rect"});
- 			document.getElementById("annoSelect").add(new Option("rect", "0"), null);
-		}
-		else if (selectedAnnoType == ANNO_TYPE.CIRCLE) {
-			annotator.addCircleRegion({'xPos': start.x, 'yPos': start.y, 'radius': Math.abs(end.x-start.x), label: ["another"]});
-			document.getElementById("annoSelect").add(new Option("circle", "0"), null);
+var loadAfterImage = function(state) {
+	if (state.stretch) {
+		stretch = state.stretch;
+		$("#stretchDot").remove();
+		$("#"+stretch+"Entry").prepend("<span id='stretchDot' class='dot'></span>");
+		$("#extentSlider").slider('values', 0, 0.0);
+		$("#extentSlider").slider('values', 1, 1000.0);
+		if (imageUrl) {
+			renderer.setExtent(0.0, 1000.0);
+			renderer.initGL(stretch);
 		}
 	}
-	if (selectedEditType == EDIT_TYPE.SELECT) {
-		editContext.clearRect(0,0,640,480);
-		var start = {x: dragStart.x, y: dragStart.y};
-		var end = {x: e.offsetX, y: e.offsetY};
-		selectAnnotations(start, end);
+	if (state.sliders) {
+		sliders = state.sliders;
+		$("#extentSlider").slider('values', 0, sliders[0]*1000.0);
+		$("#extentSlider").slider('values', 1, sliders[1]*1000.0);
+		renderer.setExtent(sliders[0], sliders[1]);
 	}
-	annotator.handleMouseup(e.originalEvent);
-	draw();
-}
-
-var handleMouseup = function(e) {
-	if (!imageLoaded)
-		return;
-	// Send event to fits image canvas
-	var evObj = document.createEvent('MouseEvents');
-	evObj.initMouseEvent( 'mouseup', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
-	fitsCanvas.dispatchEvent(evObj);
-
-	mouseDown = false;
-	finishDrag(e);
-}
-
-var handleMousewheel = function(e) {
-	if (!imageLoaded)
-		return;
-	e.preventDefault();
-	// Send event to fits image canvas
-	var evObj = document.createEvent('MouseEvents');
-	evObj.initMouseEvent( 'mousewheel', false, true, window, 1, e.originalEvent.screenX-22, e.originalEvent.screenY-22, e.originalEvent.clientX-22, e.originalEvent.clientY-22, false, false, true, false, 0, null );
-	evObj.wheelDelta = e.originalEvent.wheelDelta;
-	fitsCanvas.dispatchEvent(evObj);
-	
-	annotator.handleMousewheel(e.originalEvent);
-	draw();
-}
-
-var handleMouseout = function(e) {
-	mouseDown = false;
-	if (!imageLoaded)
-		return;
-	// Send event to fits image canvas
-	var evObj = document.createEvent('MouseEvents');
-	evObj.initMouseEvent( 'mouseout', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
-	fitsCanvas.dispatchEvent(evObj);
-	finishDrag(e);
-}
-
-var handleMousemove = function(e) {
-	if (!imageLoaded)
-		return;
-	// Send event to fits image canvas
-	var evObj = document.createEvent('MouseEvents');
-	evObj.initMouseEvent( 'mousemove', false, true, window, 1, e.screenX, e.screenY, e.clientX, e.clientY, false, false, true, false, 0, null );
-	fitsCanvas.dispatchEvent(evObj);
-
-	if (mouseDown) {
-		if (selectedEditType == EDIT_TYPE.ADD || selectedEditType == EDIT_TYPE.SELECT) {
-			editContext.clearRect(0,0,640,480);
-			if (selectedAnnoType == ANNO_TYPE.RECT || selectedEditType == EDIT_TYPE.SELECT)
-				editContext.fillRect(dragStart.x, dragStart.y, e.offsetX-dragStart.x, e.offsetY-dragStart.y);
-			else if (selectedAnnoType == ANNO_TYPE.CIRCLE && selectedEditType != EDIT_TYPE.SELECT) {
-				editContext.beginPath();
-				editContext.arc(dragStart.x	, dragStart.y, Math.abs(e.offsetX-dragStart.x), 0, 2 * Math.PI, false);
-				editContext.fill();
+	if (state.annotations) {
+		annotations = state.annotations;
+		if (annotationManager) {
+			annotationManager.clear();
+			for (i in annotations) {
+				annotationManager.addAnno(annotations[i]);
 			}
 		}
-		else if (selectedEditType == EDIT_TYPE.PAN)
-			annotator.handleMousemovePan(e);
 	}
-	else
-		annotator.handleMousemove(e);
-	draw();
+	if (state.dsName) {
+		dsName = state.dsName;
+		raFieldName = state.raFieldName;
+		decFieldName = state.decFieldName;
+	}
+	if (state.sciDbURLs) {
+		sciDbURLs = state.sciDbURLs;
+		var sciDbUrlSelect = $("#sciDbUrlSelect");
+		sciDbUrlSelect.empty();
+		$.each(sciDbURLs, function(index, value) {
+			sciDbUrlSelect.append($("<option value='"+value+"'>"+value+"</option>"));
+		});
+	}
+	if (imageUrl) renderer.drawGL();
 }
 
-// Makes an AJAX request through the server and sends the result to the FITS parser to be displayed
-var imageFromUrl = function(path) {
-	if (path == "None")
-		return;
+gadget.loadState = function(state) {
+	if (state) {
+		// Only reload the image if the url is different
+		// Otherwise panning and zoom gets reset whenever the state changes
+		if (state.imageUrl && state.imageUrl !== imageUrl) {
+			imageUrl = state.imageUrl;
+			$("#fitsCanvas").remove();
+			var progressbar = $("#fitsProgressbar");
+			var progresslabel = $("#fitsProgresslabel");
+			var filename;
+			if (imageUrl.substring(0, 7) === "http://") filename = imageUrl.split("/")[imageUrl.split("/").length-1];
+			else filename = imageUrl.split("\\")[imageUrl.split("\\").length-1];
+			
+			var fitsCallback = function(f, a) {
+				headerBlock = f.getHeader().block;
+				wcsLib = new wcs();
+				wcsLib.init(headerBlock);
+				var dataunit = f.getDataUnit();
+				dataunit.getFrame(0, dataunitCallback, dataunit);
+			}
+
+			var dataunitCallback = function(arr, dataunit) {
+				var width = dataunit.width;
+				var height = dataunit.height;
+				var extent = dataunit.getExtent(arr);
+				var imageState = { width: width, height: height, data: arr, extent: extent};
+				initRenderer(imageState);
+				
+				// Notify other gadgets about the boundaries of the image
+				var bottomRight = wcsLib.pix2sky(0, 0);
+				var topLeft = wcsLib.pix2sky(width, height);
+				curBounds = { topLeft:     {ra: topLeft[0], dec: topLeft[1] },
+                    	bottomRight: {ra: bottomRight[0], dec: bottomRight[1] } };
+				gadget.notify('viewBoundsChanged', { 'bounds': curBounds, 'source': gadget.id });
+				
+				loadAfterImage(state);
+			}
 		
-	// Send an http response to the FITS parser to be displayed
-	var renderImage = function(response) {
-		var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder;
-		var bb = new BlobBuilder();
-
-		// convert string object into a binary object
-		var byteArray = new Uint8Array(response.length);
-		for (var i = 0; i < response.length; i++) {
-				byteArray[i] = response.charCodeAt(i) & 0xff;
+			$("#fitsCanvas").remove();
+			$("#canvasPlaceholder").show();
+			progressbar.show();
+			$("#loadImageText").hide();
+			progresslabel.text("Downloading " + filename + "...");
+			$("#loadImageText").hide();
+			progressbar.progressbar({
+				value: false,
+				complete: function() {
+					progresslabel.text("Complete!");
+				}
+			});
+		
+			loadFITS(imageUrl, fitsCallback);
 		}
-
-		bb.append(byteArray.buffer);
-		var file = bb.getBlob('text/plain');
-		fits.renderImage(file, fitsCanvas, renderSuccess);
+		else loadAfterImage(state);
 	}
+};
 
-	$('#dropLabel').html('Loading file...');
-	$('#loadingBar').show();
+// Globals
+var stretch = 'linear';
+var sliders;
+var wcsLib;
+var renderer;
+var fits;
+var annotationManager;
+var annotations = [];
+var imageUrl;
+var dsName;
+var raFieldName;
+var decFieldName;
+var curBounds;
+var selectColor = 'grey';
+var sciDbURLs = []
 
+// Called when a new annotation is added by the anno manager
+var addAnnotation = function(newAnno) {
+	annotations.push(newAnno);
+	gadget.setState({ annotations: annotations });
+};
+
+var removeAnnotation = function(id) {
+	var idx = getAnnotationIndex(id);
+	annotations.splice(idx, 1);
+	gadget.setState({ annotations: annotations });
+}
+
+// Called when a dataset select box is dragged out
+var selectAnnos = function(xStart, yStart, xEnd, yEnd) {
+	if (!dsName) return;
+	
+	// Convert coordinates to wcs and select all data set points within the boundaries
+	var sky1 = wcsLib.pix2sky(xStart, yStart);
+	var sky2 = wcsLib.pix2sky(xEnd, yEnd);
+	
+	var ds;
+	var datasets = gadget.dashboard.getDataSetList();
+	for (i in datasets) {
+		if (datasets[i].text === dsName) {
+			ds = gadget.dashboard.getDataSet(datasets[i].id);
+			break;
+		}
+	}
+	
+	var idsToColor = [];
+	for (i in ds.records) {
+		var ra = parseFloat(ds.records[i][raFieldName]);
+		var dec = parseFloat(ds.records[i][decFieldName]);
+		if (ra > sky2[0] && ra < sky1[0] && dec > sky2[1] && dec < sky1[1]) {
+			idsToColor.push(ds.records[i].id);
+		}
+	}
+	
+	ds.setRecords({ 'color': selectColor }, idsToColor);
+};
+
+// Called when annotation properties are modified
+var modifyAnnotation = function(annoId, fields, values) {
+	var annoIndex = getAnnotationIndex(annoId);
+	for (i in fields) {
+		var field = fields[i];
+		var val = values[i];
+		annotations[annoIndex][field] = val;
+	}
+	gadget.setState({ annotations: annotations });
+};
+
+var getAnnotationIndex = function(id) {
+	for (i in annotations) {
+		if (annotations[i].id === id) {
+			return i;
+		}
+	}
+};
+
+var clearAnnotations = function() {
+	gadget.setState({annotations: []});
+};
+
+var updateDsPoints = function() {
+	if (!dsName || !raFieldName || !decFieldName) return;
+	var ds;
+	var datasets = gadget.dashboard.getDataSetList();
+	for (i in datasets) {
+		if (datasets[i].text === dsName) {
+			ds = gadget.dashboard.getDataSet(datasets[i].id);
+			break;
+		}
+	}
+	
+	// Remove and re-add any annotations associated with a dataset
+	for (var i = annotations.length-1; i >= 0; i--) {
+		if (annotations[i].fromDs) annotations.splice(i, 1);
+	}
+	gadget.setState({ annotations: annotations });
+	
+	var idCounter = annotationManager.idCounter;
+	for (var i = 0; i < ds.length(); i++) {
+		coordA = ds.getRecord(i)[raFieldName]; 
+		coordA = /\./.test(coordA)? parseFloat(coordA) : coordA;
+		coordB = ds.getRecord(i)[decFieldName];
+		coordB = /\./.test(coordB)? parseFloat(coordB) : coordB;
+		var pointColor = ds.getRecord(i)['color'];
+
+		var pix = wcsLib.sky2pix(coordA, coordB);
+		annoData = { type: 'circle', xPos: pix[0], yPos: pix[1], radius: 4, id: idCounter, color: pointColor, fromDs: true };
+		annotations.push(annoData);
+		idCounter++;
+	}
+	
+	gadget.setState({ annotations: annotations });
+};
+
+var handleSciDbResponse = function(path) {
+  sciDbURLs.push(path);
+  gadget.setState({ sciDbURLs: sciDbURLs });
+};
+
+var sendSciDBQueryBounds = function(xStart, yStart, xEnd, yEnd) {
+	gadget.notify('queryBoundsChanged', {
+ 			        'x': xStart, 
+ 			        'y': yStart, 
+ 			        'width': xEnd - xStart, 
+ 			        'height': yEnd - yStart
+ 	});
+};
+
+var handleViewBoundsRequest = function() {
+	if (!imageUrl) return;
+	
+	gadget.notify('viewBoundsChanged', { 'bounds': curBounds, 'source': gadget.id });
+};
+
+var initRenderer = function(imageState) {
+	var canvas = document.createElement("canvas");
+	canvas.setAttribute("style", "display: block");
+	canvas.setAttribute("id", "fitsCanvas");
+	var canvasPlaceholder = $("#canvasPlaceholder")
+	canvasPlaceholder.after(canvas);
+	canvasPlaceholder.hide();
+	canvas.width = canvasPlaceholder.width();
+	canvas.height = canvasPlaceholder.height();
+	gadget.resize();
+	annotationManager = new AnnotationManager(propDialog, addAnnotation, modifyAnnotation, selectAnnos);
+	renderer = new Renderer(annotationManager, canvas, stretch, imageState, wcsLib);
+};
+
+// Generate a dialog with given fields and values
+// Submit the values to the gadget state when ok is clicked
+var propDialog = function(id, getFields) {
+	var fields = getFields();
+	
+	var annoPropDialog = $("#annoPropDialog");
+	annoPropDialog.empty();
+	
+	var coordTypeDiv = $("<div id='coordTypeRadio'>Coordinate Type: <input type='radio' id='imageRadio' checked='checked' name='coordRadio'><label for='imageRadio'>Image</label><input type='radio' id='wcsRadio' name='coordRadio'><label for='wcsRadio'>WCS</label></div>");
+	coordTypeDiv.buttonset();
+	annoPropDialog.append(coordTypeDiv);
+	
+	var posFields = $("<label>Position:</label><br><input type='text' id='xPosInput' value='"+fields.position.xPos+"' class='text ui-widget-content ui-corner-all'><input type='text' id='yPosInput' value='"+fields.position.yPos+"' class='text ui-widget-content ui-corner-all'><br>");
+	annoPropDialog.append(posFields);
+	for (d in fields.dimensions) {
+		var field = $("<label for='"+d+"Input'>"+d+":<br></label><input type='text' id='"+d+"Input' value='"+fields.dimensions[d]+"' class='text ui-widget-content ui-corner-all'><br>");
+		annoPropDialog.append(field);
+	}
+	
+	// Update the values in the text box when we switch between image coordinates and wcs
+	$("input[type=radio][name=coordRadio]").change(function() {
+		var toWcs = this.id === 'wcsRadio' ? true : false;
+		
+		var xField = $("#xPosInput");
+		var yField = $("#yPosInput");
+		var xVal = parseFloat(xField.val());
+		var yVal = parseFloat(yField.val());
+		var converted = toWcs ? wcsLib.pix2sky(xVal, yVal) : wcsLib.sky2pix(xVal, yVal);
+		xField.val(converted[0]);
+		yField.val(converted[1]);
+		
+		for (f in fields.dimensions) {
+			var inputField = $("#"+f+"Input");
+			var val = parseFloat(inputField.val());
+			var start = toWcs ? wcsLib.pix2sky(xVal, yVal) : wcsLib.sky2pix(xVal, yVal);
+			var end = toWcs ? wcsLib.pix2sky(xVal + val, yVal) : wcsLib.sky2pix(xVal + val, yVal);
+			var dist = Math.sqrt((start[0]-end[0])*(start[0]-end[0])+(start[1]-end[1])*(start[1]-end[1]));
+			// If only 1 coordinate decreases, the distance interval is negative
+			if ((end[0] - start[0] < 0.0 && end[1] - start[1] > 0.0) || (end[0] - start[0] > 0.0 && end[1] - start[1] < 0.0))
+				dist = -dist;
+			
+			inputField.val(dist);
+		}
+	});
+	
+	annoPropDialog.dialog({
+    autoOpen: true,
+    height: 300,
+    width: 350,
+    modal: true,
+    buttons: {
+		  "Ok": function() {
+		  	var v = [];
+		  	var xVal = parseFloat($("#xPosInput").val());
+		  	var yVal = parseFloat($("#yPosInput").val());
+		  	v.push(xVal);
+		  	v.push(yVal);
+		  	for (d in fields.dimensions) {
+		  		v.push(parseFloat($("#"+d+"Input").val()));
+		  	}
+		  	
+		  	var f = ['xPos', 'yPos'];
+		  	for (d in fields.dimensions) {
+		  		f.push(d);
+		  	}
+		  	modifyAnnotation(id, f, v);
+		  	annoPropDialog.dialog("close");
+		  },
+			"Delete": function() {
+				removeAnnotation(id);
+		  	annoPropDialog.dialog("close");
+			},
+			"SciDB Query Bounds": function() {
+				var xVal = parseFloat($("#xPosInput").val());
+		  	var yVal = parseFloat($("#yPosInput").val());
+		  	var width = parseFloat($("#widthInput").val());
+		  	var height = parseFloat($("#heightInput").val());
+				
+				// Bounds must be in image pixel coordinates
+				var xStart, yStart, xEnd, yEnd;
+				var toPix = $("input[type=radio][name=coordRadio]:checked").attr('id') === 'wcsRadio' ? true : false;
+				if (toPix) {
+					var coords1 = wcsLib.sky2pix(xVal, yVal);
+					var coords2 = wcsLib.sky2pix(xVal + width, yVal + height);
+					xStart = coords1[0];
+					yStart = coords1[1];
+					xEnd = coords2[0];
+					yEnd = coords2[1];
+				}
+				else {
+					xStart = xVal;
+					yStart = yVal;
+					xEnd = xVal + width;
+					yEnd = yVal + height;
+				}
+				
+				sendSciDBQueryBounds(xStart, yStart, xEnd, yEnd);
+				annoPropDialog.dialog("close");
+			}
+		}
+  });
+  
+  // Only include the sciDB button with the rectangle annotation
+  if (!fields.dimensions.hasOwnProperty("width")) {
+  	$('.ui-dialog-buttonpane').find('button:last').css('visibility','hidden');
+  }
+}
+
+var loadFITS = function(targetUrl, callback) {
+	fits = new astro.FITS(targetUrl, callback);
+};
+
+var verifyUrl = function(targetUrl, successCallback, failureCallback) {
+	if (targetUrl.substring(0, 7) === "http://") {
+		targetUrl = '/xhrProxy/' + encodeURIComponent(targetUrl);
+	}
+	
 	$.ajax({
-		'url': '/xhrProxy/' + encodeURIComponent(path),
-		success: renderImage 
+		url: targetUrl,
+		success: function() {
+			successCallback();
+		},
+		error: function(xhrObj, textStatus, errorThrown) {
+			failureCallback();
+		}
+	});
+};
+
+var initHTML = function() {
+	// Init the extent slider
+	$("#extentSlider").slider({
+		range: true,
+		min: 0.0,
+		max: 1000.0,
+		values: [0.0, 1000.0],
+		slide: function(e, ui) {
+			if (imageUrl) renderer.setExtent(ui.values[0]/1000.0, ui.values[1]/1000.0);
+			else return false;
+		},
+		stop: function(e, ui) {
+			if (imageUrl) gadget.setState({ sliders: [ui.values[0]/1000.0, ui.values[1]/1000.0] });
+			else return false;
+		}	
+	});
+	
+	// Init the stretch select menu
+	$("#stretchUl").empty();
+	$.each(Object.keys(imgFragmentShaderSource), function(index, value) {
+		var newLi = $("<li><div id='"+value+"Entry'>"+value+"</div></li>");
+		if (value === stretch)
+			newLi.children("#"+stretch+"Entry").prepend("<span id='stretchDot' class='dot'></span>");
+		$("#stretchUl").append(newLi);
+	});
+	$("#stretchUl > li").on("click", function() {
+		stretch = $(this).text().replace(/\s/g, '');
+		gadget.setState({ stretch: stretch });
+	});
+	
+	// Init the file chooser
+	$("#fileChooser").change(function(event) {
+		var successHandler = function(url) {
+			$("#fitsProgressbar").hide();
+      clearAnnotations();
+			gadget.setState({imageUrl: url});
+		};
+		var formData = new FormData($("#FITSform")[0]);
+		var path = $("#fileChooser").val();
+		var filename = path.split("\\")[path.split("\\").length-1];
+		var progresslabel = $("#fitsProgresslabel");
+		progresslabel.text("Uploading " + filename + " to server...");
+		var progressbar = $("#fitsProgressbar");
+		$("#loadImageText").hide();
+		progressbar.progressbar({
+			value: false,
+			complete: function() {
+				progresslabel.text("Complete!");
+			}
+		});
+		
+		$.ajax({
+			url: "/uploadFITS/" + gadget.dashboard.id,
+			type: "POST",
+			xhr: function () {
+				var myXhr = $.ajaxSettings.xhr();
+				if (myXhr.upload) {
+					var progressHandler = function(e) {
+						if (e.lengthComputable) {
+							progressbar.progressbar("value", e.loaded/e.total*100);
+						}
+					};
+					myXhr.upload.addEventListener("progress", progressHandler, false);
+				}
+				return myXhr;
+			},
+			success: successHandler,
+			data: formData,
+			cache: false,
+			contentType: false,
+			processData: false
+		});
+	});
+	
+	$(".menu > li").on("click", function() {
+		$(".menu > li > ul").css("opacity", "1");
+	});
+	// "Image from file" menu item pulls up file chooser
+	$("#imgFromFileButton").on("click", function() {
+		$("#fileChooser").click();
+	});
+	
+  $("#imgFromUrlButton").on("click", function() {
+  	var imgFromUrlDialog = $("#imgFromUrlDialog").dialog({
+		  autoOpen: false,
+		  height: 300,
+		  width: 350,
+		  modal: true,
+		  buttons: {
+		    "Open": function() {
+		    	var url = $("#urlInput").val();
+		    	
+		    	var success = function() {
+		    		clearAnnotations();
+		    		gadget.setState({imageUrl: url});
+		    		$("#fromUrlText").text("");
+		    		imgFromUrlDialog.dialog("close");
+		    	};
+		    	var failure = function() {
+		    		$("#fromUrlText").text(url + " not found");
+		    	};
+		    
+		    	verifyUrl(url, success, failure);
+		    	$("#fromUrlText").text("Validating URL");
+		    }
+		  }
+		});
+  	imgFromUrlDialog.dialog("open");
+  });
+	
+	// Init the region draw and pan tools
+	$("#circleTool, #ellipseTool, #rectTool, #annulusTool, #lineTool, #vectorTool").on("click", function() {
+		if (imageUrl) {
+			var toolState = $(this).attr("id");
+			renderer.enableCreateAnno(toolState);
+			renderer.drawGL();
+		}
+	});
+	
+	$("#fromDataset").on("click", function() {
+		var annoFromDataDialog = $("#datasetAnnoDialog").dialog({
+			autoOpen: false,
+			height: 300,
+			width: 350,
+			modal: true,
+			buttons: {
+				"Create": function() {
+					var dsName = $("#datasetSelect").val();
+					var raFieldName = $("#raSelect").val();
+					var decFieldName = $("#decSelect").val();
+					gadget.setState({ dsName: dsName, raFieldName: raFieldName, decFieldName: decFieldName });
+					updateDsPoints();
+					annoFromDataDialog.dialog("close");
+				},
+				"Remove DS Annotations": function() {
+					for (var i = annotations.length-1; i >= 0; i--) {
+						if (annotations[i].fromDs) annotations.splice(i, 1);
+					}
+					gadget.setState({ annotations: annotations });
+					annoFromDataDialog.dialog("close");
+				}
+			}
+		});
+		var populateRaDecSelect = function(dsName) {
+			var datasets = gadget.dashboard.getDataSetList();
+			
+			var dsId;
+			for (i in datasets) {
+				if (datasets[i].text === dsName) {
+					dsId = datasets[i].id;
+					break;
+				}
+			}
+			var ds = gadget.dashboard.getDataSet(dsId);
+			if (!ds) return;
+			var cols = ds.columns;
+			
+			var raSelect = $("#raSelect");
+			var decSelect = $("#decSelect");
+			raSelect.empty();
+			decSelect.empty();
+			$.each(cols, function(key, value) {
+				raSelect.append($("<option value='"+key+"'>"+key+"</option>"));
+				decSelect.append($("<option value='"+key+"'>"+key+"</option>"));
+			});
+		};
+	
+		annoFromDataDialog.dialog("open");
+		var dsSelect = $("#datasetSelect");
+		var datasets = gadget.dashboard.getDataSetList();
+		
+		dsSelect.empty();
+		$.each(datasets, function(index, value) {
+			var dsName = value.text;
+			var newOption = $("<option value='"+dsName+"'>"+dsName+"</option>");
+			dsSelect.append(newOption);
+		});
+		populateRaDecSelect($("#datasetSelect option:selected").text());
+		
+		dsSelect.on("click", function () {
+			populateRaDecSelect(this.value);
+		});
+	});
+	
+	// Init the annotation and sciDB select tools
+	$("#selectDsPoints").on("click", function() {
+		if (!imageUrl) return;
+		var selectColorDialog = $("#selectColorDialog").dialog({
+			autoOpen: false,
+			height: 300,
+			width: 350,
+			modal: true,
+			buttons: {
+				"Ok": function() {
+					var id = $("input[type=radio][name=colorRadio]:checked").attr('id');
+					selectColor = $("label[for="+id+"]").text().toLowerCase();
+					if (imageUrl) {
+						var toolState = "select";
+						renderer.enableSelectAnno(toolState);
+						renderer.drawGL();
+					}
+					selectColorDialog.dialog("close");
+				}
+			}
+		});
+		selectColorDialog.dialog("open");
+	});
+	
+	$("#imgFromSciDbButton").on("click", function() {
+		var sciDbImageDialog = $("#sciDbImgDialog").dialog({
+			autoOpen: false,
+			height: 300,
+			width: 350,
+			modal: true,
+			buttons: {
+				"Load": function() {
+					var url = $("#sciDbUrlSelect").val();
+		    	clearAnnotations();
+		    	gadget.setState({imageUrl: url});
+		    	sciDbImageDialog.dialog("close");
+				}
+			}
+		});
+		sciDbImageDialog.dialog("open");
+	});
+	
+	$(".menu li").on("mouseenter", function() {
+		$(this).children("ul").css("opacity", "1");
+		$(this).children("ul").children("li").css("height", "36px");
+		$(this).children("ul").children("li").css("overflow", "visible");
+	});
+	$(".menu li").on("mouseleave", function() {
+		$(this).children("ul").css("opacity", "0");
+		$(this).children("ul").children("li").css("height", "0");
+		$(this).children("ul").children("li").css("overflow", "hidden");
+	});
+	$(".menu li > ul li").on("click", function() {
+		$(this).parent().css("opacity", "0");
+		$(this).parent().children("li").css("height", "0");
+		$(this).parent().children("li").css("overflow", "hidden");
 	});
 }
-  
-// HTML controls
-
-var initHTMLControls = function() {
-	// Load an image from URL when 'Fetch' is clicked
-	$('#fetchURL').click(function() {
-		imageFromUrl($('#imageURL').val());
-	});
-	
-	// Load an image from the server when one is selected from the 'remote files' dropdown box
-	var imageList = $("#sampleImageSelect");
-  $.each(imageFiles, function() {
-    imageList.append($("<option />").val(this.path).text(this.name));
-  });
-  imageList.change(function() {
-  	gadget.setState({ imagePath : $(this).val()});
-  	imageFromUrl($(this).val());
-  });
-
-	// Construct the dropdown box for the selection colors
-  var colorSelect = $("#selectionColorSelect");
-  var items = ["red", "green", "blue", "yellow", "unselect"];
-  $.each(items, function(index, value) {
-  	colorSelect.append($("<option />").val(value).text(value));
-  });
-
-	// Set up the brightness/contrast sliders
-  var tbody = $('#slidersList')[0];
-  for (var i = 0; i < this.sliders.length; i++) {
-    var slider = this.sliders[i];
-    $('<tr><th>' + slider.label.replace(/ /g, '&nbsp;') + ':</th><td><div id="slider' + i + '"></div></td></tr>').appendTo(tbody);
-    var onchange = (function(this_, slider) {
-        return function(event, ui) {
-          this_[slider.name] = ui.value;
-          fits.filters.brightnessContrast(this_.brightness , this_.contrast);
-          draw();
-        };  
-    })(this, slider);
-    $('#slider' + i).slider({
-        slide: onchange,
-        change: onchange,
-        min: slider.min,
-        max: slider.max,
-        value: slider.value,
-        step: slider.step
-    });
-    this[slider.name] = slider.value;
-  }
-}
-
-// Called when the user clicks 'unload image'
-// Sets the gadget back to its initial blank state
-var clickUnloadImage = function() {
-	$("#dropLabel").show(); 
-	$("#dropLabel").html('Drop file here...');
-  $("#loadingBar").hide();
-  $("#init").show();
-  $("#unloadImageButton").hide();
-  $("#annoControlsContainer").hide();
-  $("#slidersList").hide();
-  
-  fitsCanvas.style.display = 'none';
-	display.style.display = 'none';
-  gadget.resize();
-  
-  gadget.setState({ annoObject : undefined});
-  gadget.setState({ imagePath : undefined});
-  imageLoaded = false;
-}
-
-var clickRadioAdd = function() {
-	document.getElementById("removeControls").style.display = "none";
-	document.getElementById("addControls").style.display = "block";
-	document.getElementById("polyControls").style.display = "none";
-	document.getElementById("selectControls").style.display = "none";
-	gadget.resize();
-	selectedEditType = EDIT_TYPE.ADD;
-	
-	switch (selectedAnnoType) {
-		case ANNO_TYPE.CIRCLE:
-			document.getElementById("circleControls").style.display = "block";
-			break;
-		case ANNO_TYPE.RECT:
-			document.getElementById("rectControls").style.display = "block";
-			break;
-		case ANNO_TYPE.POLY:
-			document.getElementById("polyControls").style.display = "block";
-			break;
-	}
-}
-
-var clickRadioRemove = function() {
-	document.getElementById("addControls").style.display = "none";
-	document.getElementById("removeControls").style.display = "block";
-	document.getElementById("polyControls").style.display = "none";
-	document.getElementById("selectControls").style.display = "none";
-	gadget.resize();
-	selectedEditType = EDIT_TYPE.REMOVE;
-}
-
-var clickRadioPan = function() {
-	selectedEditType = EDIT_TYPE.PAN;
-}
-
-var clickRadioSelect = function() {
-	document.getElementById("removeControls").style.display = "none";
-	document.getElementById("addControls").style.display = "none";
-	document.getElementById("polyControls").style.display = "none";
-	document.getElementById("selectControls").style.display = "block";
-	gadget.resize();
-	selectedEditType = EDIT_TYPE.SELECT;
-}
-
-var clickRadioCircle = function() {
-	document.getElementById("rectControls").style.display = "none";
-	document.getElementById("circleControls").style.display = "block";
-	document.getElementById("polyControls").style.display = "none";
-	document.getElementById("datasetControls").style.display = "none";
-	gadget.resize();
-	selectedAnnoType = ANNO_TYPE.CIRCLE;
-}
-
-var clickRadioRect = function() {
-	document.getElementById("rectControls").style.display = "block";
-	document.getElementById("circleControls").style.display = "none";
-	document.getElementById("polyControls").style.display = "none";
-	document.getElementById("datasetControls").style.display = "none";
-	gadget.resize();
-	selectedAnnoType = ANNO_TYPE.RECT;
-}
-
-var clickRadioPoly = function() {
-	document.getElementById("rectControls").style.display = "none";
-	document.getElementById("circleControls").style.display = "none";
-	document.getElementById("polyControls").style.display = "block";
-	document.getElementById("datasetControls").style.display = "none";
-	gadget.resize();
-	selectedAnnoType = ANNO_TYPE.POLY;
-}
-
-var clickRadioDataset = function() {
-	document.getElementById("rectControls").style.display = "none";
-	document.getElementById("circleControls").style.display = "none";
-	document.getElementById("polyControls").style.display = "none";
-	document.getElementById("datasetControls").style.display = "block";
-	selectedAnnoType = ANNO_TYPE.DATA;
-}
-
-var clickRadioPix = function() {
-	selectedCoordType = COORD_TYPE.PIX;
-}
-
-var clickRadioWCS = function() {
-	selectedCoordType = COORD_TYPE.WCS;
-}
-
-var clickRemovalSelection = function() {
-	var selectedIndex = document.getElementById("annoSelect").selectedIndex+1;
-	prevSelectedIndex = selectedIndex;
-}
-
-var clickShowAnnotations = function() {
-	if (showAnnotations) {
-		annotator.hideAnnotations();
-		showAnnotations = false;
-		gadget.setState({ showAnnotations : false});
-		draw();
-	}
-	else {
-		annotator.showAnnotations();
-		showAnnotations = true;
-		gadget.setState({ showAnnotations : true});
-		draw();
-	}
-}
-
-var addPolyPoint = function() {
-	var coordA = document.getElementById("polyPosA").value;
-	var coordB = document.getElementById("polyPosB").value;
-	var str = "(" + coordA + ", " + coordB + ")";
-	document.getElementById("polyPointsSelect").add(new Option(str, "0"), null);
-	polyCreateList.push([coordA, coordB]);
-}
-
-var removeSelectedPolyPoint = function() {
-	var list = document.getElementById("polyPointsSelect");
-	var selectedId = list.selectedIndex;
-	if (selectedId != -1) {
-		list.remove(selectedId);
-	}
-	polyCreateList.splice(selectedId,1);
-}
-
-var removeAnnotations = function() {
-	var numAnnos = document.getElementById("annoSelect").length;
-	var list = document.getElementById("annoSelect");
-	for (var i = 0; i < numAnnos; i++) {
-		annotator.removeAnnotation(0);
-		list.remove(0);
-		draw();
-	}
-}
-
-var removeSelectedAnnotation = function () {
-	var list = document.getElementById("annoSelect");
-	var selectedId = list.selectedIndex;
-	if (selectedId != -1) {
-		annotator.removeAnnotation(selectedId);
-		list.remove(selectedId);
-		draw();
-	}
-}
-
-var createCircleAnno = function() {
-	var coordA = document.getElementById('circlePosA').value;
-	var coordB = document.getElementById('circlePosB').value;
-	var radius = document.getElementById('circleRadius').value;
-	var label = [document.getElementById('circleLabel').value];
-	
-	var circlePos;
-	if (selectedCoordType == COORD_TYPE.WCS)
-		circlePos = fits.wcs2pix(coordA,coordB);
-	else
-		circlePos = {"x": parseFloat(coordA), "y": parseFloat(coordB)};
-	annotator.addCircleRegion({'xPos': circlePos.x, 'yPos': circlePos.y, 'radius': parseFloat(radius), label: label});
-	document.getElementById("annoSelect").add(new Option(label, "0"), null);
-	draw();
-}
-
-var createRectAnno = function() {
-	var corner1A = document.getElementById('rectPosA').value;
-	var corner1B = document.getElementById('rectPosB').value;
-	var width = document.getElementById('rectWidth').value;
-	var height = document.getElementById('rectHeight').value;
-	var label = [document.getElementById('rectLabel').value];
-
-	var corner1;
-	var corner2;
-	if (selectedCoordType == COORD_TYPE.WCS) {
-		corner1 = fits.wcs2pix(corner1A,corner1B);
-		corner2 = fits.wcs2pix(parseFloat(corner1A)-parseFloat(width),parseFloat(corner1B)-parseFloat(height));
-	}
-	else {
-		corner1 = {"x": parseFloat(corner1A), "y": parseFloat(corner1B)};
-		corner2 = {"x": parseFloat(corner1A)+parseFloat(width), "y": parseFloat(corner1B)+parseFloat(height)};
-	}
-	annotator.addRectRegion({'xPos': corner1.x, 'yPos': corner1.y, 
-  												 'width': corner2.x-corner1.x, 'height': corner2.y-corner1.y, 
-  												 'label': label});
- 	document.getElementById("annoSelect").add(new Option(label, "0"), null);
- 	draw();
-}
-
-var createPolyAnno = function() {
-	var list = document.getElementById("polyPointsSelect");
-	var polyPoints = [];
-	for (i in polyCreateList) {
-		list.remove(0);
-		var point = fits.wcs2pix(polyCreateList[i][0], polyCreateList[i][1])
-		polyPoints.push([point.x, point.y]);
-	}
-	
-	polyCreateList = [];
-	var label = [document.getElementById("polyLabel").value];
-	
-	annotator.addPolyRegion({'vertices': polyPoints, 'label': label, 'labelXPos': 0, 'labelYPos': 0});
-	document.getElementById("annoSelect").add(new Option("polygon", "0"), null);
-	draw();
-}
-
-var addDataSetPoints = function() {
-	if (selectedDataSetId == -1)
-		selectedDataSetId = gadget.dashboard.getDataSetList()[0].id;
-	selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetId);
-	removeAnnotations();
-	var coordA;
-	var coordB;
-	for (var i = 0; i < selectedDataSet.length(); i++) {
-    coordA = selectedDataSet.getRecord(i)["ra"]; 
-    coordA = /\./.test(coordA)? parseFloat(coordA) : coordA;
-    coordB = selectedDataSet.getRecord(i)["dec"];
-    coordB = /\./.test(coordB)? parseFloat(coordB) : coordB;
-    
-    var label = [("ra: " + coordA),("dec: " + coordB)]
-    
-    if (coordA !== NaN && coordB !== NaN) {
-    	var circlePos = fits.wcs2pix(coordA, coordB);
-      annotator.addCircleRegion({'id': selectedDataSet.getRecord(i)["id"],
-                    						 'xPos': circlePos.x, 
-												         'yPos': circlePos.y,
-												         'color': MARKER_COLOR[selectedDataSet.getRecord(i).color],
-												         'radius': 3,
-												         'label': label});
-     document.getElementById("annoSelect").add(new Option("circle", "0"), null);
-    }
-  }
-  gadget.setState({savedDataSetId: selectedDataSetId});
-  dataSetImported = true;
-  draw();
-}
-
 
 </script>
+
 <body>
-	<div id="wrapper">
-				<div id="dropbox">
-					<div id="canvasArea" style="position: relative; height: 100%; width: 100%; float: left">
-						<canvas id="display" style="position: absolute; left: 0; top: 0; display: block; z-index:0"></canvas>
-						<span id="dropLabel">Drop file here...</span>
-						<div id="loadingBar" style="display: none"><img style="height: 19px; width: 107px" alt="dashboard loading" src='/images/loadingBar.gif'></div>  
-					</div>
-				</div>
-				</table>
-				<div id="init">
-					<input type="file" onchange="renderFile(this.files[0])"><br>
-					or choose a remote file:
-					<select id="sampleImageSelect"></select><br>
-					<input type="button" id="fetchURL" value="Fetch" style="padding: 3px"><input id="imageURL" value="From URL" size="50">
-				</div>
-				<table id="slidersList" height="35" style="display: none"></table>
-				<input type="button" value="Unload Image" id="unloadImageButton" onclick="clickUnloadImage();" style="display: none">
-				<div id="annoControlsContainer" style="display: none">
-					<div id="annoControls">
-						Annotations
-						<input type="radio" value="pan" id="editRad" name="editRad" checked="checked" onclick="clickRadioPan();" /><label>Pan</label>
-						<input type="radio" value="select" id="editRad" name="editRad" onclick="clickRadioSelect();" /><label>Select</label>
-						<input type="radio" value="add" id="editRad" name="editRad" onclick="clickRadioAdd();" /><label>Add</label>
-						<input type="radio" value="remove" id="editRad" name="editRad" onclick="clickRadioRemove();" /><label>Remove</label>
-						<hr>
-						<div id="selectControls" style="display: none">
-							Color: <select id="selectionColorSelect"></select>
-						</div>
-						<div id="addControls">
-							<input type="radio" value="circle" id="addTypeRad" name="addTypeRad" checked="checked" onclick="clickRadioCircle();" /><label>Circle</label>
-							<input type="radio" value="rect" id="addTypeRad" name="addTypeRad" onclick="clickRadioRect();" /><label>Rectangle</label>
-							<input type="radio" value="poly" id="addTypeRad" name="addTypeRad" onclick="clickRadioPoly();" /><label>Poly</label>
-							<input type="radio" value="data" id="addTypeRad" name="addTypeRad" onclick="clickRadioDataset();" /><label>Dataset</label>
-							<div id="circleControls">
-								Radius: <input id="circleRadius" size=10 value="10">px<br>
-								Position: (<input id="circlePosA" size=10 value="241.1766">, <input id="circlePosB" size=10 value="10.102814">)<br>
-								Label: <input id="circleLabel" size=10 value="circle"> <br>
-								<input type="button" value="Create" onclick="createCircleAnno();">
-							</div>
-							<div id="rectControls" style="display: none">
-								Position: (<input id="rectPosA" size=10 value="241.14284">, <input id="rectPosB" size=10 value="10.097803">)<br>
-								Width: <input id="rectWidth" size=10 value="0.03516">  Height: <input id="rectHeight" size=10 value="0.042004"><br>
-								Label: <input id="rectLabel" size=10 value="rectangle"> <br>
-								<input type="button" value="Create" onclick="createRectAnno();">
-							</div>
-							<div id="polyControls" style="display: none">
-								Position: (<input id="polyPosA" size=10 value="241.14284">, <input id="polyPosB" size=10 value="10.097803">)<br>
-								<select id="polyPointsSelect" size=5><br>
-								<input type="button" value="Add Point" onclick="addPolyPoint();">
-								<input type="button" value="Remove Point" onclick="removeSelectedPolyPoint();"><br>
-								Label: <input id="polyLabel" size=10 value="poly"> <br>
-								<input type="button" value="Create" onclick="createPolyAnno();">
-							</div>
-							<div id="datasetControls" style="display: none">
-								Dataset: <select id="datasetNameSelect" onchange="dataSetSelectChange();"></select><br>
-								<input type="button" value="Import Points" onclick="addDataSetPoints();">
-							</div>
-							<hr>
-							Coordinate Type:
-							<input type="radio" value="pixels" id="coordTypeRad" name="coordTypeRad" onclick="clickRadioPix();" /><label>Pixels</label>
-							<input type="radio" value="wcs" id="coordTypeRad" name="coordTypeRad" checked="checked" onclick="clickRadioWCS();" /><label>WCS</label><br>
-						</div>
-						<div id="removeControls" style="display: none">
-							<select id="annoSelect" size="3" onchange="clickRemovalSelection();">
-							<input type="button" value="Remove All" onclick="removeAnnotations();">
-							<input type="button" value="Remove Selected" onclick="removeSelectedAnnotation();">
-						</div>
-						<input type="checkbox" id="showAnnotations" value="showAnnotations" checked="checked" onclick="clickShowAnnotations();" /><label>Show Annotations</label>
-					</div>
-				</div>
-	</div>
+<!-- top menu bar -->
+<form id="FITSform" enctype="multipart/form-data" style="display: none"><input id="fileChooser" name="fitsImage" type="file"></form>
+<ul class="menu menu-top" style="width: 100%">
+    <li><div>Load</div>
+        <ul id="fileUl">
+            <li><div id="imgFromFileButton">Image from File</div></li>
+            <li><div id="imgFromUrlButton">Image from URL</div></li>
+            <li><div id="imgFromSciDbButton">SciDB Image</div></li>
+        </ul>
+    </li>
+    <li><div>Stretch</div><ul id="stretchUl"></ul></li>
+     <li><div>Add Region</div>
+        <ul id="regionUl">
+            <li><div id="circleTool">Circle</div></li>
+            <li><div id="ellipseTool">Ellipse</div></li>
+            <li><div id="rectTool">Rectangle</div></li>
+            <li><div id="annulusTool">Annulus</div></li>
+            <li><div id="lineTool">Line</div></li>
+            <li><div id="vectorTool">Vector</div></li>
+        </ul>
+    </li>
+   <li><div>Datasets</div>
+   	<ul id="datasetsUl">
+   		<li><div id="fromDataset">Annotations</div></li>
+   		<li><div id="selectDsPoints">Select Points</div></li>
+   	</ul>
+   </li>
+</ul>
+
+<div id="canvasPlaceholder" style="background-color: #F1F1F1; width: 100%; height: 500px">
+<div style="position: relative; top: 250px">
+<center><div id="loadImageText" style="color: 555; font-size: 12pt">No image loaded</div>
+<div id="fitsProgressbar" style="width: 80%"><div id="fitsProgresslabel"></div></div></center>
+</div>
+</div>
+
+<div class="menu menu-bot" style="width: 100%; position: relative;"><div id="extentSlider" style="width: 90%; height: 10px; position: relative; top: 7px; margin-left: auto; margin-right: auto;"></div></div>
 </body>
 
+<!-- image from url dialog -->
+<div id="imgFromUrlDialog" title="Load a FITS image from URL" style="display: none">
+	<label for="urlInput">URL:</label><br>
+	<textarea id="urlInput" placeholder="Specify a URL" class="text ui-widget-content ui-corner-all" style="width: 300px"></textarea>
+	<input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+	<span id="fromUrlText"></span>
+</div>
+
+<!-- anno property dialog -->
+<div id="annoPropDialog" title="Properties" style="display: none"></div>
+
+<!-- dataset annotations dialog -->
+<div id="datasetAnnoDialog" title="Annotations From Dataset" style="display: none">
+	<label for="datasetSelect">Data Set:</label><select id="datasetSelect"></select><br>
+	<label for="raSelect">RA Field:</label><select id="raSelect"></select><br>
+	<label for="decSelect">Dec Field:</label><select id="decSelect"></select>
+</div>
+
+<!-- Selection color chooser dialog -->
+<div id="selectColorDialog" title="Choose a Selection Color" style="display: none">
+	<div id="radioColor">
+		<input type="radio" id="redRadio" checked="checked" name="colorRadio"><label for="redRadio">Red</label><br>
+		<input type="radio" id="greenRadio" name="colorRadio"><label for="greenRadio">Green</label><br>
+		<input type="radio" id="blueRadio" name="colorRadio"><label for="blueRadio">Blue</label><br>
+		<input type="radio" id="yellowRadio" name="colorRadio"><label for="yellowRadio">Yellow</label><br>
+		<input type="radio" id="greyRadio" name="colorRadio"><label for="greyRadio">Grey</label>
+	</div>
+</div>
+
+<!-- SciDB image dialog -->
+<div id="sciDbImgDialog" title="SciDB Images" style="display: none">
+	<label for="sciDbUrlSelect">SciDB URL:</label><br>
+	<select id="sciDbUrlSelect"></select>
+</div>
+
+</body>
 </html>

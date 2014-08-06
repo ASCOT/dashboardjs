@@ -35,7 +35,7 @@ var parseSDSSQueryResult = function(queryResult, callback){
   	var rows = result.root.Answer[0].Row;
   	
   	for (j in rows) {
-		  var entry = rows[j];
+		  var entry = rows[j].$;
 		  newRecord = {};
 		  for (i in entry)
 		  	newRecord[i] = entry[i];

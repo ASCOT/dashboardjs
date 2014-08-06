@@ -2,6 +2,7 @@
 var express = require('express');
 var sharejs = require('../ShareJS/').server;
 var faye = require('faye');
+var fs = require('fs');
 
 // Local Modules
 var DashboardManager = require('./js/server/dashboardsManager');
@@ -91,7 +92,28 @@ app.post('/dataSet/', function(req, res){
     res.send(JSON.stringify(datasetId));
   }
   DataSetsManager.createDataSet(queryInfo, dataSetCreated);
-});           
+});    
+
+app.post('/uploadFITS/:dashboardId', function(req, res) {	
+	// Add the image to /images/fitsViewer/(dashboardId)
+	var tmpPath = req.files.fitsImage.path;
+	var dashboardId = req.params.dashboardId;
+	var targetPath = './public/images/fitsViewer/' + dashboardId;
+	
+	// Create the directory if it doesnt exist
+	if (!fs.existsSync(targetPath)) {
+		fs.mkdirSync(targetPath);
+	}
+	
+	targetPath +=  '/' + req.files.fitsImage.name;
+	fs.rename(tmpPath, targetPath, function(err) {
+		if (err) throw err;
+		fs.unlink(tmpPath, function() {
+			if (err) throw err;
+			res.send('/images/fitsViewer/' + dashboardId + '/' + req.files.fitsImage.name);
+		});
+	});
+});       
 
 if (!module.parent) {
   app.listen(80);

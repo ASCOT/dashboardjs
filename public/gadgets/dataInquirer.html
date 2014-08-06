@@ -85,6 +85,7 @@ gadget.init = function(finishedLoading){
 	$("#sourceSelect").append($("<option />").val(firstVal).text(firstVal));
 	
   setFields();
+	gadget.notify('requestViewBounds', null);
   finishedLoading();
 }
 
