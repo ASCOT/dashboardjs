@@ -1,0 +1,6 @@
+Any changes made to the coffee script code must be compiled into javascript.
+To do so, run the following command in this directory:
+
+coffee -c --join fitsVis.js *.coffee
+
+This will produce a file called fitsVis.js containing all of the coffee script.
