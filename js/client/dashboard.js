@@ -173,7 +173,9 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 							activeTab[op[index].p[1]] = op[index].oi;
 							if (op[index].oi !== 'none') {
 								renderer.selectTab(op[index].oi);
-								gadgets[op[index].oi].notify('tabActivated');
+								if (gadgets[op[index].oi].notificationCallbacks.tabActivated) {
+									gadgets[op[index].oi].notificationCallbacks.tabActivated({ notification: 'tabActivated', source: 'dashboard' });
+								}
 							}
 						}
 					}
