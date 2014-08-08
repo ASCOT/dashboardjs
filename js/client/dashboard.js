@@ -173,6 +173,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 							activeTab[op[index].p[1]] = op[index].oi;
 							if (op[index].oi !== 'none') {
 								renderer.selectTab(op[index].oi);
+								// If the gadget cares, let it know that its tab was just activated
 								if (gadgets[op[index].oi].notificationCallbacks.tabActivated) {
 									gadgets[op[index].oi].notificationCallbacks.tabActivated({ notification: 'tabActivated', source: 'dashboard' });
 								}

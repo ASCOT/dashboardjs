@@ -87,7 +87,7 @@ var bufferedQuery;
 
 // create HR object
 gadget.init = function(callback) {
-    gadget.update = function(){};
+    gadget.update = gadget.loadState;
     
     gadget.onNotification('queryUpdate', function(json) {
             bufferedQuery = json['query'];
@@ -99,10 +99,29 @@ gadget.init = function(callback) {
 }
 
 gadget.saveState = function(){
-  return {}
+  return {
+  	'zValue': $("#z_value").val(),
+  	'zScale': $("#z_scale").get(0).checked,
+  	'boundingBox': $("#boundingBox").get(0).checked,
+  	'raMin': $("#ra_min").val(),
+  	'raMax': $("#ra_max").val(),
+  	'decMin': $("#dec_min").val(),
+  	'decMax': $("#dec_max").val(),
+  	'tableName': $("#tableName").val(),
+  	'aggFunction': $("#aggFunction").val()
+  }
 };
 
 gadget.loadState = function(state){
+	$("#z_value").val(state.zValue);
+	$("#z_scale").get(0).checked = state.zScale;
+	$("#boundingBox").get(0).checked = state.boundingBox;
+	$("#ra_min").val(state.raMin);
+	$("#ra_max").val(state.raMax);
+	$("#dec_min").val(state.decMin);
+	$("#dec_max").val(state.decMax);
+	$("#tableName").val(state.tableName);
+	$("#aggFunction").val(state.aggFunction);
 };
 
 function showQueryFromBuffer() {
@@ -190,6 +209,17 @@ window.onload = function() {
     
     // Set Up Buttons
     $('#submitQuery').on("click", function() {
+    		gadget.setState({
+    			'zValue': $("#z_value").val(),
+  				'zScale': $("#z_scale").get(0).checked,
+  				'boundingBox': $("#boundingBox").get(0).checked,
+  				'raMin': $("#ra_min").val(),
+					'raMax': $("#ra_max").val(),
+					'decMin': $("#dec_min").val(),
+					'decMax': $("#dec_max").val(),
+					'tableName': $("#tableName").val(),
+  				'aggFunction': $("#aggFunction").val()
+  			});
         var request = {};
         request['language'] = 'aql';
         request['query'] =  $('#txtQueryString').attr('value');
