@@ -189,12 +189,15 @@ class Renderer
 		@extent = imageState.extent
 		@imageData = imageState.data
 		@wcs = wcs
+		
 	
 		@gl = canvas.getContext('webgl')
 		@gl.getExtension('OES_texture_float')
+		@initViewport(canvas)
+	
+	initViewport: () ->
 		@gl.viewportWidth = canvas.width
 		@gl.viewportHeight = canvas.height
-		
 		@mouseDownLast = x: 0.0, y: 0.0
 		@mouseLast = x: 0.0, y: 0.0
 		@createAnno = false

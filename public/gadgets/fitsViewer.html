@@ -28,6 +28,7 @@ gadget.init = function(finishedLoading) {
 	gadget.onNotification('dataSetChanged', updateDsPoints);
 	gadget.onNotification('newSciDbURL', handleSciDbResponse);
 	gadget.onNotification('requestViewBounds', handleViewBoundsRequest);
+	gadget.onNotification('tabActivated', handleTabActivation);
 	initHTML();
   finishedLoading();
 };
@@ -137,6 +138,7 @@ gadget.loadState = function(state) {
 };
 
 // Globals
+var canvas;
 var stretch = 'linear';
 var sliders;
 var wcsLib;
@@ -270,11 +272,20 @@ var handleViewBoundsRequest = function() {
 	gadget.notify('viewBoundsChanged', { 'bounds': curBounds, 'source': gadget.id });
 };
 
+// Make sure the canvas is set to the correct width
+var handleTabActivation = function() {
+	if (imageUrl) {
+		var canvasPlaceholder = $("#canvasPlaceholder");
+		canvas.width = canvasPlaceholder.width();
+		renderer.initViewport(canvas);
+	}
+};
+
 var initRenderer = function(imageState) {
-	var canvas = document.createElement("canvas");
+	canvas = document.createElement("canvas");
 	canvas.setAttribute("style", "display: block");
 	canvas.setAttribute("id", "fitsCanvas");
-	var canvasPlaceholder = $("#canvasPlaceholder")
+	var canvasPlaceholder = $("#canvasPlaceholder");
 	canvasPlaceholder.after(canvas);
 	canvasPlaceholder.hide();
 	canvas.width = canvasPlaceholder.width();

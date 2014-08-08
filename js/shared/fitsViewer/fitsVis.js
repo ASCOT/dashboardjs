@@ -822,6 +822,10 @@
       this.wcs = wcs;
       this.gl = canvas.getContext('webgl');
       this.gl.getExtension('OES_texture_float');
+      this.initViewport(canvas);
+    }
+
+    Renderer.prototype.initViewport = function() {
       this.gl.viewportWidth = canvas.width;
       this.gl.viewportHeight = canvas.height;
       this.mouseDownLast = {
@@ -839,8 +843,8 @@
       this.yTrans = 0.0;
       this.scale = 1.0;
       this.initEventHandlers(canvas);
-      this.initGL(stretch);
-    }
+      return this.initGL(stretch);
+    };
 
     /*
     	# Setup the canvas event handlers
