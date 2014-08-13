@@ -376,7 +376,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 			p: ['layout', colIndex, pos],
 			li: paneObj
 			};
-		
+			
 		var op2 = {
 			p: ['activeTab', paneId],
 			oi: 'none'
@@ -694,7 +694,8 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 	// Load a dataset from a url and attach it to this dashboard
 	this.fetchDataSet = function (url, success, error) {
 		var successLoadingDataSet = function (data) {
-			addDataSet(JSON.parse(data));
+			var newDs = addDataSet(JSON.parse(data));
+			this.loadDataSet(newDs.id);
 			if (success) {
 				success();
 			}
@@ -706,7 +707,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		});
 	}
 
-	// Load a dataset from the ASCOT server and attach it to this dashboard
+	// Add the dataset to the dashboard state
 	this.loadDataSet = function (id) {
 		dashboardModel.submitOp({
 			p: ['dataSets', id],
