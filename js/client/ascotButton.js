@@ -1,4 +1,12 @@
+//     Date: 8/11
+//     Author: Diego Marcos (diego.marcos@gmail.com)
+//
+//     ASCOT Button
+// ----------
+//     Interface through which a dashboard can be constructed via an external link.
+//		 Gadget and dataset information is sent to ASCOT through the url
 
+// Global framework variable
 var ASCOT = ASCOT || {};
 ASCOT.button = {};
 

@@ -1,3 +1,10 @@
+//     Date: 8/11
+//     Author: Diego Marcos (diego.marcos@gmail.com)
+//
+//     Dashboards Manager
+// ----------
+//     Handles the creation and removal of dashboards on the server
+
 var dataSetsManager = require("./dataSetsManager");
 var async = require('async');
 
@@ -207,6 +214,7 @@ var defaultDashboards = [{
 	comments: []
 }];
 
+// These are the gadgets that load when the user selects the 'quick dashboard' option
 var defaultGadgetsSet = {
 	skyView: {
 		number: 1
@@ -223,7 +231,7 @@ var defaultGadgetsSet = {
 };
 
 module.exports = function (app, model) {
-
+	
 	var createDashboard = function (dashboardObj, callback) {
 		var data = {};
 		var dashboardCreated = function () {
@@ -235,6 +243,7 @@ module.exports = function (app, model) {
 		dashboardIdCounter++;
 	}
 
+	// Creates an instance of an object in memory
 	var cloneObject = function (obj) {
 		if (null == obj || "object" != typeof obj) return obj;
 		var copy = obj.constructor();
@@ -244,6 +253,8 @@ module.exports = function (app, model) {
 		return copy;
 	}
 
+	// Constructs a new dashboard from a specified configuration. This involves
+	// loading the gadgets and data sets and generating a layout to be read by the client
 	var parseConfiguration = function (configuration, callback) {
 		var i;
 		var newDashboard = {
@@ -332,10 +343,12 @@ module.exports = function (app, model) {
 
 	//// REST API ////
 
+	// Sends a list of gadgets to the client
 	app.get('/dashboard/gadgets/', function (req, res) {
 		res.send(JSON.stringify(dashboardsManager.find(req.params.id)));
 	});
 
+	// Sends the layout of the dashboard to the client
 	app.get('/dashboard/:id', function (req, res) {
 		res.render("dashboardPanel", {
 			locals: {
@@ -345,6 +358,7 @@ module.exports = function (app, model) {
 		});
 	});
 
+	// Cconstruct a new dashboard with the provided configuration
 	app.post('/dashboard/', function (req, res) {
 		var configuration = req.body || undefined;
 		async.waterfall([
@@ -368,12 +382,14 @@ module.exports = function (app, model) {
 		]);
 	});
 
+	// Modify the state of an existing dashboard
 	app.post('/dashboard/:id', function (req, res) {
 		var state = req.body || undefined;
 		dashboardsManager.set(req.params.id, state);
 		res.send("Dashboard saved");
 	});
 
+	// Create a copy of an existing dashboard
 	app.post('/forkdashboard/:id', function (req, res) {
 		var data = {};
 		async.waterfall([

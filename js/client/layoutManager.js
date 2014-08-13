@@ -1,59 +1,23 @@
-/**
- * @namespace The global ASCOT namespace
- * @type {Object}
- */
+//     Date: 6/14
+//     Author: Spencer Wallace (spencerw@email.arizona.edu)
+//
+//     Layout Manager
+// ----------
+//     Handles the organization of gadgets in tabs, panes and columns
+
+// Framework global variable
 var UW = UW || {};
 
-
-var logConsole = window.console ? window.console :
-	window.opera ? window.opera.postError : undefined;
-
-/**
- * @static
- * @namespace Support for basic logging capability.
- * @name UW.log
- */
-UW.log = function () {
-
-	function logMessage(level, message) {
-
-		if (level === "WARNING" && logConsole.warn) {
-			logConsole.warn(message);
-		}
-		else if (level === "ERROR" && logConsole.error) {
-			logConsole.error(message);
-		}
-		else if (logConsole.log) {
-			logConsole.log(message);
-		}
-
-	};
-
-	return {
-
-		warning: function (message) {
-			logMessage("WARNING", message);
-		},
-		error: function (message) {
-			logMessage("ERROR", message);
-		},
-		log: function (message) {
-			logMessage("LOG", message);
-		}
-
-	};
-
-}();
-
+// The constructor takes the element to which columns will be appended
 UW.layoutManager = function (rootElement) {
-	var layoutInitalized = false;
+	// Need to keep track of initalization state. Prevents unexpected behavior if
+	// the dashboard state changes while the layout is being initialized
+	var layoutInitialized = false;
 
-	function helperEl() {
-		var helperDiv = $("<div class='helper'></div>");
-		return helperDiv;
-	}
-
+	// This function sets up the DOM using jQuery's sortable API.
+	// Call this whenever the layout needs to be refreshed
 	function makeSortable() {
+		// Keep track of information about drag before elements are dropped
 		var movePane = this.movePane;
 		var paneDragSourceColId;
 		var paneDragSourcePos;
@@ -64,7 +28,12 @@ UW.layoutManager = function (rootElement) {
 		var sourcePanePos;
 		var sourceCol;
 
-		// Make the panes sortable
+		// Placeholder for elements currently being dragged
+		function helperEl() {
+			var helperDiv = $("<div class='helper'></div>");
+			return helperDiv;
+		}
+		// Panes are sortable
 		$(".column").sortable({
 			connectWith: $(".column"),
 			placeholder: 'panePlaceholder',
@@ -74,6 +43,7 @@ UW.layoutManager = function (rootElement) {
 			handle: '.ui-widget-header',
 			helper: helperEl,
 			dropOnEmpty: true,
+			// Keep track of information about the source when a pane is dragged
 			start: function (e, ui) {
 				paneDragSourceColId = ui.item.parent().attr('id').charAt(ui.item.parent().attr('id').length-1);
 				paneDragSourcePos = ui.item.parent().children().index(ui.item);
@@ -84,16 +54,15 @@ UW.layoutManager = function (rootElement) {
 					tabsInPane.push($(this).attr('id').substring(5));
 				});
 			},
+			// When a pane is dropped, remove all tabs from the old pane, remove the pane,
+			// add an empty pane in the new position and add all of the old tabs to the new pane.
 			stop: function (e, ui) {
-				// Let the server handle movement of DOM elements
 				var paneId = ui.item.attr('id').charAt(ui.item.attr('id').length-1);
 				var toColId = ui.item.parent().attr('id').charAt(ui.item.parent().attr('id').length-1);
 				var dropPos = ui.item.parent().children().index(ui.item);
 	
-				// Remove all tabs from the pane
-				// Remove the pane
-				// Add a pane in the new position
-				// Add the old tabs to the new pane
+				// This function simply sends commands to the server. The response from the server is what
+				// actually manipulates the DOM
 				$(this).sortable('cancel');
 				for (index in tabsInPane) {
 					ASCOT.dashboard.removeTab(paneDragSourceColId, 0, paneId);
@@ -108,7 +77,7 @@ UW.layoutManager = function (rootElement) {
 			}
 		});
 
-		// Make the tabs sortable
+		// Tabs are also sortable
 		var sortableItems = $(".tabHandle");
 		$(".tabHandle").sortable({
 			items: sortableItems,
@@ -119,6 +88,7 @@ UW.layoutManager = function (rootElement) {
 			forceHelperSize: true,
 			opacity: 0.8,
 			delay: 50,
+			// Keep track of information about the source when a tab is dragged
 			start: function (e, ui) {
 				tabDragSourcePaneId = ui.item.parent().parent().parent().parent().attr('id').charAt(ui.item.parent().parent().parent().parent().attr('id').length-1);
 				tabDragSourcePos = ui.item.parent().children("li").index(ui.item);
@@ -128,8 +98,8 @@ UW.layoutManager = function (rootElement) {
 				ui.placeholder.css('min-width', ui.item.width() + 'px');
 				ui.placeholder.css('min-height', ui.item.height() + 'px');
 			},
+			// When a tab is dropped, remove the old tab and add a tab in the drop position
 			stop: function (e, ui) {
-				// Let the server handle movement of DOM elements
 				var tabId = ui.item.attr('id').substring(5);
 				var destCol;
 				
@@ -140,18 +110,24 @@ UW.layoutManager = function (rootElement) {
 				// Dont do anything if we dropped the tab back into the same spot
 				if (sourceCol === destCol && tabDragSourcePos === dropPos && tabDragSourcePaneId === toPaneId) return;
 				
+				// Again, the response from the server is what modifies the DOM. We don't want the drop action to do anything besides
+				// send a request to the server.
 				$(this).sortable('cancel');
 				ASCOT.dashboard.removeTab(sourceCol, tabDragSourcePos, tabDragSourcePaneId);
-				// If this is the last tab in the pane, also remove the pane
+				// Be sure to remove the old pane if this was the last tab in it
 				if ($("#paneTabs"+tabDragSourcePaneId+ " ul").children().length === 0) {
 					ASCOT.dashboard.removePane(sourcePanePos, sourceCol);
 				}
 				ASCOT.dashboard.addTab(destCol, dropPos, toPaneId, tabId);
+				// Immediately activate the new tab
 				ASCOT.dashboard.selectTab(toPaneId, tabId)
 			}
 		});
 	}
 
+	// This function gets a list of available gadgets from the server and puts them
+	// into an unordered list. liClickFunction is the function that executes when
+	// one of the list elements is clicked.
 	function populateGadgetList(listUl, liClickFunction) {
 		var success = function(listResults) {
 			listUl.empty();
@@ -170,6 +146,8 @@ UW.layoutManager = function (rootElement) {
 		});
 	}
 
+	// This function returns a new DOM element for an add gadget control. These are the
+	// purple buttons which appear at the bottom of each column on the dashboard.
 	function getAddGadgetDiv(colId) {
 		var addGadgetDiv = $("<div id='addToCol"+colId+"'></div>");
 		
@@ -190,7 +168,7 @@ UW.layoutManager = function (rootElement) {
 			list.toggle();
 		});
 		
-		// Function for clicking a gadget name
+		// Tell the server to add a new gadget to the dashboard when a gadget name is clicked.
 		var clickGadgetName = function(e) {
 			var gadgetName = $(e.target).attr('id');
 			var columnNum = $(e.target).parent().parent().parent().attr('id').charAt($(e.target).parent().parent().parent().attr('id').length-1);
@@ -204,6 +182,7 @@ UW.layoutManager = function (rootElement) {
 		return addGadgetDiv;
 	}
 
+	// Adds a column with the specified id and width (in pixels) to the container. Also adds an "add gadget" control at the bottom.
 	function addColumn(colId, width) {
 		var colDiv = $("<div id='colContainer" + colId + "' class='columnContainer' style='width: "+width+"'></div>");
 		var newCol = $("<ul id='col" + colId + "' class='column'></ul>");
@@ -214,11 +193,13 @@ UW.layoutManager = function (rootElement) {
 		colDiv.append(addGadgetDiv);
 	}
 
+	// Adds a pane to the specified column and position with the given id
 	function addPane(colNum, paneId, pos) {
 		var newPane = $("<li class='pane' id='pane" + paneId + "'></li>");
 		var paneContent = $("<div class='paneContent' id='paneContent" + paneId + "'></div>");
 		var paneTabs = $("<div id='paneTabs" + paneId + "' class='tabContainer'><ul></ul></div>");
 
+		// If no position specified, add it to the bottom
 		if (pos === undefined) {
 			$("#col" + colNum).append(newPane);
 		}
@@ -233,10 +214,12 @@ UW.layoutManager = function (rootElement) {
 		paneContent.append(paneTabs);
 	}
 	
+	// Remove a specific pane from the DOM
 	function removePane(paneId) {
 		$("#pane" + paneId).remove();
 	}
 
+	// Add a new tab element to a certain pane and position with the given id and content
 	function addTab(tabContentCode, paneNum, pos, tabId) {
 		var pos = parseInt(pos);
 		var tabDiv = $("#paneTabs" + paneNum);
@@ -255,6 +238,7 @@ UW.layoutManager = function (rootElement) {
 			ul.after(newContent);
 		}
 
+		// The eject button puts this tab in its own pane
 		var ejectTabButton = $("<span class='ui-icon ui-icon-arrowthickstop-1-n' id='ejectTab" + tabId + "' style='float: right' role='presentation'>Remove Tab</span>");
 		ejectTabButton.click(function (e) {
 			var sourceCol = $(e.target).parent().parent().parent().parent().parent().parent().attr('id').charAt($(e.target).parent().parent().parent().parent().parent().parent().attr('id').length-1);
@@ -271,6 +255,7 @@ UW.layoutManager = function (rootElement) {
 			ASCOT.dashboard.selectTab(newPaneId, tabId);
 		});
 
+		// The close button completely removes this tab from the dashboard state
 		var closeTabButton = $("<span class='ui-icon ui-icon-close' id='closeTab" + tabId + "' style='float: right' role='presentation'>Remove Tab</span>");
 		closeTabButton.click(function (e) {
 			var tabToClose = e.target.id.charAt(e.target.id.length - 1);
@@ -297,11 +282,13 @@ UW.layoutManager = function (rootElement) {
 		return tabContent;
 	}
 
+	// Remove the given tab from the DOM
 	function removeTab(tabId) {
 		$("#tabLi" + tabId).remove();
 		$("#tabContent" + tabId).remove();
 	}
 	
+	// Activate the given tab in the DOM
 	function selectTab(tabId) {
 		var tabLi = $("#tabLi"+tabId);
 		var index = tabLi.parent().children().index(tabLi);
@@ -309,6 +296,7 @@ UW.layoutManager = function (rootElement) {
 		$("#paneTabs"+paneId).tabs('option', 'active', index);
 	}
 
+	// Moves tab at the specified position and pane to a new position and pane in the DOM
 	function moveTab(fromPaneId, fromPos, toPaneId, toPos) {
 		var liToMove = $("#paneTabs" + fromPaneId + " > ul").children().eq(fromPos);
 		var contentToMove = $("#paneTabs" + fromPaneId + " > div").eq(fromPos);
@@ -331,14 +319,11 @@ UW.layoutManager = function (rootElement) {
 		}
 	}
 	
-	function refreshPanes() {
-		makeSortable();
-	}
-	
+	// Notify the server if the user activates a tab
 	function initTabs($container) {
 		$container.tabs({
 			activate: function (event, ui) {
-				if (!layoutInitalized) return false;
+				if (!layoutInitialized) return false;
 				var paneId = ui.newTab.parent().parent().attr('id').charAt(ui.newTab.parent().parent().attr('id').length-1)
 				var tabId = ui.newTab.attr('id').substring(5)
 				ASCOT.dashboard.selectTab(paneId, tabId);
@@ -346,9 +331,8 @@ UW.layoutManager = function (rootElement) {
 		});
 	}
 	
+	// Initalize any new tab containers and refresh existing ones
 	function refreshTabs() {
-		// New containers need to be initalized
-		// Existing containers need to be refreshed
 		$(".tabContainer").each(function() {
 			if ($(this).hasClass("ui-tabs")) {
 				$(this).tabs('refresh');
@@ -359,15 +343,16 @@ UW.layoutManager = function (rootElement) {
 		});
 	}
 	
-	function initalize(activeTabs) {
+	// Set up the DOM given a list of tabs
+	function initialize(activeTabs) {
 		refreshTabs();
-		refreshPanes();
+		makeSortable();
 		
 		for (i in activeTabs) {
 			selectTab(activeTabs[i]);
 		}
 		
-		layoutInitalized = true;
+		layoutInitialized = true;
 	}
 
 	return {
@@ -377,8 +362,8 @@ UW.layoutManager = function (rootElement) {
 		addTab: addTab,
 		removeTab: removeTab,
 		selectTab: selectTab,
-		refreshPanes: refreshPanes,
+		refreshPanes: makeSortable,
 		refreshTabs: refreshTabs,
-		initalize: initalize
+		initialize: initialize
 	}
 };

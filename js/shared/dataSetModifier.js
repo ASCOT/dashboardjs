@@ -1,9 +1,10 @@
-/**
- * It represents additional information added on top of dataSets
- * It could be annotations, transformations or additional information that affects 
- * how the dataSet is displayed
- * @author Diego Marcos (dmarcos@uw.edu)
- */
+//     Date: 8/11
+//     Author: Diego Marcos (diego.marcos@gmail.com)
+//
+//     Dataset Modifier
+// ----------
+//     Handles additional mutable properties that can be added to data sets. This
+//		 includes things like annotations, transformations...etc
  
 if (!UW) var UW={};
 

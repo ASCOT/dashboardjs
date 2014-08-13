@@ -1,11 +1,19 @@
+//     Date: 8/11
+//     Author: Diego Marcos (diego.marcos@gmail.com)
+//
+//     Datasets Manager
+// ----------
+//     Handles the creation and removal of data sets on the server
+
 var XMLHttpRequest = require("./XMLHttpRequest").XMLHttpRequest;
-var xml2js = require('xml2js'); //require('libxmljs');
+var xml2js = require('xml2js');
 var LsstMySQLClient = require('mysql').Client;
 var lsstMySQLClient = new LsstMySQLClient();
 lsstMySQLClient.host = 'lsst10.ncsa.uiuc.edu';
 
 var dataSets = [];
 
+// Send a query to the SDSS server. The response comes in XML format
 var querySDSS = function(query, callback){
   var xhr = new XMLHttpRequest();
   xhr.onreadystatechange = function() {
@@ -19,16 +27,7 @@ var querySDSS = function(query, callback){
   xhr.send();
 };
 
-var queryLSST = function(query, callback){	
-  lsstMySQLClient.user = dataSources.lsst.user;
-  lsstMySQLClient.password = dataSources.lsst.password;
-  lsstMySQLClient.query('use buildbot_PT1_2_u_wp_tags_2011_0817_215234;');
-  lsstMySQLClient.query(query, function(err, results, fields) {
-    callback(results);
-	});
-	//lsstMySQLClient.end();
-};
-
+// Parse the XML response from the SDSS server
 var parseSDSSQueryResult = function(queryResult, callback){
 	var parseSuccess = function (err, result) {
   	var records = [];
@@ -47,6 +46,16 @@ var parseSDSSQueryResult = function(queryResult, callback){
   var parser = new xml2js.Parser();
   parser.parseString(queryResult, parseSuccess);
   
+};
+
+var queryLSST = function(query, callback){	
+  lsstMySQLClient.user = dataSources.lsst.user;
+  lsstMySQLClient.password = dataSources.lsst.password;
+  lsstMySQLClient.query('use buildbot_PT1_2_u_wp_tags_2011_0817_215234;');
+  lsstMySQLClient.query(query, function(err, results, fields) {
+    callback(results);
+	});
+	//lsstMySQLClient.end();
 };
 
 var parseLSSTQueryResult = function(queryResults){
@@ -87,6 +96,7 @@ var dataSources = {
 
 var dataSourcesNameIndex = {};
 
+// Fetch a set of records according to the provided source and query
 var retrieveRecords = function(source, query, success, error){
   var dataInquirer = dataSources[source].dataInquirer;
   var queryResultParser;
@@ -111,6 +121,7 @@ var retrieveRecords = function(source, query, success, error){
   dataInquirer(query, processQueryResult); 
 }
 
+// Add a new data set to the ASCOT server
 var addDataSet = function(dataSet){
   var dataSetName = dataSet.name;
   if(!dataSetName){
@@ -122,6 +133,7 @@ var addDataSet = function(dataSet){
   return dataSets.length-1;
 }
 
+// Interface to get data sets from the server
 module.exports.find = function(id, callback) {
   id = parseInt(id, 10);
   var dataSet = dataSets[id];
@@ -144,7 +156,8 @@ module.exports.find = function(id, callback) {
 
 }
 
-// dataSetName, dataSourceId, query, dataParser
+// Interface to create a new data set. One can provide either a source a query, or a
+// list of records
 module.exports.createDataSet = function(dataSetInfo, callback) {
   var id = dataSetInfo.id || dataSets.length;
   var name = dataSetInfo.name;

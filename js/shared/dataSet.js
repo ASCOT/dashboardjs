@@ -1,7 +1,10 @@
-/**
- * Ascot data set representation
- * @author Diego Marcos (dmarcos@uw.edu)
- */
+//     Date: 8/11
+//     Author: Diego Marcos (diego.marcos@gmail.com)
+//
+//     Dataset
+// ----------
+//     Represents an ASCOT dataset. Provides routines to create, delete and
+//		 modify data sets.
 
 if (!UW) var UW={};
 

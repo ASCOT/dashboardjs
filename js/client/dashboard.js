@@ -6,6 +6,7 @@
 //     Defines the controller mediating in `gadget to gadget` 
 //     and `gadget to data set` communication.
 //     Models and communication based on [backbone.js](http://documentcloud.github.com/backbone/)
+
 // Framework global variable
 var UW = UW || {};
 
@@ -26,8 +27,8 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 	var renderer;
 	// List of gadgets
 	var gadgets = {};
-	// Represents the state of the dashboard that will be saved to and load from the server
-
+	
+	// Represents the state of the dashboard that will be tracked by the server
 	var layout = {};
 	var paneIdCounter;
 	var activeTab = {};
@@ -37,6 +38,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 	var gadgetsInfo;
 	var dashboard = this;
 
+	// Gadget-gadget communication interface
 	var bayeuxClient;
 	var bayeuxClientId;
 
@@ -47,6 +49,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		UW.debugMessage("MANAGER: " + msg);
 	}
 
+	// Add a dataset to the client model
 	var addDataSet = function (data, silent) {
 		var newDataSet = new UW.DataSet(data);
 		var id = newDataSet.id;
@@ -56,6 +59,8 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 			modifiers = (dashboardModel.at('dataSets').get())[id].modifiers || [];
 			loadedDataSets[id].applyModifiers(modifiers);
 		}
+		
+		// Notify the server whenever we make a change to this data set
 		newDataSet.bind('changed', _.bind(function (data) {
 			if (data && data.modifiers) {
 				for (var i = 0; i < data.modifiers.length; ++i) {
@@ -76,6 +81,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		return newDataSet;
 	};
 
+	// Remove a dataset from the client model
 	var removeDataSet = function (id, silent) {
 		delete loadedDataSets[id];
 		if (!silent) {
@@ -87,6 +93,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 
 	this.loadedGadgets = 0;
 
+	// Local gadgets and datasets listen for server messages
 	this.init = function (callback) {
 		var stateLoaded = _.bind(function (state) {
 			this.inflateState(state, callback);
@@ -101,6 +108,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		this.onNotification('dataSetUnloaded', removeDataSet)
 	};
 
+	// Bind a function to a notification
 	this.onNotification = function (notification, callback) {
 		var newCallback = function (notificationObject) {
 			if (notificationObject['private']) {
@@ -111,6 +119,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		this.bind(notification, newCallback);
 	};
 
+	// Get a list of available gadgets from the server
 	this.loadGadgets = function (callback) {
 		$.ajax({
 			url: /gadgets/,
@@ -119,8 +128,10 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		});
 	};
 
+	// Executes when a client first pulls up a dashboard
 	this.loadState = function (callback) {
 
+		// Handler for messages from the server
 		var dashboardModelChanged = _.bind(function (op) {
 			var communications = bayeuxClient;
 			var modifiers;
@@ -258,6 +269,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 			}
 		}, this);
 
+		// Get the dashboard state from the server and set up the initialize the client accordingly
 		var state;
 		var onDocOpened = function (error, doc) {
 			var that = this;
@@ -308,6 +320,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		url = dashboardUrl;
 	};
 
+	// Construct a new gadget object
 	this.makeGadgetInstance = function (gadgetInstanceInfo) {
 		newGadgetModel = new UW.GadgetModel(gadgetInstanceInfo.state);
 		newGadget = new UW.Gadget({
@@ -321,13 +334,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		return newGadget;
 	}
 
-	this.renderGadgets = function (callback) {
-		var gadgetLoaded = _.bind(function () {
-			var finished = callback;
-			this.gadgetLoaded(finished)
-		}, this);
-	};
-
+	// Move the server state forward/backward 1 step
 	this.undo = function (callback) {
 		dashboardModel.undo();
 	}
@@ -336,6 +343,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		dashboardModel.redo();
 	}
 	
+	// Tell the server to remove the pane at the given position and column
 	this.removePane = function (pos, colIndex) {
 		var op1 = {
 			p: ['layout', colIndex, pos],
@@ -351,6 +359,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		dashboardModel.submitOp([op1, op2]);
 	}
 	
+	// Tell the server to add a new pane at the given position and column
 	this.addPane = function (pos, colIndex, paneId) {
 		var opsToSubmit = [];
 		
@@ -380,6 +389,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		return paneId;
 	}
 	
+	// Tell the server to remove the tab in the given pane and position
 	this.removeTab = function (colIndex, pos, paneId) {
 		var paneIndex = -1;
 		for (index in layout[colIndex]) {
@@ -410,6 +420,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		dashboardModel.submitOp(opsToSubmit);
 	}
 	
+	// Tell the server to add a tab to the given pane and position
 	this.addTab = function (colIndex, pos, paneId, tabId) {
 		var paneIndex = -1;
 		for (index in layout[colIndex]) {
@@ -427,6 +438,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		dashboardModel.submitOp(op);
 	}
 	
+	// Tell the server to activate a given tab
 	this.selectTab = function (paneId, tabId) {
 		var op = {
 			p: ['activeTab', paneId],
@@ -436,6 +448,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		dashboardModel.submitOp(op);
 	}
 	
+	// Tell the server to add a new gadget in its own pane to the given column
 	this.addGadget = function (gadgetName, columnNum) {
 		// Add the gadget to the dashboard
 		var gadgetCount = 1;
@@ -458,6 +471,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		this.addTab(columnNum, 0, newPaneId, gadgetId);
 	}
 	
+	// Tell the server to stop tracking the state for a gadget
 	this.removeGadget = function (gadgetId) {
 		var gadgetToRemove = dashboardModel.at('gadgets').get()[gadgetId];
 		var op = {
@@ -468,6 +482,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		dashboardModel.submitOp(op);
 	}
 
+	// Construct a new data set on the server and link it to this dashboard
 	this.createDataSet = function (name, source, query, success, error, staticData, existingRecords) {
 		var createDataSetSuccess = function (dataSetId) {
 			this.loadDataSet(dataSetId);
@@ -491,6 +506,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 
 	};
 
+	// Construct a new data set from an existing list of records on the server and link it to this dashboard
 	this.createDataSetFromRecords = function (name, records, success) {
 		var createDataSetSuccess = function (dataSetId) {
 			this.loadDataSet(dataSetId);
@@ -512,6 +528,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		return dashboardModel.at('comments').get();
 	};
 
+	// Submit a comment to the server
 	this.publishComment = function (comment) {
 		var currentDate = new Date();
 		var commentObj = {
@@ -534,6 +551,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		return loadedDataSets[id];
 	};
 
+	//Get a list of the ids of all datasets loaded to this dashboard
 	this.getDataSetList = function () {
 		var dataSetsIds = [];
 		for (var id in loadedDataSets) {
@@ -545,6 +563,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		return dataSetsIds;
 	};
 
+	// Tell the server to make a copy of the current dashboard state
 	this.fork = function (success, error) {
 		var successFork = function (id) {
 			console.log("Dashboard forked");
@@ -559,6 +578,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 
 	};
 
+	// Interface through which a notification can be sent out to subscribed listeners
 	this.notify = function (notification, data, options) {
 		options = options || {};
 		var notificationObject = {};
@@ -578,6 +598,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		}
 	};
 
+	// Init the notification network
 	this.initCommunications = function (channelId) {
 		var processNotification = _.bind(function (message) {
 			this.trigger(message.notification, message);
@@ -608,7 +629,22 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 			processNotification(message);
 		});
 	};
+	
+	this.gadgetLoaded = function (callback) {
+		this.loadedGadgets--;
+		if (this.loadedGadgets == 0) {
+			callback();
+		}
+	};
+	
+	this.renderGadgets = function (callback) {
+		var gadgetLoaded = _.bind(function () {
+			var finished = callback;
+			this.gadgetLoaded(finished)
+		}, this);
+	};
 
+	// Construct a client based on a provided dashboard state
 	this.inflateState = function (dashboardState, success, error) {
 		var newGadget;
 		var gadgetInstanceInfo;
@@ -655,6 +691,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		}
 	};
 
+	// Load a dataset from a url and attach it to this dashboard
 	this.fetchDataSet = function (url, success, error) {
 		var successLoadingDataSet = function (data) {
 			addDataSet(JSON.parse(data));
@@ -669,6 +706,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		});
 	}
 
+	// Load a dataset from the ASCOT server and attach it to this dashboard
 	this.loadDataSet = function (id) {
 		dashboardModel.submitOp({
 			p: ['dataSets', id],
@@ -680,6 +718,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		});
 	}
 
+	// Detach a dataset from this dashboard
 	this.unloadDataSet = function (id) {
 		dashboardModel.submitOp({
 			p: ['dataSets', id],
@@ -687,6 +726,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		});
 	}
 
+	// Attach a list of datasets from the ASCOT server to this dashboard
 	this.loadDataSets = function (dataSets, success, error) {
 		var remainingDataSets = 0;
 		var succesFetchingDataSet = _.bind(function (data) {
@@ -713,13 +753,6 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 			}
 		}
 
-	};
-
-	this.gadgetLoaded = function (callback) {
-		this.loadedGadgets--;
-		if (this.loadedGadgets == 0) {
-			callback();
-		}
 	};
 
 };
