@@ -158,6 +158,8 @@ function populateSelects() {
   columnNames = selectedDataSet.getColumns();
   selectedXAxis = populateSelect("selectXAxis", columnNames, selectedXAxis).val();
   selectedYAxis = populateSelect("selectYAxis", columnNames, selectedYAxis).val();
+  gadget.setState({ 'selectedXAxis': selectedXAxis });
+  gadget.setState({ 'selectedYAxis': selectedYAxis });
 
   // add colors to the select box (pass the select Name and color array)
   $('#selectDatasetName').bind('change', function(){

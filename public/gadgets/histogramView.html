@@ -98,6 +98,7 @@ var populateSelects = function() {
   selectedDataSetName = selectedDataSetName.text();
   columnNames = selectedDataSet.getColumns();
   selectedXAxis = populateSelect("selectXAxis", columnNames, selectedXAxis).val();
+  gadget.setState({ 'selectedXAxis': selectedXAxis });
   
    $('#selectDataSetName').change( function(){
     if(this.selectedIndex != -1){
