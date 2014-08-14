@@ -24,6 +24,7 @@
 gadget.init = function(callback){
   gadget.update = updateDataSetList;
   gadget.onNotification('dataSetChanged', gadget.update);
+  updateDataSetList();
   callback();
 }
 
