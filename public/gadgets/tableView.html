@@ -45,6 +45,7 @@ var table;
 
 // Creates gadget object
 gadget.init = function(callback){ 
+  gadget.update();
   gadget.onNotification('dataSetChanged', gadget.update);  
   // add colors to the select box (pass the select Name and color array)
   $('#selectDataSetName').change( function(){
