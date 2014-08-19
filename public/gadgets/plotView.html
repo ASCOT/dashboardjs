@@ -209,13 +209,7 @@ function populateSelects() {
   
   $('#selectColor').bind('change', function(){
     selectedColor =  $(this).find('option:selected').val();
-  });    
-  
-  if(!init) {
-    init = true;
-    $('#selectDatasetName').change();
-  }
-
+  });
 };
 
 // Highcharts plot options
