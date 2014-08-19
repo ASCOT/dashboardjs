@@ -45,8 +45,16 @@ gadget.init = function(finishedLoading){
   finishedLoading();
 };
 
-gadget.loadState = function(state){
+gadget.saveState = function() {
+	gadget.setState({
+		'selectedDataSetId': selectedDataSetId,
+		'selectedXAxis': selectedXAxis,
+		'selectedColor': selectedColor,
+		'numberOfBins': numberOfBins
+	});
+};
 
+gadget.loadState = function(state){
   if (state) {
     selectedDataSetId = state.selectedDataSetId || "";
     selectedXAxis = state.selectedXAxis || "";
@@ -55,7 +63,6 @@ gadget.loadState = function(state){
     $('#selectNumberOfBins').val(numberOfBins);
   }
   redraw();
-
 };
 
 gadget.update = gadget.loadState;
@@ -91,14 +98,12 @@ var populateSelects = function() {
   $('#selectNumberOfBins').unbind('change');          
   
   selectedColor = populateSelect("selectColor", ["red", "green", "blue", "yellow", "grey"], selectedColor).val();
-  //numberOfBins = parseInt(populateSelect("selectNumberOfBins", [1, 2, 3, 4, 5 ,6 ,7 ,8, 9 ,10], numberOfBins).val());
   selectedDataSetName = populateSelect('selectDataSetName', gadget.dashboard.getDataSetList(), selectedDataSetName);
   selectedDataSetId = selectedDataSetName.val();
   selectedDataSet = gadget.dashboard.getDataSet(selectedDataSetId);
   selectedDataSetName = selectedDataSetName.text();
   columnNames = selectedDataSet.getColumns();
   selectedXAxis = populateSelect("selectXAxis", columnNames, selectedXAxis).val();
-  gadget.setState({ 'selectedXAxis': selectedXAxis });
   
    $('#selectDataSetName').change( function(){
     if(this.selectedIndex != -1){

@@ -40,6 +40,11 @@ UW.Gadget = Backbone.View.extend({
     if (!isEmpty(this.dashboardModel.get().gadgets[this.id].state)) {
       this.loadState(this.dashboardModel.get().gadgets[this.id].state);
     }
+    else{
+    	// Record initial gadget state (blank text boxes...etc) so the first state changes
+    	// can be undone
+    	this.saveState();
+    }
   },
 
 	// Modify the current gadget state

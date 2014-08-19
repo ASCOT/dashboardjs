@@ -86,15 +86,16 @@ gadget.init = function(finishedLoading){
 	
   setFields();
 	gadget.notify('requestViewBounds', null);
+	
   finishedLoading();
 }
 
 gadget.saveState = function(){
-  return {
+  gadget.setState ({
   	'datasetName': $("#txtDatasetName").val(),
     'currentQueryText': currentQuery.query,
     'selectedCatalog': $("#selectCatalog option:selected").text()
-  }
+  });
 };
 
 gadget.loadState = function(state){
@@ -194,7 +195,7 @@ var setQueryText = function(buttonNumber) {
   buttonObject = QUERY_BUTTONS[buttonNumber];
   queryString = buttonObject.query;
   
-  $('#selectCatalog').val(buttonObject.catalog).attr('selected',true);  
+  //$('#selectCatalog').val(buttonObject.catalog).attr('selected',true);  
         
   // replace bounds    
   if (viewportBounds && viewportBounds.topLeft && viewportBounds.bottomRight) {

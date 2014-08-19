@@ -99,7 +99,7 @@ gadget.init = function(callback) {
 }
 
 gadget.saveState = function(){
-  return {
+  gadget.setState ({
   	'zValue': $("#z_value").val(),
   	'zScale': $("#z_scale").get(0).checked,
   	'boundingBox': $("#boundingBox").get(0).checked,
@@ -109,7 +109,7 @@ gadget.saveState = function(){
   	'decMax': $("#dec_max").val(),
   	'tableName': $("#tableName").val(),
   	'aggFunction': $("#aggFunction").val()
-  }
+  });
 };
 
 gadget.loadState = function(state){

@@ -33,9 +33,9 @@ gadget.init = function(finishedLoading){
 }
 
 gadget.saveState = function(){
-  return {
+  gadget.setState({
   	'txtInput': $("#txtInputText").val()
-  }
+  });
 };
 
 gadget.loadState = function(state){

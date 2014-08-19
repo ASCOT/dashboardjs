@@ -34,7 +34,16 @@ gadget.init = function(finishedLoading) {
 };
 
 gadget.saveState = function() {
-
+	gadget.setState({
+		'sliders': [ $("#extentSlider").slider("values")[0]/1000.0, $("#extentSlider").slider("values")[1]/1000.0 ],
+		'annotations': annotations,
+		'raFieldName': raFieldName,
+		'decFieldName': decFieldName,
+		'dsName': dsName,
+		'imageUrl': imageUrl,
+		'stretch': stretch,
+		'sciDbURLs': sciDbURLs
+	});
 };
 
 var loadAfterImage = function(state) {
@@ -44,7 +53,7 @@ var loadAfterImage = function(state) {
 		$("#"+stretch+"Entry").prepend("<span id='stretchDot' class='dot'></span>");
 		$("#extentSlider").slider('values', 0, 0.0);
 		$("#extentSlider").slider('values', 1, 1000.0);
-		if (imageUrl) {
+		if (renderer) {
 			renderer.setExtent(0.0, 1000.0);
 			renderer.initGL(stretch);
 		}
@@ -53,7 +62,9 @@ var loadAfterImage = function(state) {
 		sliders = state.sliders;
 		$("#extentSlider").slider('values', 0, sliders[0]*1000.0);
 		$("#extentSlider").slider('values', 1, sliders[1]*1000.0);
-		renderer.setExtent(sliders[0], sliders[1]);
+		if (renderer) {
+			renderer.setExtent(sliders[0], sliders[1]);
+		}
 	}
 	if (state.annotations) {
 		annotations = state.annotations;
@@ -77,7 +88,7 @@ var loadAfterImage = function(state) {
 			sciDbUrlSelect.append($("<option value='"+value+"'>"+value+"</option>"));
 		});
 	}
-	if (imageUrl) renderer.drawGL();
+	if (renderer) renderer.drawGL();
 }
 
 gadget.loadState = function(state) {
