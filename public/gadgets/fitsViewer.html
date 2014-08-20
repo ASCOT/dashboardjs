@@ -95,56 +95,58 @@ gadget.loadState = function(state) {
 	if (state) {
 		// Only reload the image if the url is different
 		// Otherwise panning and zoom gets reset whenever the state changes
-		if (state.imageUrl && state.imageUrl !== imageUrl) {
-			imageUrl = state.imageUrl;
-			$("#fitsCanvas").remove();
-			var progressbar = $("#fitsProgressbar");
-			var progresslabel = $("#fitsProgresslabel");
-			var filename;
-			if (imageUrl.substring(0, 7) === "http://") filename = imageUrl.split("/")[imageUrl.split("/").length-1];
-			else filename = imageUrl.split("\\")[imageUrl.split("\\").length-1];
+		if (state.imageUrl) {
+			if (state.imageUrl !== imageUrl) {
+				imageUrl = state.imageUrl;
+				var progressbar = $("#fitsProgressbar");
+				var progresslabel = $("#fitsProgresslabel");
+				var filename;
+				if (imageUrl.substring(0, 7) === "http://") filename = imageUrl.split("/")[imageUrl.split("/").length-1];
+				else filename = imageUrl.split("\\")[imageUrl.split("\\").length-1];
 			
-			var fitsCallback = function(f, a) {
-				headerBlock = f.getHeader().block;
-				wcsLib = new wcs();
-				wcsLib.init(headerBlock);
-				var dataunit = f.getDataUnit();
-				dataunit.getFrame(0, dataunitCallback, dataunit);
-			}
-
-			var dataunitCallback = function(arr, dataunit) {
-				var width = dataunit.width;
-				var height = dataunit.height;
-				var extent = dataunit.getExtent(arr);
-				var imageState = { width: width, height: height, data: arr, extent: extent};
-				initRenderer(imageState);
-				
-				// Notify other gadgets about the boundaries of the image
-				var bottomRight = wcsLib.pix2sky(0, 0);
-				var topLeft = wcsLib.pix2sky(width, height);
-				curBounds = { topLeft:     {ra: topLeft[0], dec: topLeft[1] },
-                    	bottomRight: {ra: bottomRight[0], dec: bottomRight[1] } };
-				gadget.notify('viewBoundsChanged', { 'bounds': curBounds, 'source': gadget.id });
-				
-				loadAfterImage(state);
-			}
-		
-			$("#fitsCanvas").remove();
-			$("#canvasPlaceholder").show();
-			progressbar.show();
-			$("#loadImageText").hide();
-			progresslabel.text("Downloading " + filename + "...");
-			$("#loadImageText").hide();
-			progressbar.progressbar({
-				value: false,
-				complete: function() {
-					progresslabel.text("Complete!");
+				var fitsCallback = function(f, a) {
+					headerBlock = f.getHeader().block;
+					wcsLib = new wcs();
+					wcsLib.init(headerBlock);
+					var dataunit = f.getDataUnit();
+					dataunit.getFrame(0, dataunitCallback, dataunit);
 				}
-			});
+
+				var dataunitCallback = function(arr, dataunit) {
+					var width = dataunit.width;
+					var height = dataunit.height;
+					var extent = dataunit.getExtent(arr);
+					var imageState = { width: width, height: height, data: arr, extent: extent};
+					initRenderer(imageState);
+				
+					// Notify other gadgets about the boundaries of the image
+					var bottomRight = wcsLib.pix2sky(0, 0);
+					var topLeft = wcsLib.pix2sky(width, height);
+					curBounds = { topLeft:     {ra: topLeft[0], dec: topLeft[1] },
+		                  	bottomRight: {ra: bottomRight[0], dec: bottomRight[1] } };
+					gadget.notify('viewBoundsChanged', { 'bounds': curBounds, 'source': gadget.id });
+				
+					loadAfterImage(state);
+				}
 		
-			loadFITS(imageUrl, fitsCallback);
+				$("#fitsCanvas").hide();
+				$("#canvasPlaceholder").show();
+				progressbar.show();
+				$("#loadImageText").hide();
+				progresslabel.text("Downloading " + filename + "...");
+				$("#loadImageText").hide();
+				progressbar.progressbar({
+					value: false,
+					complete: function() {
+						progresslabel.text("Complete!");
+					}
+				});
+		
+				loadFITS(imageUrl, fitsCallback);
+			}
+			else loadAfterImage(state);
 		}
-		else loadAfterImage(state);
+		else makeBlankCanvas();
 	}
 };
 
@@ -432,6 +434,14 @@ var verifyUrl = function(targetUrl, successCallback, failureCallback) {
 			failureCallback();
 		}
 	});
+};
+
+var makeBlankCanvas = function() {
+	imageUrl = undefined;
+	$("#fitsCanvas").remove();
+	$("#canvasPlaceholder").show();
+	$("#fitsProgressbar").hide();
+	$("#loadImageText").show();
 };
 
 var initHTML = function() {
