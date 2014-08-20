@@ -383,7 +383,6 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		}
 		
 		opsToSubmit.push(op1);
-		//opsToSubmit.push(op2);
 		dashboardModel.submitOp(opsToSubmit);
 		
 		return paneId;
