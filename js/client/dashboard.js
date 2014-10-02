@@ -185,7 +185,7 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 							if (op[index].oi !== 'none') {
 								renderer.selectTab(op[index].oi);
 								// If the gadget cares, let it know that its tab was just activated
-								if (gadgets[op[index].oi].notificationCallbacks.tabActivated) {
+								if (gadgets[op[index].oi].notificationCallbacks && gadgets[op[index].oi].notificationCallbacks.tabActivated) {
 									gadgets[op[index].oi].notificationCallbacks.tabActivated({ notification: 'tabActivated', source: 'dashboard' });
 								}
 							}
@@ -468,6 +468,8 @@ UW.Dashboard = function (_id, container, dashboardUrl) {
 		
 		// Add a tab to the new pane
 		this.addTab(columnNum, 0, newPaneId, gadgetId);
+		// Make this the selected tab in the new pane
+		this.selectTab(newPaneId, gadgetId);
 	}
 	
 	// Tell the server to stop tracking the state for a gadget
